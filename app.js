@@ -6,9 +6,8 @@ const fields = [
     'fakultas', 'jurusan', 'ruangan', 'no_bpjsn', 'no_bpjsket_taspen', 'npwp', 'email', 'no_telp'
 ];
 
-// ⚠️ ISI DENGAN KUNCI PROYEK SUPABASE ANDA SENDIRI (HARUS SAMA DENGAN DI FILE LOGIN)
 const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
-const SUPABASE_ANON_KEY = "process.env.SUPABASE_KEY";
+const SUPABASE_ANON_KEY = "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC";
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -85,7 +84,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function muatDataDariCloud() {
     try {
-        // Ambil data instan dari Supabase
         const { data, error } = await supabaseClient.from('pegawai').select('*');
         if (error) throw error;
         dbPegawai = data || [];
@@ -126,12 +124,10 @@ async function simpanFormPegawai(e) {
 
     try {
         if (statusEdit) {
-            // Perbarui Data (Update)
             const { error } = await supabaseClient.from('pegawai').update(dataObj).eq('id_pegawai', dataObj.id_pegawai);
             if (error) throw error;
             alert('Data pegawai berhasil diperbarui!');
         } else {
-            // Tambah Baru (Create)
             dataObj.id_pegawai = 'ID-' + Date.now();
             const { error } = await supabaseClient.from('pegawai').insert([dataObj]);
             if (error) throw error;
@@ -282,7 +278,6 @@ function unduhPDF() {
     doc.save("Laporan_Ringkas_Pegawai.pdf");
 }
 
-// Unggah Excel Massal Cepat via Supabase Upsert
 function jalankanProsesImportExcel() {
     const file = inputFileExcel.files[0];
     if (!file) return alert('Silakan pilih berkas Excel!');
@@ -309,7 +304,6 @@ function jalankanProsesImportExcel() {
         });
 
         if (batchData.length > 0) {
-            // Gunakan metode upsert milik Supabase untuk pemrosesan super cepat sekaligus
             const { error } = await supabaseClient.from('pegawai').upsert(batchData, { onConflict: 'nik' });
             if (error) {
                 console.error(error);
