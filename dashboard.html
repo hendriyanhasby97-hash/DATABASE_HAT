@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
     <style>
-        /* CSS INTERNAL MURNI - DIJAMIN RAPI & TERSTRUKTUR */
+        /* CSS INTERNAL MURNI */
         :root {
             --primary: #1e40af;
             --primary-hover: #1d4ed8;
@@ -22,27 +22,21 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
         .container { max-width: 1300px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
         
-        /* HEADER BAR */
         .main-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px 24px; border-radius: 12px; border: 1px solid #e2e8f0; }
         .main-header h1 { font-size: 22px; font-weight: 800; color: var(--primary); }
         .main-header p { font-size: 13px; color: #64748b; }
         .btn-nav { background: var(--primary); color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; text-decoration: none; display: inline-block; }
         .btn-nav:hover { background: var(--primary-hover); }
 
-        /* METRIC CARD (TOTAL PEGAWAI AKTIF) */
         .metric-card { background: white; border-left: 6px solid var(--success); padding: 24px; border-radius: 12px; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 8px; max-width: 350px; }
         .metric-label { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
         .metric-value { font-size: 36px; font-weight: 800; color: var(--text); }
         .metric-sub { font-size: 12px; color: #16a34a; font-weight: 600; }
 
-        /* GRID UNTUK TABEL REKAPITULASI */
         .dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
-
-        /* CARD UNTUK TABEL */
         .table-card { background: white; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .table-card-title { font-size: 15px; font-weight: 800; color: #1e293b; margin-bottom: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* TABEL STYLING */
         table { width: 100%; border-collapse: collapse; text-align: left; background: white; font-size: 14px; }
         th { background: #f8fafc; color: #475569; padding: 12px 14px; font-weight: 700; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
         td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; color: #334155; }
@@ -50,11 +44,9 @@
         .text-right { text-align: right; }
         .font-bold { font-weight: 700; }
         
-        /* BAR PERSENTASE MINI */
         .progress-container { width: 100%; background-color: #f1f5f9; border-radius: 4px; height: 6px; margin-top: 4px; overflow: hidden; }
         .progress-bar { background-color: #3b82f6; height: 100%; border-radius: 4px; width: 0%; }
 
-        /* RESPONSIVE UNTUK LAYAR HP */
         @media (max-width: 900px) {
             .dashboard-grid { grid-template-columns: 1fr; }
         }
@@ -89,8 +81,7 @@
                         <th style="width: 120px;">Persentase</th>
                     </tr>
                 </thead>
-                <tbody id="rekap-kelompok">
-                    </tbody>
+                <tbody id="rekap-kelompok"></tbody>
             </table>
         </div>
 
@@ -104,8 +95,7 @@
                         <th style="width: 120px;">Persentase</th>
                     </tr>
                 </thead>
-                <tbody id="rekap-jabatan">
-                    </tbody>
+                <tbody id="rekap-jabatan"></tbody>
             </table>
         </div>
 
@@ -119,8 +109,7 @@
                         <th style="width: 120px;">Persentase</th>
                     </tr>
                 </thead>
-                <tbody id="rekap-gender">
-                    </tbody>
+                <tbody id="rekap-gender"></tbody>
             </table>
         </div>
 
@@ -134,8 +123,7 @@
                         <th style="width: 120px;">Persentase</th>
                     </tr>
                 </thead>
-                <tbody id="rekap-agama">
-                    </tbody>
+                <tbody id="rekap-agama"></tbody>
             </table>
         </div>
 
@@ -143,7 +131,7 @@
 </div>
 
 <script>
-    // ⚠️ KUNCI KREDENSIAL UTAMA SUPABASE ANDA
+    // KREDENSIAL UTAMA SUPABASE SINKRON
     const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC";
     
@@ -152,24 +140,33 @@
     document.addEventListener('DOMContentLoaded', async () => {
         try {
             // Ambil data live seluruh pegawai langsung dari database Supabase
-            const { data: dbPegawai, error } = await supabaseClient.from('pegawai').select('*');
+            const { data: dataRaw, error } = await supabaseClient.from('pegawai').select('*');
             if (error) throw error;
 
-            document.getElementById('status-text').textContent = "Data statistik real-time berdasarkan database cloud aktif";
+            // PENGAMAN DATABASE: Normalisasi semua key data menjadi huruf kecil agar COCOK 100% dengan Supabase
+            const dbPegawai = (dataRaw || []).map(obj => {
+                let cleanObj = {};
+                Object.keys(obj).forEach(key => {
+                    cleanObj[key.toLowerCase().trim()] = obj[key] ? obj[key].toString().trim() : '';
+                });
+                return cleanObj;
+            });
 
-            // 1. Hitung Pegawai Aktif (Filter status == 'Aktif')
-            const pegawaiAktif = dbPegawai.filter(p => p.status && p.status.trim().toLowerCase() === 'aktif');
+            document.getElementById('status-text').textContent = `Berhasil memuat data. Total Database: ${dbPegawai.length} Pegawai.`;
+
+            // 1. Hitung Pegawai Aktif (Bandingkan dengan teks huruf kecil agar aman)
+            const pegawaiAktif = dbPegawai.filter(p => p.status && p.status.toLowerCase() === 'aktif');
             document.getElementById('total-aktif').textContent = pegawaiAktif.length + " Orang";
 
             const totalSemua = dbPegawai.length;
 
-            // Daftar kategori master data
+            // Daftar kategori master data pembanding
             const listKelompok = ['ASN', 'APBD', 'BLUD', 'KONSULTAN', 'MAGANG'];
             const listJabatan = ['Management', 'Tenaga Medis', 'Tenaga Kesehatan', 'Tenaga Penunjang Medis', 'Tenaga Administrasi', 'Tenaga Non Administrasi'];
             const listGender = ['Laki-laki', 'Perempuan'];
             const listAgama = ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha'];
 
-            // Jalankan kalkulasi perhitungan & pasang ke tabel masing-masing
+            // Jalankan kalkulasi perhitungan & pasang ke tabel masing-masing (Properti Key wajib huruf kecil murni di sini)
             hitungDanRender(dbPegawai, 'kelompok_pegawai', listKelompok, 'rekap-kelompok', totalSemua);
             hitungDanRender(dbPegawai, 'kelompok_jabatan', listJabatan, 'rekap-jabatan', totalSemua);
             hitungDanRender(dbPegawai, 'jenis_kelamin', listGender, 'rekap-gender', totalSemua);
@@ -181,7 +178,7 @@
         }
     });
 
-    // Fungsi Otomatis Hitung Distribusi Frekuensi Data
+    // Fungsi Frekuensi Data Kebal Typo Huruf Besar/Kecil
     function hitungDanRender(database, propertiKey, daftarKategori, idTargetTbody, totalSemua) {
         const tbody = document.getElementById(idTargetTbody);
         tbody.innerHTML = '';
@@ -189,11 +186,10 @@
         let akumulasiJumlah = 0;
 
         daftarKategori.forEach(kategori => {
-            // Hitung jumlah kecocokan string field data
-            const jumlah = database.filter(p => p[propertiKey] && p[propertiKey].toString().trim().toLowerCase() === kategori.toLowerCase()).length;
+            // Hitung kecocokan, ubah kedua belah pihak ke huruf kecil murni agar dijamin terhitung
+            const jumlah = database.filter(p => p[propertiKey] && p[propertiKey].toLowerCase() === kategori.toLowerCase()).length;
             akumulasiJumlah += jumlah;
 
-            // Hitung Persentase aman dari pembagian angka 0
             const persentase = totalSemua > 0 ? ((jumlah / totalSemua) * 100).toFixed(1) : 0;
 
             const tr = document.createElement('tr');
@@ -202,4 +198,48 @@
                 <td class="text-right font-bold">${jumlah}</td>
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="width:35px; font-size:12px; color
+                        <span style="width:35px; font-size:12px; color:#475569;">${persentase}%</span>
+                        <div class="progress-container" style="flex:1;">
+                            <div class="progress-bar" style="width: ${persentase}%;"></div>
+                        </div>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Hitung kategori sisa jika ada kolom kosong
+        const dataLainnya = totalSemua - akumulasiJumlah;
+        if (dataLainnya > 0) {
+            const pctLainnya = totalSemua > 0 ? ((dataLainnya / totalSemua) * 100).toFixed(1) : 0;
+            const trLain = document.createElement('tr');
+            trLain.innerHTML = `
+                <td style="color:#94a3b8; font-style:italic;">Belum Diisi / Lainnya</td>
+                <td class="text-right font-bold" style="color:#94a3b8;">${dataLainnya}</td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="width:35px; font-size:12px; color:#94a3b8;">${pctLainnya}%</span>
+                        <div class="progress-container" style="flex:1;">
+                            <div class="progress-bar" style="width: ${pctLainnya}%; background-color:#cbd5e1;"></div>
+                        </div>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(trLain);
+        }
+
+        // Baris Total Paling Bawah
+        const trTotal = document.createElement('tr');
+        trTotal.style.backgroundColor = '#f8fafc';
+        trTotal.style.fontWeight = '700';
+        trTotal.innerHTML = `
+            <td class="font-bold" style="border-top: 2px solid #cbd5e1;">TOTAL KESELURUHAN</td>
+            <td class="text-right font-bold" style="border-top: 2px solid #cbd5e1; color: var(--primary);">${totalSemua}</td>
+            <td class="font-bold" style="border-top: 2px solid #cbd5e1; color: var(--primary);">100%</td>
+        `;
+        tbody.appendChild(trTotal);
+    }
+</script>
+
+</body>
+</html>
