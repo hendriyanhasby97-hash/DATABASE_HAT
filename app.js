@@ -28,14 +28,14 @@ const btnPdf = document.getElementById('btn-pdf');
 document.addEventListener('DOMContentLoaded', () => {
     renderTabel();
 
-    btnToggle.onclick = toggleFormAksi;
-    btnTutupForm.onclick = toggleFormAksi;
-    btnTutupDetail.onclick = tutupPanelDetail;
-    inputCari.oninput = jalankanPencarian;
-    inputMasukRS.onchange = hitungMasaKerjaOtomatis;
-    btnExcel.onclick = unduhExcel;
-    btnPdf.onclick = unduhPDF;
-    mainForm.onsubmit = simpanFormPegawai;
+    if (btnToggle) btnToggle.onclick = toggleFormAksi;
+    if (btnTutupForm) btnTutupForm.onclick = toggleFormAksi;
+    if (btnTutupDetail) btnTutupDetail.onclick = tutupPanelDetail;
+    if (inputCari) inputCari.oninput = jalankanPencarian;
+    if (inputMasukRS) inputMasukRS.onchange = hitungMasaKerjaOtomatis;
+    if (btnExcel) btnExcel.onclick = unduhExcel;
+    if (btnPdf) btnPdf.onclick = unduhPDF;
+    if (mainForm) mainForm.onsubmit = simpanFormPegawai;
 });
 
 // Kontrol Buka/Tutup Form Input
@@ -54,7 +54,10 @@ function toggleFormAksi() {
 function simpanFormPegawai(e) {
     e.preventDefault();
     const data = {};
-    fields.forEach(f => data[f] = document.getElementById(f).value);
+    fields.forEach(f => {
+        const el = document.getElementById(f);
+        data[f] = el ? el.value : '';
+    });
 
     if (statusEdit) {
         const index = dbPegawai.findIndex(x => x.id_pegawai === data.id_pegawai);
@@ -66,7 +69,7 @@ function simpanFormPegawai(e) {
         alert('Data pegawai baru sukses disimpan!');
     }
 
-    localStorage.setItem('pegawai_storage_db', JSON.stringify(dbPegawai));
+    simpanDatabase();
     renderTabel();
     toggleFormAksi();
 }
@@ -92,7 +95,7 @@ function renderTabel(dataData = dbPegawai) {
             <td style="text-align: center; white-space:nowrap;">
                 <button type="button" class="btn-row" style="background:#2563eb;" onclick="tampilkanDetailPanel('${p.id_pegawai}')">👁️ Detail</button>
                 <button type="button" class="btn-row" style="background:#d97706;" onclick="pemicuEditPegawai('${p.id_pegawai}')">✏️ Edit</button>
-                <button type="button" class="btn-row" style="background:#dot c2626;" style="background:#dc2626;" onclick="eksekusiHapusPegawai('${p.id_pegawai}')">🗑️ Hapus</button>
+                <button type="button" class="btn-row" style="background:#dc2626;" onclick="eksekusiHapusPegawai('${p.id_pegawai}')">🗑️ Hapus</button>
             </td>
         `;
         tBody.appendChild(tr);
@@ -129,7 +132,7 @@ function pemicuEditPegawai(id) {
 
     fields.forEach(f => {
         const element = document.getElementById(f);
-        if(element) element.value = dataPeg[f] || '';
+        if (element) element.value = dataPeg[f] || '';
     });
     statusEdit = true;
     
@@ -144,7 +147,7 @@ function pemicuEditPegawai(id) {
 function eksekusiHapusPegawai(id) {
     if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
         dbPegawai = dbPegawai.filter(x => x.id_pegawai !== id);
-        localStorage.setItem('pegawai_storage_db', JSON.stringify(dbPegawai));
+        simpanDatabase();
         renderTabel();
         tutupPanelDetail();
     }
@@ -177,25 +180,48 @@ function resetStrukturForm() {
     statusEdit = false;
 }
 
-// Unduh berkas format Excel
+function simpanDatabase() { 
+    localStorage.setItem('pegawai_storage_db', JSON.stringify(dbPegawai)); 
+}
+
+// Unduh berkas format Excel (.xlsx)
 function unduhExcel() {
-    if (dbPegawai.length === 0) return alert('Data kosong.');
-    const ws = XLSX.utils.json_to_sheet(dbPegawai);
+    if (dbPegawai.length === 0) return alert('Data kosong, tidak bisa ekspor Excel.');
+    
+    // Format nama kolom Excel agar rapi saat dibuka
+    const dataFormatted = dbPegawai.map((p, i) => {
+        const row = { "No": i + 1 };
+        fields.forEach(f => {
+            const labelClean = f.replace(/_/g, ' ').toUpperCase();
+            row[labelClean] = p[f] || '-';
+        });
+        return row;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(dataFormatted);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Database Pegawai");
     XLSX.writeFile(wb, "Data_Pegawai_Lengkap.xlsx");
 }
 
-// Cetak berkas format PDF
+// Cetak berkas format PDF (.pdf)
 function unduhPDF() {
-    if (dbPegawai.length === 0) return alert('Data kosong.');
+    if (dbPegawai.length === 0) return alert('Data kosong, tidak bisa cetak PDF.');
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'pt', 'a4');
     doc.setFontSize(16);
     doc.text("LAPORAN RINGKASAN DATA PEGAWAI", 24, 30);
     
-    const headerPDF = [['NIK', 'NAMA PEGAWAI', 'STATUS', 'JABATAN', 'MASUK RS', 'RUANGAN']];
-    const isiPDF = dbPegawai.map(p => [p.nik || '-', p.nama || '-', p.status || '-', p.jabatan || '-', p.masuk_rs || '-', p.ruangan || '-']);
+    const headerPDF = [['NIK', 'NAMA PEGAWAI', 'STATUS', 'KELOMPOK', 'JABATAN', 'MASUK RS', 'RUANGAN']];
+    const isiPDF = dbPegawai.map(p => [
+        p.nik || '-', 
+        p.nama || '-', 
+        p.status || '-', 
+        p.kelompok_pegawai || '-',
+        p.jabatan || '-', 
+        p.masuk_rs || '-', 
+        p.ruangan || '-'
+    ]);
     
     doc.autoTable({
         head: headerPDF,
