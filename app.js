@@ -23,6 +23,8 @@ const btnTutupDetail = document.getElementById('btn-tutup-detail');
 const inputMasukRS = document.getElementById('masuk_rs');
 const btnExcel = document.getElementById('btn-excel');
 const btnPdf = document.getElementById('btn-pdf');
+const btnImportExcel = document.getElementById('btn-import-excel');
+const inputFileExcel = document.getElementById('input-file-excel');
 
 // Jalankan sistem utama saat halaman siap
 document.addEventListener('DOMContentLoaded', () => {
@@ -36,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnExcel) btnExcel.onclick = unduhExcel;
     if (btnPdf) btnPdf.onclick = unduhPDF;
     if (mainForm) mainForm.onsubmit = simpanFormPegawai;
+    if (btnImportExcel) btnImportExcel.onclick = jalankanProsesImportExcel;
 });
 
 // Kontrol Buka/Tutup Form Input
@@ -56,7 +59,7 @@ function simpanFormPegawai(e) {
     const data = {};
     fields.forEach(f => {
         const el = document.getElementById(f);
-        data[f] = el ? el.value : '';
+        data[f] = el ? el.value.trim() : '';
     });
 
     if (statusEdit) {
@@ -89,7 +92,7 @@ function renderTabel(dataData = dbPegawai) {
             <td style="font-weight:700; color:#1e3a8a;">${p.nama || '-'}</td>
             <td><span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px; font-weight:600; font-size:12px;">${p.status || '-'}</span></td>
             <td><span style="background:#f1f5f9; padding:3px 8px; border-radius:4px; font-weight:600; font-size:12px;">${p.kelompok_pegawai || '-'}</span></td>
-            <td>${p.jabatan || '-'}</td>
+            <td>${p.kelompok_jabatan || '-'}</td>
             <td>${p.masuk_rs || '-'}</td>
             <td>${p.ruangan || '-'}</td>
             <td style="text-align: center; white-space:nowrap;">
@@ -188,9 +191,8 @@ function simpanDatabase() {
 function unduhExcel() {
     if (dbPegawai.length === 0) return alert('Data kosong, tidak bisa ekspor Excel.');
     
-    // Format nama kolom Excel agar rapi saat dibuka
     const dataFormatted = dbPegawai.map((p, i) => {
-        const row = { "No": i + 1 };
+        const row = { "NO": i + 1 };
         fields.forEach(f => {
             const labelClean = f.replace(/_/g, ' ').toUpperCase();
             row[labelClean] = p[f] || '-';
@@ -218,7 +220,7 @@ function unduhPDF() {
         p.nama || '-', 
         p.status || '-', 
         p.kelompok_pegawai || '-',
-        p.jabatan || '-', 
+        p.kelompok_jabatan || '-', 
         p.masuk_rs || '-', 
         p.ruangan || '-'
     ]);
@@ -231,4 +233,62 @@ function unduhPDF() {
         headStyles: { fillColor: [30, 41, 59] }
     });
     doc.save("Laporan_Ringkas_Pegawai.pdf");
+}
+
+// Logika Unggah & Pemrosesan File Excel (Import Data)
+function jalankanProsesImportExcel() {
+    const file = inputFileExcel.files[0];
+    if (!file) {
+        alert('Silakan tentukan berkas Excel (.xlsx / .xls) yang ingin diunggah!');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetPertama = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetPertama];
+        const excelRows = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+
+        if (excelRows.length === 0) {
+            alert('Proses dibatalkan, file Excel tidak memuat baris data.');
+            return;
+        }
+
+        let totalBarisSukses = 0;
+
+        excelRows.forEach(row => {
+            const dataBaru = {};
+            fields.forEach(f => {
+                const labelAlternatif = f.replace(/_/g, ' ').toLowerCase();
+                const keyTerdeteksi = Object.keys(row).find(k => 
+                    k.toLowerCase().trim() === f.toLowerCase() || 
+                    k.toLowerCase().trim() === labelAlternatif
+                );
+                dataBaru[f] = keyTerdeteksi ? row[keyTerdeteksi].toString().trim() : '';
+            });
+
+            if (!dataBaru.id_pegawai) {
+                dataBaru.id_pegawai = 'ID-' + Date.now() + Math.floor(Math.random() * 100);
+            }
+
+            // Aturan Minimal: Wajib punya NIK dan Nama agar valid masuk database
+            if (dataBaru.nik && dataBaru.nama) {
+                const indexDuplikat = dbPegawai.findIndex(x => x.nik === dataBaru.nik);
+                if (indexDuplikat !== -1) {
+                    dbPegawai[indexDuplikat] = dataBaru; // Timpa data lama jika NIK sama
+                } else {
+                    dbPegawai.push(dataBaru); // Tambah baru jika NIK belum ada
+                }
+                totalBarisSukses++;
+            }
+        });
+
+        simpanDatabase();
+        renderTabel();
+        inputFileExcel.value = ''; // bersihkan input file
+        alert(`Sukses memproses file Excel!\nSebanyak ${totalBarisSukses} data pegawai berhasil dimasukkan/diperbarui.`);
+    };
+    reader.readAsArrayBuffer(file);
 }
