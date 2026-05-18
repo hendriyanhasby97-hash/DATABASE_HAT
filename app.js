@@ -1,4 +1,3 @@
-// Master Array Fields Lengkap Terkini (31 Parameter)
 const fields = [
     'id_pegawai', 'nik', 'nama', 'nip', 'status', 'kelompok_pegawai', 'kelompok_jabatan',
     'gol', 'tmt_pangkat', 'tmt_berikutnya', 'jabatan', 'jenis_kelamin', 'agama', 
@@ -10,12 +9,16 @@ const fields = [
 let dbPegawai = JSON.parse(localStorage.getItem('pegawai_storage_db')) || [];
 let statusEdit = false;
 
-// KONTROL PAGINATION (Hanya Tampil 25 Data per halaman)
+// Pagination vars
 let currentPage = 1;
 const rowsPerPage = 25;
-let dataFilterAktif = [...dbPegawai]; // Cadangan array untuk pencarian
+let dataFilterAktif = [...dbPegawai];
 
-// DOM Elemen Selector
+// Cek Sesi Skenario Hak Akses (Role)
+const userRole = sessionStorage.getItem('role');
+const userKey = sessionStorage.getItem('user_key');
+
+// DOM Element Selector
 const wrapperForm = document.getElementById('form-master-wrapper');
 const btnToggle = document.getElementById('btn-toggle-form');
 const btnTutupForm = document.getElementById('btn-tutup-form');
@@ -30,43 +33,66 @@ const btnExcel = document.getElementById('btn-excel');
 const btnPdf = document.getElementById('btn-pdf');
 const btnImportExcel = document.getElementById('btn-import-excel');
 const inputFileExcel = document.getElementById('input-file-excel');
-
-// DOM Pagination Selector
 const btnPrev = document.getElementById('btn-page-prev');
 const btnNext = document.getElementById('btn-page-next');
 const pagInfoText = document.getElementById('pagination-text-info');
 
-// Jalankan sistem utama saat halaman siap
 document.addEventListener('DOMContentLoaded', () => {
-    refreshDataState();
-    
-    if (btnToggle) btnToggle.onclick = toggleFormAksi;
-    if (btnTutupForm) btnTutupForm.onclick = toggleFormAksi;
-    if (btnTutupDetail) btnTutupDetail.onclick = tutupPanelDetail;
-    if (inputCari) inputCari.oninput = jalankanPencarian;
-    if (inputMasukRS) inputMasukRS.onchange = hitungMasaKerjaOtomatis;
-    if (btnExcel) btnExcel.onclick = unduhExcel;
-    if (btnPdf) btnPdf.onclick = unduhPDF;
-    if (mainForm) mainForm.onsubmit = simpanFormPegawai;
-    if (btnImportExcel) btnImportExcel.onclick = jalankanProsesImportExcel;
+    // Tombol Logout Global
+    document.getElementById('btn-logout').onclick = () => {
+        sessionStorage.clear();
+        window.location.href = 'login.html';
+    };
 
-    // Aksi Navigasi Tombol Pagination
-    if (btnPrev) btnPrev.onclick = () => { if(currentPage > 1) { currentPage--; renderTabelDenganHalaman(); } };
-    if (btnNext) btnNext.onclick = () => { const maxPage = Math.ceil(dataFilterAktif.length / rowsPerPage); if(currentPage < maxPage) { currentPage++; renderTabelDenganHalaman(); } };
+    // Pembagian Interface Visual berdasarkan Role Akun
+    if (userRole === 'admin') {
+        // Mode Tampilan Penuh Admin
+        document.getElementById('welcome-text').textContent = "Masuk sebagai: Super Admin (Kendali Penuh)";
+        refreshDataState();
+        
+        if (btnToggle) btnToggle.onclick = toggleFormAksi;
+        if (btnTutupForm) btnTutupForm.onclick = toggleFormAksi;
+        if (btnTutupDetail) btnTutupDetail.onclick = tutupPanelDetail;
+        if (inputCari) inputCari.oninput = jalankanPencarian;
+        if (btnExcel) btnExcel.onclick = unduhExcel;
+        if (btnPdf) btnPdf.onclick = unduhPDF;
+        if (btnImportExcel) btnImportExcel.onclick = jalankanProsesImportExcel;
+        if (btnPrev) btnPrev.onclick = () => { if(currentPage > 1) { currentPage--; renderTabelDenganHalaman(); } };
+        if (btnNext) btnNext.onclick = () => { const maxPage = Math.ceil(dataFilterAktif.length / rowsPerPage); if(currentPage < maxPage) { currentPage++; renderTabelDenganHalaman(); } };
+
+    } else if (userRole === 'pegawai') {
+        // Mode Batasan Tampilan Akun Pegawai Biasa
+        const dataSaya = dbPegawai.find(x => x.id_pegawai === userKey);
+        document.getElementById('welcome-text').textContent = `Pegawai: ${dataSaya ? dataSaya.nama : 'User'} (Hak Akses Terbatas)`;
+        
+        // Sembunyikan elemen admin
+        document.getElementById('area-tabel-admin').classList.add('hide-element');
+        document.getElementById('nav-dashboard').classList.add('hide-element');
+        
+        // Modifikasi tombol "+ Tambah Pegawai" menjadi "✏️ Ubah Data Saya"
+        btnToggle.textContent = "✏️ Perbarui Data Saya";
+        btnToggle.onclick = () => {
+            pemicuEditPegawai(userKey);
+        };
+        
+        // Tombol batalkan di dalam form menutup form inputan kembali
+        btnTutupForm.onclick = () => wrapperForm.classList.add('hide-element');
+    }
+
+    if (inputMasukRS) inputMasukRS.onchange = hitungMasaKerjaOtomatis;
+    if (mainForm) mainForm.onsubmit = simpanFormPegawai;
 });
 
-// Update data state saat ada perubahan isi data
 function refreshDataState() {
     dataFilterAktif = [...dbPegawai];
     currentPage = 1;
     renderTabelDenganHalaman();
 }
 
-// Kontrol Buka/Tutup Form Input
 function toggleFormAksi() {
     wrapperForm.classList.toggle('hide-element');
     if (wrapperForm.classList.contains('hide-element')) {
-        btnToggle.textContent = "📝 Buka Form Input";
+        btnToggle.textContent = userRole === 'admin' ? "📝 Buka Form Input" : "✏️ Perbarui Data Saya";
         resetStrukturForm();
     } else {
         btnToggle.textContent = "❌ Sembunyikan Form";
@@ -74,7 +100,6 @@ function toggleFormAksi() {
     }
 }
 
-// Simpan Data (Aksi Tambah / Perbarui)
 function simpanFormPegawai(e) {
     e.preventDefault();
     const data = {};
@@ -86,40 +111,42 @@ function simpanFormPegawai(e) {
     if (statusEdit) {
         const index = dbPegawai.findIndex(x => x.id_pegawai === data.id_pegawai);
         if (index !== -1) dbPegawai[index] = data;
-        alert('Data pegawai sukses diperbarui!');
+        alert('Data berhasil diperbarui!');
     } else {
         data.id_pegawai = 'ID-' + Date.now();
         dbPegawai.push(data);
-        alert('Data pegawai baru sukses disimpan!');
+        alert('Data baru berhasil disimpan!');
     }
 
-    simpanDatabase();
-    refreshDataState();
-    toggleFormAksi();
+    localStorage.setItem('pegawai_storage_db', JSON.stringify(dbPegawai));
+    
+    if (userRole === 'admin') {
+        refreshDataState();
+        toggleFormAksi();
+    } else {
+        alert('Perubahan data pribadi Anda berhasil disimpan!');
+        wrapperForm.classList.add('hide-element');
+        btnToggle.textContent = "✏️ Perbarui Data Saya";
+        statusEdit = false;
+    }
 }
 
-// LOGIKA UTAMA PAGINATION: Memotong array data menjadi hanya 25 baris per halaman
 function renderTabelDenganHalaman() {
     tBody.innerHTML = '';
     const totalData = dataFilterAktif.length;
     
     if (totalData === 0) {
         tBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#94a3b8; padding:30px;">Tidak ada database pegawai terdaftar.</td></tr>`;
-        pagInfoText.textContent = "Menampilkan 0 sampai 0 dari 0 data";
+        pagInfoText.textContent = "Menampilkan 0 data";
         btnPrev.disabled = true;
         btnNext.disabled = true;
         return;
     }
 
-    // Tentukan indeks batas potongan data array
     const maxPage = Math.ceil(totalData / rowsPerPage);
     if(currentPage > maxPage) currentPage = maxPage;
-    if(currentPage < 1) currentPage = 1;
-
     const indexMulai = (currentPage - 1) * rowsPerPage;
     const indexSelesai = Math.min(indexMulai + rowsPerPage, totalData);
-    
-    // Potong data hanya untuk halaman aktif saat ini
     const dataHalamanIni = dataFilterAktif.slice(indexMulai, indexSelesai);
 
     dataHalamanIni.forEach(p => {
@@ -141,36 +168,24 @@ function renderTabelDenganHalaman() {
         tBody.appendChild(tr);
     });
 
-    // Update info teks keterangan baris dan status aktif tombol navigasi
-    pagInfoText.textContent = `Menampilkan ${indexMulai + 1} sampai ${indexSelesai} dari ${totalData} data pegawai`;
+    pagInfoText.textContent = `Menampilkan ${indexMulai + 1}-${indexSelesai} dari ${totalData} pegawai`;
     btnPrev.disabled = (currentPage === 1);
     btnNext.disabled = (currentPage === maxPage);
 }
 
-// Tampilkan semua detail rincian data (31 parameter) di bawah tabel
 function tampilkanDetailPanel(id) {
     const dataPeg = dbPegawai.find(x => x.id_pegawai === id);
     if (!dataPeg) return;
-
     wadahDetail.innerHTML = '';
     fields.forEach(f => {
-        const labelBersih = f.replace(/_/g, ' ');
-        wadahDetail.innerHTML += `
-            <div class="detail-card-item">
-                <div class="detail-card-label">${labelBersih}</div>
-                <div class="detail-card-value">${dataPeg[f] || '-'}</div>
-            </div>
-        `;
+        wadahDetail.innerHTML += `<div class="detail-card-item"><div class="detail-card-label">${f.replace(/_/g, ' ')}</div><div class="detail-card-value">${dataPeg[f] || '-'}</div></div>`;
     });
     panelDetail.classList.add('active');
     window.scrollTo({ top: panelDetail.offsetTop - 20, behavior: 'smooth' });
 }
 
-function tutupPanelDetail() {
-    panelDetail.classList.remove('active');
-}
+function tutupPanelDetail() { panelDetail.classList.remove('active'); }
 
-// Pemicu Tombol Edit Data Pegawai
 function pemicuEditPegawai(id) {
     const dataPeg = dbPegawai.find(x => x.id_pegawai === id);
     if (!dataPeg) return;
@@ -181,35 +196,27 @@ function pemicuEditPegawai(id) {
     });
     statusEdit = true;
     
-    if (wrapperForm.classList.contains('hide-element')) {
-        wrapperForm.classList.remove('hide-element');
-        btnToggle.textContent = "❌ Sembunyikan Form";
-    }
+    wrapperForm.classList.remove('hide-element');
+    btnToggle.textContent = "❌ Sembunyikan Form";
     window.scrollTo({ top: wrapperForm.offsetTop - 20, behavior: 'smooth' });
 }
 
-// Eksekusi Hapus Permanen
 function eksekusiHapusPegawai(id) {
     if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
         dbPegawai = dbPegawai.filter(x => x.id_pegawai !== id);
-        simpanDatabase();
+        localStorage.setItem('pegawai_storage_db', JSON.stringify(dbPegawai));
         refreshDataState();
         tutupPanelDetail();
     }
 }
 
-// Fungsi Pencarian Filter nama / NIK
 function jalankanPencarian() {
     const kataKunci = inputCari.value.toLowerCase().trim();
-    dataFilterAktif = dbPegawai.filter(p => 
-        (p.nama && p.nama.toLowerCase().includes(kataKunci)) || 
-        (p.nik && p.nik.includes(kataKunci))
-    );
+    dataFilterAktif = dbPegawai.filter(p => (p.nama && p.nama.toLowerCase().includes(kataKunci)) || (p.nik && p.nik.includes(kataKunci)));
     currentPage = 1;
     renderTabelDenganHalaman();
 }
 
-// Auto Hitung Masa Kerja
 function hitungMasaKerjaOtomatis() {
     if (!this.value) return;
     const masuk = new Date(this.value);
@@ -220,114 +227,56 @@ function hitungMasaKerjaOtomatis() {
     document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan`;
 }
 
-function resetStrukturForm() {
-    mainForm.reset();
-    document.getElementById('id_pegawai').value = '';
-    statusEdit = false;
-}
+function resetStrukturForm() { mainForm.reset(); document.getElementById('id_pegawai').value = ''; statusEdit = false; }
 
-function simpanDatabase() { 
-    localStorage.setItem('pegawai_storage_db', JSON.stringify(dbPegawai)); 
-}
-
-// Unduh berkas format Excel (.xlsx)
 function unduhExcel() {
-    if (dbPegawai.length === 0) return alert('Data kosong, tidak bisa ekspor Excel.');
-    
+    if (dbPegawai.length === 0) return alert('Data kosong.');
     const dataFormatted = dbPegawai.map((p, i) => {
         const row = { "NO": i + 1 };
-        fields.forEach(f => {
-            const labelClean = f.replace(/_/g, ' ').toUpperCase();
-            row[labelClean] = p[f] || '-';
-        });
+        fields.forEach(f => { row[f.replace(/_/g, ' ').toUpperCase()] = p[f] || '-'; });
         return row;
     });
-
     const ws = XLSX.utils.json_to_sheet(dataFormatted);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Database Pegawai");
     XLSX.writeFile(wb, "Data_Pegawai_Lengkap.xlsx");
 }
 
-// Cetak berkas format PDF (.pdf)
 function unduhPDF() {
-    if (dbPegawai.length === 0) return alert('Data kosong, tidak bisa cetak PDF.');
+    if (dbPegawai.length === 0) return alert('Data kosong.');
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'pt', 'a4');
-    doc.setFontSize(16);
-    doc.text("LAPORAN RINGKASAN DATA PEGAWAI", 24, 30);
-    
+    doc.setFontSize(16); doc.text("LAPORAN RINGKASAN DATA PEGAWAI", 24, 30);
     const headerPDF = [['NIK', 'NAMA PEGAWAI', 'STATUS', 'KELOMPOK', 'JABATAN', 'MASUK RS', 'RUANGAN']];
-    const isiPDF = dbPegawai.map(p => [
-        p.nik || '-', 
-        p.nama || '-', 
-        p.status || '-', 
-        p.kelompok_pegawai || '-',
-        p.kelompok_jabatan || '-', 
-        p.masuk_rs || '-', 
-        p.ruangan || '-'
-    ]);
-    
-    doc.autoTable({
-        head: headerPDF,
-        body: isiPDF,
-        startY: 50,
-        styles: { fontSize: 10 },
-        headStyles: { fillColor: [30, 41, 59] }
-    });
+    const isiPDF = dbPegawai.map(p => [p.nik||'-', p.nama||'-', p.status||'-', p.kelompok_pegawai||'-', p.kelompok_jabatan||'-', p.masuk_rs||'-', p.ruangan||'-']);
+    doc.autoTable({ head: headerPDF, body: isiPDF, startY: 50, styles: { fontSize: 10 }, headStyles: { fillColor: [30, 41, 59] } });
     doc.save("Laporan_Ringkas_Pegawai.pdf");
 }
 
-// Logika Unggah & Pemrosesan File Excel (Import Data)
 function jalankanProsesImportExcel() {
     const file = inputFileExcel.files[0];
-    if (!file) {
-        alert('Silakan tentukan berkas Excel (.xlsx / .xls) yang ingin diunggah!');
-        return;
-    }
-
+    if (!file) return alert('Silakan pilih berkas Excel!');
     const reader = new FileReader();
     reader.onload = function(e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
-        const sheetPertama = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetPertama];
-        const excelRows = XLSX.utils.sheet_to_json(worksheet, { raw: false });
-
-        if (excelRows.length === 0) {
-            alert('Proses dibatalkan, file Excel tidak memuat baris data.');
-            return;
-        }
-
+        const excelRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false });
         let totalBarisSukses = 0;
-
         excelRows.forEach(row => {
             const dataBaru = {};
             fields.forEach(f => {
-                const labelAlternatif = f.replace(/_/g, ' ').toLowerCase();
-                const keyTerdeteksi = Object.keys(row).find(k => 
-                    k.toLowerCase().trim() === f.toLowerCase() || 
-                    k.toLowerCase().trim() === labelAlternatif
-                );
-                dataBaru[f] = keyTerdeteksi ? row[keyTerdeteksi].toString().trim() : '';
+                const alt = f.replace(/_/g, ' ').toLowerCase();
+                const key = Object.keys(row).find(k => k.toLowerCase().trim() === f.toLowerCase() || k.toLowerCase().trim() === alt);
+                dataBaru[f] = key ? row[key].toString().trim() : '';
             });
-
-            if (!dataBaru.id_pegawai) {
-                dataBaru.id_pegawai = 'ID-' + Date.now() + Math.floor(Math.random() * 100);
-            }
-
+            if (!dataBaru.id_pegawai) dataBaru.id_pegawai = 'ID-' + Date.now() + Math.floor(Math.random() * 100);
             if (dataBaru.nik && dataBaru.nama) {
-                const indexDuplikat = dbPegawai.findIndex(x => x.nik === dataBaru.nik);
-                if (indexDuplikat !== -1) {
-                    dbPegawai[indexDuplikat] = dataBaru;
-                } else {
-                    dbPegawai.push(dataBaru);
-                }
+                const idx = dbPegawai.findIndex(x => x.nik === dataBaru.nik);
+                if (idx !== -1) dbPegawai[idx] = dataBaru; else dbPegawai.push(dataBaru);
                 totalBarisSukses++;
             }
         });
-
-        simpanDatabase();
+        localStorage.setItem('pegawai_storage_db', JSON.stringify(dbPegawai));
         refreshDataState();
         inputFileExcel.value = '';
         alert(`Sukses memproses file Excel!\nSebanyak ${totalBarisSukses} data pegawai berhasil dimasukkan/diperbarui.`);
