@@ -6,7 +6,7 @@ const fields = [
     'fakultas', 'jurusan', 'ruangan', 'no_bpjsn', 'no_bpjsket_taspen', 'npwp', 'email', 'no_telp'
 ];
 
-// ⚠️ PASTIKAN URL & KEY INI TIDAK BERUBAH ATAU TERTIMPA
+// ⚠️ KREDENSIAL UTAMA SUPABASE CLOUD (TETAP SINKRON)
 const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC";
 
@@ -16,73 +16,48 @@ let dbPegawai = [];
 let statusEdit = false;
 
 let currentPage = 1;
-const rowsPerPage = 25;
+const rowsPerPage = 10; // Diubah ke 10 baris agar pas dengan desain web modern yang ringkas
 let dataFilterAktif = [];
-
-// DOM Selector
-const wrapperForm = document.getElementById('form-master-wrapper');
-const btnToggle = document.getElementById('btn-toggle-form');
-const btnTutupForm = document.getElementById('btn-tutup-form');
-const mainForm = document.getElementById('main-crud-form');
-const tBody = document.getElementById('body-tabel-pegawai');
-const inputCari = document.getElementById('input-cari');
-const panelDetail = document.getElementById('detail-panel');
-const wadahDetail = document.getElementById('wadah-detail-item');
-const btnTutupDetail = document.getElementById('btn-tutup-detail');
-const inputMasukRS = document.getElementById('masuk_rs');
-const btnExcel = document.getElementById('btn-excel');
-const btnPdf = document.getElementById('btn-pdf');
-const btnImportExcel = document.getElementById('btn-import-excel');
-const inputFileExcel = document.getElementById('input-file-excel');
-const btnPrev = document.getElementById('btn-page-prev');
-const btnNext = document.getElementById('btn-page-next');
-const pagInfoText = document.getElementById('pagination-text-info');
 
 const userRole = sessionStorage.getItem('role');
 const userKey = sessionStorage.getItem('user_key');
 
+// DOM Selector Elemen Utama
+const mainForm = document.getElementById('main-crud-form');
+const tBody = document.getElementById('body-tabel-pegawai');
+const inputCari = document.getElementById('input-cari');
+const inputMasukRS = document.getElementById('masuk_rs');
+const btnExcel = document.getElementById('btn-excel');
+const btnPdf = document.getElementById('btn-pdf');
+const btnPrev = document.getElementById('btn-page-prev');
+const btnNext = document.getElementById('btn-page-next');
+const pagInfoText = document.getElementById('pagination-text-info');
+
 document.addEventListener('DOMContentLoaded', async () => {
-    document.getElementById('btn-logout').onclick = () => {
-        sessionStorage.clear();
-        window.location.href = 'login.html';
-    };
+    if (pagInfoText) pagInfoText.textContent = "Menghubungkan ke server cloud...";
 
-    if (pagInfoText) pagInfoText.textContent = "Menghubungkan ke database Supabase...";
-
+    // 1. Ambil seluruh data teranyar dari Supabase
     await muatDataDariCloud();
 
-    if (userRole === 'admin') {
-        const welcomeEl = document.getElementById('welcome-text');
-        if (welcomeEl) welcomeEl.textContent = "Super Admin (Terhubung Ke Supabase Database)";
-        refreshDataState();
-        
-        if (btnToggle) btnToggle.onclick = toggleFormAksi;
-        if (btnTutupForm) btnTutupForm.onclick = toggleFormAksi;
-        if (btnTutupDetail) btnTutupDetail.onclick = tutupPanelDetail;
-        if (inputCari) inputCari.oninput = jalankanPencarian;
-        if (btnExcel) btnExcel.onclick = unduhExcel;
-        if (btnPdf) btnPdf.onclick = unduhPDF;
-        if (btnImportExcel) btnImportExcel.onclick = jalankanProsesImportExcel;
-        if (btnPrev) btnPrev.onclick = () => { if(currentPage > 1) { currentPage--; renderTabelDenganHalaman(); } };
-        if (btnNext) btnNext.onclick = () => { const maxPage = Math.ceil(dataFilterAktif.length / rowsPerPage); if(currentPage < maxPage) { currentPage++; renderTabelDenganHalaman(); } };
+    // 2. Kalkulasi Angka Statistik untuk Komponen Dashboard Utama
+    hitungStatistikDashboard();
 
-    } else if (userRole === 'pegawai') {
-        const dataSaya = dbPegawai.find(x => x.id_pegawai === userKey);
-        const welcomeEl = document.getElementById('welcome-text');
-        if (welcomeEl) welcomeEl.textContent = `Pegawai: ${dataSaya ? dataSaya.nama : 'User'} (Akses Sinkron Terbatas)`;
-        
-        const areaAdmin = document.getElementById('area-tabel-admin');
-        if (areaAdmin) areaAdmin.classList.add('hide-element');
-        
-        btnToggle.textContent = "✏️ Perbarui Data Saya";
-        btnToggle.onclick = () => pemicuEditPegawai(userKey);
-        btnTutupForm.onclick = () => wrapperForm.classList.add('hide-element');
-    }
+    // 3. Siapkan Status Tabel Utama
+    refreshDataState();
+
+    // 4. Pasang Event Listener Aksi
+    if (inputCari) inputCari.oninput = jalankanPencarian;
+    if (btnExcel) btnExcel.onclick = unduhExcel;
+    if (btnPdf) btnPdf.onclick = unduhPDF;
+    
+    if (btnPrev) btnPrev.onclick = () => { if(currentPage > 1) { currentPage--; renderTabelDenganHalaman(); } };
+    if (btnNext) btnNext.onclick = () => { const maxPage = Math.ceil(dataFilterAktif.length / rowsPerPage); if(currentPage < maxPage) { currentPage++; renderTabelDenganHalaman(); } };
 
     if (inputMasukRS) inputMasukRS.onchange = hitungMasaKerjaOtomatis;
     if (mainForm) mainForm.onsubmit = simpanFormPegawai;
 });
 
+// Ambil Data Terpusat dari Supabase
 async function muatDataDariCloud() {
     try {
         const { data, error } = await supabaseClient.from('pegawai').select('*');
@@ -94,28 +69,40 @@ async function muatDataDariCloud() {
     }
 }
 
+// Menghitung Angka Rekapitulasi Secara Otomatis di Halaman Depan Overview
+function hitungStatistikDashboard() {
+    // Total Seluruh Data Pegawai
+    const totalPegawai = dbPegawai.length;
+    const elTotal = document.getElementById('stat-total-pegawai');
+    if (elTotal) elTotal.textContent = totalPegawai;
+
+    // Total Pegawai Aktif (Filter Status == 'aktif')
+    const pegawaiAktif = dbPegawai.filter(p => p.status && p.status.trim().toLowerCase() === 'aktif').length;
+    const elAktif = document.getElementById('stat-pegawai-aktif');
+    if (elAktif) elAktif.textContent = pegawaiAktif;
+
+    // Parameter Cuti & Surat Masuk (Placeholder Data Simpanan Sementara)
+    const elCuti = document.getElementById('stat-total-cuti');
+    if (elCuti) elCuti.textContent = dbPegawai.filter(p => p.status && p.status.trim().toLowerCase() === 'cuti').length;
+
+    const elSurat = document.getElementById('stat-surat-masuk');
+    if (elSurat) elSurat.textContent = "0"; // Default sistem kearsipan administrasi awal
+}
+
 function refreshDataState() {
     dataFilterAktif = [...dbPegawai];
     currentPage = 1;
     renderTabelDenganHalaman();
 }
 
-function toggleFormAksi() {
-    wrapperForm.classList.toggle('hide-element');
-    if (wrapperForm.classList.contains('hide-element')) {
-        btnToggle.textContent = userRole === 'admin' ? "📝 Buka Form Input" : "✏️ Perbarui Data Saya";
-        resetStrukturForm();
-    } else {
-        btnToggle.textContent = "❌ Sembunyikan Form";
-        window.scrollTo({ top: wrapperForm.offsetTop - 20, behavior: 'smooth' });
-    }
-}
-
+// SIMPAN & UPDATE DATA KE SUPABASE
 async function simpanFormPegawai(e) {
     e.preventDefault();
-    const saveBtn = mainForm.querySelector('.btn-save');
+    const saveBtn = mainForm.querySelector('button[type="submit"]');
+    const textAwal = saveBtn.innerHTML;
+    
     saveBtn.disabled = true;
-    saveBtn.textContent = "⏳ Menyimpan Ke Supabase...";
+    saveBtn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Memproses...";
 
     const dataObj = {};
     fields.forEach(f => {
@@ -125,41 +112,44 @@ async function simpanFormPegawai(e) {
 
     try {
         if (statusEdit) {
+            // Aksi Update
             const { error } = await supabaseClient.from('pegawai').update(dataObj).eq('id_pegawai', dataObj.id_pegawai);
             if (error) throw error;
-            alert('Data pegawai berhasil diperbarui!');
+            alert('Data pegawai sukses diperbarui!');
         } else {
+            // Aksi Insert Baru
             dataObj.id_pegawai = 'ID-' + Date.now();
             const { error } = await supabaseClient.from('pegawai').insert([dataObj]);
             if (error) throw error;
-            alert('Data pegawai baru sukses ditambahkan!');
+            alert('Data pegawai baru berhasil ditambahkan!');
         }
 
+        // Segarkan data
         await muatDataDariCloud();
-        if (userRole === 'admin') {
-            refreshDataState();
-            toggleFormAksi();
-        } else {
-            wrapperForm.classList.add('hide-element');
-            btnToggle.textContent = "✏️ Perbarui Data Saya";
-            statusEdit = false;
-        }
+        hitungStatistikDashboard();
+        refreshDataState();
+        toggleFormInput(); // Otomatis sembunyikan form input kembali
+
     } catch (err) {
         console.error(err);
-        alert("Eror saat menyimpan data ke database cloud Supabase.");
+        alert("Gagal memproses data ke server cloud Supabase.");
     } finally {
         saveBtn.disabled = false;
-        saveBtn.textContent = "💾 Simpan Data";
+        saveBtn.innerHTML = textAwal;
     }
 }
 
+// RENDERING TABEL DINAMIS DENGAN PAGINATION SYSTEM
 function renderTabelDenganHalaman() {
+    if (!tBody) return;
     tBody.innerHTML = '';
     const totalData = dataFilterAktif.length;
     
     if (totalData === 0) {
-        tBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#94a3b8; padding:30px;">Tidak ada database pegawai terdaftar.</td></tr>`;
+        tBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:30px;"><i class="fa-solid fa-folder-open"></i> Tidak ada data pegawai terdaftar.</td></tr>`;
         if (pagInfoText) pagInfoText.textContent = "Menampilkan 0 data";
+        if (btnPrev) btnPrev.disabled = true;
+        if (btnNext) btnNext.disabled = true;
         return;
     }
 
@@ -171,18 +161,23 @@ function renderTabelDenganHalaman() {
 
     dataHalamanIni.forEach(p => {
         const tr = document.createElement('tr');
+        
+        // Desain Badge Warna Status Modern
+        let badgeStyle = "background:#f1f5f9; color:#475569;";
+        if (p.status && p.status.toLowerCase() === 'aktif') badgeStyle = "background:#dcfce7; color:#15803d; font-weight:700;";
+        if (p.status && p.status.toLowerCase() === 'mutasi') badgeStyle = "background:#fef3c7; color:#b45309;";
+        if (p.status && p.status.toLowerCase() === 'pensiun') badgeStyle = "background:#fee2e2; color:#b91c1c;";
+
         tr.innerHTML = `
-            <td>${p.nik || '-'}</td>
+            <td style="font-weight:600; color:#475569;">${p.nik || '-'}</td>
             <td style="font-weight:700; color:#1e3a8a;">${p.nama || '-'}</td>
-            <td><span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px; font-weight:600; font-size:12px;">${p.status || '-'}</span></td>
-            <td><span style="background:#f1f5f9; padding:3px 8px; border-radius:4px; font-weight:600; font-size:12px;">${p.kelompok_pegawai || '-'}</span></td>
-            <td>${p.kelompok_jabatan || '-'}</td>
-            <td>${p.masuk_rs || '-'}</td>
-            <td>${p.ruangan || '-'}</td>
+            <td><span style="padding:4px 10px; border-radius:6px; font-size:12px; ${badgeStyle}">${p.status || '-'}</span></td>
+            <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:600;">${p.kelompok_pegawai || '-'}</span></td>
+            <td>${p.jabatan || '-'}</td>
+            <td><i class="fa-solid fa-door-open" style="color:#94a3b8; margin-right:4px;"></i> ${p.ruangan || '-'}</td>
             <td style="text-align: center; white-space:nowrap;">
-                <button type="button" class="btn-row" style="background:#2563eb;" onclick="tampilkanDetailPanel('${p.id_pegawai}')">👁️ Detail</button>
-                <button type="button" class="btn-row" style="background:#d97706;" onclick="pemicuEditPegawai('${p.id_pegawai}')">✏️ Edit</button>
-                <button type="button" class="btn-row" style="background:#dc2626;" onclick="eksekusiHapusPegawai('${p.id_pegawai}')">🗑️ Hapus</button>
+                <button type="button" class="btn-action" style="background:#d97706;" onclick="pemicuEditPegawai('${p.id_pegawai}')"><i class="fa-solid fa-user-pen"></i> Edit</button>
+                <button type="button" class="btn-action" style="background:#dc2626;" onclick="eksekusiHapusPegawai('${p.id_pegawai}')"><i class="fa-solid fa-trash-can"></i> Hapus</button>
             </td>
         `;
         tBody.appendChild(tr);
@@ -193,19 +188,7 @@ function renderTabelDenganHalaman() {
     if (btnNext) btnNext.disabled = (currentPage === maxPage);
 }
 
-function tampilkanDetailPanel(id) {
-    const dataPeg = dbPegawai.find(x => x.id_pegawai === id);
-    if (!dataPeg) return;
-    wadahDetail.innerHTML = '';
-    fields.forEach(f => {
-        wadahDetail.innerHTML += `<div class="detail-card-item"><div class="detail-card-label">${f.replace(/_/g, ' ')}</div><div class="detail-card-value">${dataPeg[f] || '-'}</div></div>`;
-    });
-    panelDetail.classList.add('active');
-    window.scrollTo({ top: panelDetail.offsetTop - 20, behavior: 'smooth' });
-}
-
-function tutupPanelDetail() { panelDetail.classList.remove('active'); }
-
+// BUKA PEMICU DATA EDIT KE FORM UTAMA
 function pemicuEditPegawai(id) {
     const dataPeg = dbPegawai.find(x => x.id_pegawai === id);
     if (!dataPeg) return;
@@ -216,29 +199,35 @@ function pemicuEditPegawai(id) {
     });
     statusEdit = true;
     
-    wrapperForm.classList.remove('hide-element');
-    btnToggle.textContent = "❌ Sembunyikan Form";
-    window.scrollTo({ top: wrapperForm.offsetTop - 20, behavior: 'smooth' });
+    // Pastikan form input ditampilkan jika tersembunyi
+    const wrapper = document.getElementById('form-master-wrapper');
+    if (wrapper) wrapper.classList.remove('hide-element');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// HAPUS DATA DARI SUPABASE CLOUD
 async function eksekusiHapusPegawai(id) {
-    if (confirm('Apakah Anda yakin ingin menghapus data ini dari cloud Supabase?')) {
+    if (confirm('Apakah Anda yakin ingin menghapus permanen berkas data karyawan ini dari Supabase Cloud?')) {
         try {
             const { error } = await supabaseClient.from('pegawai').delete().eq('id_pegawai', id);
             if (error) throw error;
-            alert("Data sukses terhapus!");
+            
+            alert("Berkas data karyawan berhasil terhapus.");
             await muatDataDariCloud();
+            hitungStatistikDashboard();
             refreshDataState();
-            tutupPanelDetail();
         } catch (e) {
-            alert("Gagal menghapus data.");
+            alert("Gagal menghapus berkas data.");
         }
     }
 }
 
 function jalankanPencarian() {
     const kataKunci = inputCari.value.toLowerCase().trim();
-    dataFilterAktif = dbPegawai.filter(p => (p.nama && p.nama.toLowerCase().includes(kataKunci)) || (p.nik && p.nik.includes(kataKunci)));
+    dataFilterAktif = dbPegawai.filter(p => 
+        (p.nama && p.nama.toLowerCase().includes(kataKunci)) || 
+        (p.nik && p.nik.includes(kataKunci))
+    );
     currentPage = 1;
     renderTabelDenganHalaman();
 }
@@ -250,13 +239,13 @@ function hitungMasaKerjaOtomatis() {
     let tahun = hariIni.getFullYear() - masuk.getFullYear();
     let bulan = hariIni.getMonth() - masuk.getMonth();
     if (bulan < 0) { tahun--; bulan += 12; }
-    document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan`;
+    const targetEl = document.getElementById('masa_kerja_rs');
+    if (targetEl) targetEl.value = `${tahun} Tahun ${bulan} Bulan`;
 }
 
-function resetStrukturForm() { mainForm.reset(); document.getElementById('id_pegawai').value = ''; statusEdit = false; }
-
+// PROSES EKSPOR FILE (EXCEL & PDF)
 function unduhExcel() {
-    if (dbPegawai.length === 0) return alert('Data kosong.');
+    if (dbPegawai.length === 0) return alert('Data database kosong.');
     const dataFormatted = dbPegawai.map((p, i) => {
         const row = { "NO": i + 1 };
         fields.forEach(f => { row[f.replace(/_/g, ' ').toUpperCase()] = p[f] || '-'; });
@@ -265,100 +254,16 @@ function unduhExcel() {
     const ws = XLSX.utils.json_to_sheet(dataFormatted);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Database Pegawai");
-    XLSX.writeFile(wb, "Data_Pegawai_Lengkap.xlsx");
+    XLSX.writeFile(wb, "Laporan_Master_Data_Pegawai.xlsx");
 }
 
 function unduhPDF() {
-    if (dbPegawai.length === 0) return alert('Data kosong.');
+    if (dbPegawai.length === 0) return alert('Data database kosong.');
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'pt', 'a4');
-    doc.setFontSize(16); doc.text("LAPORAN RINGKASAN DATA PEGAWAI", 24, 30);
-    const headerPDF = [['NIK', 'NAMA PEGAWAI', 'STATUS', 'KELOMPOK', 'JABATAN', 'MASUK RS', 'RUANGAN']];
-    const isiPDF = dbPegawai.map(p => [p.nik||'-', p.nama||'-', p.status||'-', p.kelompok_pegawai||'-', p.kelompok_jabatan||'-', p.masuk_rs||'-', p.ruangan||'-']);
+    doc.setFontSize(16); doc.text("LAPORAN DAFTAR INDUK KEPEGAWAIAN INSTANSI", 24, 30);
+    const headerPDF = [['NIK', 'NAMA LENGKAP PEGAWAI', 'STATUS', 'KELOMPOK', 'NAMA JABATAN', 'UNIT RUANGAN']];
+    const isiPDF = dbPegawai.map(p => [p.nik||'-', p.nama||'-', p.status||'-', p.kelompok_pegawai||'-', p.jabatan||'-', p.ruangan||'-']);
     doc.autoTable({ head: headerPDF, body: isiPDF, startY: 50, styles: { fontSize: 10 }, headStyles: { fillColor: [30, 41, 59] } });
-    doc.save("Laporan_Ringkas_Pegawai.pdf");
-}
-
-// 🚀 FITUR BARU: PROSES IMPORT AMAN & KEBAL EROR DATA INCOMPATIBLE
-function jalankanProsesImportExcel() {
-    const file = inputFileExcel.files[0];
-    if (!file) return alert('Silakan pilih berkas Excel!');
-    
-    const btnImport = document.getElementById('btn-import-excel');
-    btnImport.disabled = true;
-    btnImport.textContent = "⏳ Memproses...";
-
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        try {
-            const dataBytes = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(dataBytes, { type: 'array' });
-            const excelRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false });
-            
-            let batchData = [];
-            let nikTerdaftar = new Set(); // Mencegah duplikasi NIK internal di dalam satu file Excel
-
-            excelRows.forEach(row => {
-                const dataBaru = {};
-                fields.forEach(f => {
-                    const alt = f.replace(/_/g, ' ').toLowerCase().trim();
-                    const key = Object.keys(row).find(k => k.toLowerCase().trim() === f.toLowerCase() || k.toLowerCase().trim() === alt);
-                    
-                    let nilaiData = key ? row[key].toString().trim() : '';
-                    
-                    // Bersihkan karakter jika kolom adalah NIK atau NIP
-                    if ((f === 'nik' || f === 'nip') && nilaiData !== '') {
-                        nilaiData = nilaiData.replace(/[^0-Cloud90-9]/g, ''); // Hapus spasi gaib atau simbol strip '-'
-                    }
-                    dataBaru[f] = nilaiData;
-                });
-
-                // Validasi Ketat Sisi Client agar tidak memicu Crash Database di Supabase
-                if (dataBaru.nik && dataBaru.nik !== '' && dataBaru.nama && dataBaru.nama !== '') {
-                    if (!nikTerdaftar.has(dataBaru.nik)) {
-                        nikTerdaftar.add(dataBaru.nik);
-                        
-                        if (!dataBaru.id_pegawai || dataBaru.id_pegawai === '') {
-                            dataBaru.id_pegawai = 'ID-' + Math.floor(Math.random() * 100000) + '-' + Date.now();
-                        }
-                        batchData.push(dataBaru);
-                    }
-                }
-            });
-
-            if (batchData.length === 0) {
-                alert("Eror: Tidak ditemukan data Baris NIK & Nama yang valid di dalam file Excel Anda.");
-                btnImport.disabled = false;
-                btnImport.textContent = "Unggah Excel";
-                return;
-            }
-
-            // Eksekusi pemisahan chunk per 50 baris agar tidak memicu limit buffer browser/postgrest
-            const chunkSize = 50;
-            let totalSukses = 0;
-
-            for (let i = 0; i < batchData.length; i += chunkSize) {
-                const chunk = batchData.slice(i, i + chunkSize);
-                // Lakukan upsert ke Supabase
-                const { error } = await supabaseClient.from('pegawai').upsert(chunk, { onConflict: 'nik' });
-                if (error) {
-                    console.error("Eror pada potongan baris: ", error);
-                } else {
-                    totalSukses += chunk.length;
-                }
-            }
-
-            alert(`Sukses Sinkronisasi Excel!\nSebanyak ${totalSukses} data baris valid berhasil masuk ke Supabase.`);
-        } catch (err) {
-            console.error(err);
-            alert("Gagal membaca struktur file Excel.");
-        } finally {
-            await muatDataDariCloud();
-            refreshDataState();
-            inputFileExcel.value = '';
-            btnImport.disabled = false;
-            btnImport.textContent = "Unggah Excel";
-        }
-    };
-    reader.readAsArrayBuffer(file);
+    doc.save("Laporan_Induk_Pegawai.pdf");
 }
