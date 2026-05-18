@@ -31,6 +31,15 @@
         .drh-header { background: #1e293b; color: white; padding: 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--primary); }
         .drh-title h1 { font-size: 24px; font-weight: 800; letter-spacing: 0.5px; }
         .drh-title p { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+        
+        /* TOMBOL NAVIGASI */
+        .btn-nav { background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-nav:hover { background: var(--primary-dark); }
+        
+        .btn-pdf { background: #0891b2; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-pdf:hover { background: #0e7490; }
+        
         .btn-logout { background: #b91c1c; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; }
         .btn-logout:hover { background: #991b1b; }
 
@@ -60,10 +69,24 @@
         .btn-submit:hover { background: #15803d; }
         .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; }
 
+        /* 🖨️ ATURAN PRINT MAKSIMAL (MENGHASILKAN PDF BERKUALITAS) */
+        @media print {
+            body { background-color: white; padding: 0; color: #000; }
+            .drh-container { box-shadow: none; border: none; max-width: 100%; margin: 0; }
+            .header-actions, .notif-bar, .drh-footer, .btn-logout { display: none !important; }
+            .drh-header { background: #ffffff !important; color: #000000 !important; border-bottom: 2px solid #000000 !important; padding: 15px 0; }
+            .drh-title p { color: #475569 !important; }
+            .drh-section { background: white !important; page-break-inside: avoid; border: 1px solid #cbd5e1 !important; margin-bottom: 20px; }
+            .section-title { color: #000000 !important; border-bottom: 2px solid #000000 !important; }
+            .form-group input, .form-group select { border: none !important; border-bottom: 1px dotted #000000 !important; border-radius: 0 !important; padding: 4px 0 !important; background: transparent !important; }
+            .form-group input[readonly] { background: transparent !important; color: #000 !important; }
+        }
+
         @media (max-width: 768px) {
             .grid-inputs { grid-template-columns: 1fr; }
             .form-group.full-width { grid-column: span 1; }
             .drh-header { flex-direction: column; gap: 15px; text-align: center; }
+            .header-actions { flex-wrap: wrap; justify-content: center; }
         }
     </style>
 </head>
@@ -75,7 +98,11 @@
             <h1>DAFTAR RIWAYAT HIDUP PEGAWAI</h1>
             <p id="sub-header-nama">Memuat profil berkas rekaman elektronik...</p>
         </div>
-        <button class="btn-logout" id="btn-logout">🚪 Keluar Sistem</button>
+        <div class="header-actions">
+            <a href="dashboard.html" target="_blank" class="btn-nav">📊 Lihat Dashboard</a>
+            <button type="button" class="btn-pdf" onclick="window.print()">📥 Download PDF</button>
+            <button class="btn-logout" id="btn-logout">🚪 Keluar</button>
+        </div>
     </div>
 
     <div class="notif-bar">
@@ -235,7 +262,6 @@
             }
         }
         
-        // Handler Hitung Masa Kerja Otomatis untuk Sisi Pegawai jika mengubah Tanggal Masuk RS
         const inputMasukRS = document.getElementById('masuk_rs');
         if (inputMasukRS) {
             inputMasukRS.onchange = function() {
