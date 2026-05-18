@@ -3,15 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistem Informasi Pegawai Terpusat</title>
+    <title>Login - Sistem Terpusat Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --primary: #1e40af;
-            --primary-hover: #1d4ed8;
-            --bg: #f1f5f9;
-            --text: #0f172a;
-            --border: #cbd5e1;
-        }
+        :root { --primary: #1e40af; --primary-hover: #1d4ed8; --bg: #f1f5f9; --text: #0f172a; --border: #cbd5e1; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .login-card { background: white; padding: 32px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
@@ -20,9 +15,8 @@
         .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
         .form-group label { font-size: 12px; font-weight: 700; color: #475569; }
         .form-group input { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; }
-        .form-group input:focus { border-color: var(--primary); }
         .btn-login { background: var(--primary); color: white; border: none; width: 100%; padding: 12px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 8px; }
-        .btn-login:disabled { background: #94a3b8; cursor: not-allowed; }
+        .btn-login:disabled { background: #94a3b8; }
         .info-box { background: #f8fafc; border: 1px dashed var(--border); padding: 12px; border-radius: 6px; margin-top: 16px; font-size: 12px; color: #475569; }
     </style>
 </head>
@@ -30,7 +24,7 @@
 
 <div class="login-card">
     <div class="login-title">Sistem Informasi Pegawai</div>
-    <div class="login-sub">Verifikasi Database Cloud Terpusat</div>
+    <div class="login-sub font-weight: bold; color:green">Koneksi Database Instan Supabase</div>
     
     <form id="login-form">
         <div class="form-group">
@@ -52,8 +46,11 @@
 </div>
 
 <script>
-    // ⚠️ GANTI LINK DI BAWAH INI DENGAN LINK WEB APP USER/EXEC ANDA SENDIRI DARI GOOGLE APPS SCRIPT
-    const API_URL = "https://script.google.com/macros/s/AKfycbzPdL7Ehg23GzcR2nwhCeiQnGrM2E9mPJJEK39032dS_DUc-ew7RKy78UZI1eeEXFZf/exec";
+    // ⚠️ ISI DENGAN KUNCI PROYEK SUPABASE ANDA SENDIRI
+    const SUPABASE_URL = "https://UMBA_DENGAN_URL_SUPABASE_ANDA.supabase.co";
+    const SUPABASE_ANON_KEY = "UBAH_DENGAN_ANON_PUBLIC_KEY_SUPABASE_ANDA";
+    
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     document.getElementById('login-form').onsubmit = async function(e) {
         e.preventDefault();
@@ -64,7 +61,6 @@
         btn.disabled = true;
         btn.textContent = "Memverifikasi...";
 
-        // 1. Cek Login Akses Admin
         if (userIn === 'admin' && passIn === 'admin') {
             sessionStorage.setItem('role', 'admin');
             sessionStorage.setItem('user_key', 'admin');
@@ -73,24 +69,24 @@
             return;
         }
 
-        // 2. Cek Login Akses Pegawai secara langsung ke Google Sheets (Real-time)
         try {
-            const respon = await fetch(API_URL);
-            const dbPegawai = await respon.json();
+            // Tarik data NIK secara spesifik (Instan)
+            const { data, error } = await supabase.from('pegawai').select('*').eq('nik', userIn);
             
-            const ketemuPegawai = dbPegawai.find(p => p.nik === userIn);
+            if (error) throw error;
 
-            if (ketemuPegawai && passIn === 'Masuk123') {
+            if (data && data.length > 0 && passIn === 'Masuk123') {
+                const ketemuPegawai = data[0];
                 sessionStorage.setItem('role', 'pegawai');
                 sessionStorage.setItem('user_key', ketemuPegawai.id_pegawai);
-                alert(`Login Cloud Berhasil!\nSelamat datang, ${ketemuPegawai.nama}`);
+                alert(`Login Berhasil!\nSelamat datang, ${ketemuPegawai.nama}`);
                 window.location.href = 'index.html';
             } else {
-                alert('Username (NIK) tidak ditemukan dalam Google Sheets, atau password Anda salah!');
+                alert('Username (NIK) tidak ditemukan atau password salah!');
             }
         } catch (error) {
             console.error(error);
-            alert('Gagal terhubung ke Server Cloud Google Sheets. Pastikan Deployment Apps Script sudah diset ke "Anyone".');
+            alert('Gagal login: Periksa koneksi atau setelan tabel Supabase.');
         } finally {
             btn.disabled = false;
             btn.textContent = "Masuk ke Sistem";
