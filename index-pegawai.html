@@ -3,306 +3,408 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Riwayat Hidup Pegawai (DRH)</title>
+    <title>Portal Mandiri Pegawai (DRH & Layanan)</title>
     
     <script>
-        if (sessionStorage.getItem('role') !== 'pegawai') {
+        if (!sessionStorage.getItem('role') || sessionStorage.getItem('role') !== 'pegawai') {
             window.location.href = 'login.html';
         }
     </script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
     <style>
         :root {
-            --primary: #1e40af;
-            --primary-dark: #1d4ed8;
-            --bg: #f1f5f9;
-            --text: #0f172a;
-            --border: #cbd5e1;
+            --sidebar-width: 260px;
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --primary-light: #f0f9ff;
+            --dark-slate: #0f172a;
+            --sidebar-bg: #1e293b;
+            --bg-light: #f8fafc;
+            --text-main: #334155;
+            --border-color: #e2e8f0;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); padding: 30px 15px; line-height: 1.5; }
-        
-        .drh-container { max-width: 950px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border: 1px solid var(--border); overflow: hidden; }
-        
-        /* HEADER DRH */
-        .drh-header { background: #1e293b; color: white; padding: 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid var(--primary); }
-        .drh-title h1 { font-size: 24px; font-weight: 800; letter-spacing: 0.5px; }
-        .drh-title p { font-size: 13px; color: #94a3b8; margin-top: 4px; }
-        .header-actions { display: flex; gap: 8px; align-items: center; }
-        
-        /* TOMBOL NAVIGASI */
-        .btn-nav { background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-        .btn-nav:hover { background: var(--primary-dark); }
-        
-        .btn-pdf { background: #0891b2; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
-        .btn-pdf:hover { background: #0e7490; }
-        
-        .btn-logout { background: #b91c1c; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; }
-        .btn-logout:hover { background: #991b1b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-light); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; }
 
-        /* AREA NOTIFIKASI */
-        .notif-bar { background: #e0f2fe; color: #0369a1; padding: 12px 20px; font-size: 13px; font-weight: 600; border-bottom: 1px solid #bae6fd; text-align: center; }
+        /* SIDEBAR STYLE */
+        .sidebar { width: var(--sidebar-width); background-color: var(--sidebar-bg); color: #cbd5e1; display: flex; flex-direction: column; position: fixed; height: 100vh; left: 0; top: 0; z-index: 100; transition: all 0.3s; }
+        .sidebar-brand { padding: 24px; font-size: 16px; font-weight: 800; color: white; border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 10px; text-transform: uppercase; }
+        .sidebar-brand i { color: var(--primary); }
+        
+        .sidebar-menu { list-style: none; padding: 15px 0; flex: 1; overflow-y: auto; }
+        .menu-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; padding: 10px 24px; letter-spacing: 1px; }
+        
+        .menu-item { display: block; }
+        .menu-link { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; color: #94a3b8; text-decoration: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .menu-link:hover, .menu-item.active > .menu-link { color: white; background-color: #334155; }
+        .menu-link-inner { display: flex; align-items: center; gap: 12px; }
+        
+        .submenu { list-style: none; background-color: #0f172a; max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 15px; }
+        .submenu.open { max-height: 300px; }
+        .submenu-link { display: flex; align-items: center; gap: 10px; padding: 10px 24px; color: #64748b; text-decoration: none; font-size: 13px; font-weight: 500; transition: all 0.2s; cursor: pointer; }
+        .submenu-link:hover, .submenu-link.active { color: white; }
 
-        /* FORM DRH STYLING */
-        .drh-body { padding: 35px; }
+        /* MAIN CONTENT STYLE */
+        .main-wrapper { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); display: flex; flex-direction: column; min-height: 100vh; }
+        
+        .top-nav { height: 70px; background-color: white; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 90; }
+        .user-profile-box { display: flex; align-items: center; gap: 12px; }
+        .user-avatar { width: 38px; height: 38px; background-color: var(--primary-light); color: var(--primary); font-weight: 700; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
+        .user-info h4 { font-size: 14px; font-weight: 700; color: var(--dark-slate); }
+        .user-info p { font-size: 12px; color: #64748b; }
+
+        .content-body { padding: 30px; flex: 1; }
+        .view-panel { display: none; animation: fadeIn 0.4s ease-in-out forwards; }
+        .view-panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .page-title-box { margin-bottom: 24px; }
+        .page-title-box h2 { font-size: 22px; font-weight: 800; color: var(--dark-slate); }
+        .page-title-box p { font-size: 13px; color: #64748b; margin-top: 2px; }
+
+        /* DRH LAYOUT COMPONENT */
+        .drh-card { background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         .drh-section { margin-bottom: 30px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; }
-        .section-title { font-size: 14px; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
-        
-        /* GRID INPUT */
+        .section-title { font-size: 13px; font-weight: 800; color: var(--primary-dark); text-transform: uppercase; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; letter-spacing: 0.5px; }
         .grid-inputs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-group.full-width { grid-column: span 2; }
-        
-        .form-group label { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; }
-        .form-group input, .form-group select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background-color: white; color: var(--text); outline: none; transition: all 0.2s; }
-        .form-group input:focus, .form-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30,64,175,0.1); }
-        
-        /* ISI YANG DIKUNCI (READONLY) */
-        .form-group input[readonly] { background-color: #e2e8f0; color: #475569; cursor: not-allowed; border-color: #cbd5e1; font-weight: 500; }
+        .form-group label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; outline: none; background: white; }
+        .form-group input[readonly] { background-color: #e2e8f0; color: #475569; cursor: not-allowed; }
 
-        /* FOOTER AKSI */
-        .drh-footer { background: #f8fafc; padding: 20px 35px; border-top: 1px solid #e2e8f0; text-align: right; }
-        .btn-submit { background: #16a34a; color: white; border: none; padding: 12px 30px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .btn-submit:hover { background: #15803d; }
-        .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; }
+        /* BUTTONS */
+        .btn { padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-dark); }
+        .btn-danger { background-color: #dc2626; color: white; }
 
-        /* 🖨️ ATURAN PRINT MAKSIMAL (MENGHASILKAN PDF BERKUALITAS) */
-        @media print {
-            body { background-color: white; padding: 0; color: #000; }
-            .drh-container { box-shadow: none; border: none; max-width: 100%; margin: 0; }
-            .header-actions, .notif-bar, .drh-footer, .btn-logout { display: none !important; }
-            .drh-header { background: #ffffff !important; color: #000000 !important; border-bottom: 2px solid #000000 !important; padding: 15px 0; }
-            .drh-title p { color: #475569 !important; }
-            .drh-section { background: white !important; page-break-inside: avoid; border: 1px solid #cbd5e1 !important; margin-bottom: 20px; }
-            .section-title { color: #000000 !important; border-bottom: 2px solid #000000 !important; }
-            .form-group input, .form-group select { border: none !important; border-bottom: 1px dotted #000000 !important; border-radius: 0 !important; padding: 4px 0 !important; background: transparent !important; }
-            .form-group input[readonly] { background: transparent !important; color: #000 !important; }
-        }
-
-        @media (max-width: 768px) {
-            .grid-inputs { grid-template-columns: 1fr; }
-            .form-group.full-width { grid-column: span 1; }
-            .drh-header { flex-direction: column; gap: 15px; text-align: center; }
-            .header-actions { flex-wrap: wrap; justify-content: center; }
-        }
+        .placeholder-box { text-align: center; padding: 50px 20px; background: white; border: 2px dashed var(--border-color); border-radius: 12px; color: #64748b; }
+        .placeholder-box i { font-size: 40px; margin-bottom: 12px; color: #cbd5e1; }
+        .hide-element { display: none !important; }
     </style>
 </head>
 <body>
 
-<div class="drh-container">
-    <div class="drh-header">
-        <div class="drh-title">
-            <h1>DAFTAR RIWAYAT HIDUP PEGAWAI</h1>
-            <p id="sub-header-nama">Memuat profil berkas rekaman elektronik...</p>
+    <nav class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-circle-user fa-lg"></i>
+            <span>Portal Karyawan</span>
         </div>
-        <div class="header-actions">
-            <a href="dashboard.html" target="_blank" class="btn-nav">📊 Lihat Dashboard</a>
-            <button type="button" class="btn-pdf" onclick="window.print()">📥 Download PDF</button>
-            <button class="btn-logout" id="btn-logout">🚪 Keluar</button>
-        </div>
-    </div>
-
-    <div class="notif-bar">
-        💡 Anda dapat memperbarui hampir semua data secara mandiri. Kolom dengan tanda gembok (🔒) dikunci oleh sistem.
-    </div>
-
-    <form id="form-drh-karyawan">
-        <input type="hidden" id="id_pegawai">
-
-        <div class="drh-body">
+        <ul class="sidebar-menu">
+            <li class="menu-title">Layanan Publik</li>
+            <li class="menu-item active" onclick="switchView('view-overview', this)">
+                <a class="menu-link"><span class="menu-link-inner"><i class="fa-solid fa-house-user"></i>Overview Profil</span></a>
+            </li>
+            <li class="menu-item">
+                <a href="dashboard.html" target="_blank" class="menu-link"><span class="menu-link-inner"><i class="fa-solid fa-chart-simple"></i>Dashboard Publik</span></a>
+            </li>
             
-            <div class="drh-section">
-                <div class="section-title">👤 I. Identitas & Status Kepegawaian</div>
-                <div class="grid-inputs">
-                    <div class="form-group"><label>🔒 NIK (Nomor Induk Kependudukan)</label><input type="text" id="nik" readonly></div>
-                    <div class="form-group"><label>NIP / Nomor Pegawai</label><input type="text" id="nip"></div>
-                    <div class="form-group full-width"><label>Nama Lengkap (Sesuai SK)</label><input type="text" id="nama"></div>
-                    <div class="form-group">
-                        <label>Status Dinas</label>
-                        <select id="status">
-                            <option>Aktif</option><option>Mutasi</option><option>Pensiun</option><option>Resign</option><option>Lainnya</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Kelompok Pegawai</label>
-                        <select id="kelompok_pegawai">
-                            <option>ASN</option><option>APBD</option><option>BLUD</option><option>KONSULTAN</option><option>MAGANG</option>
-                        </select>
-                    </div>
+            <li class="menu-title">Berkas Mandiri</li>
+            <li class="menu-item" onclick="switchView('view-drh', this)">
+                <a class="menu-link"><span class="menu-link-inner"><i class="fa-solid fa-file-invoice"></i>Data Pegawai (DRH)</span></a>
+            </li>
+
+            <li class="menu-item">
+                <a class="menu-link" onclick="toggleDropdown(this)"><span class="menu-link-inner"><i class="fa-solid fa-id-card-clip"></i>Izin Kerja</span><i class="fa-solid fa-chevron-down arrow"></i></a>
+                <ul class="submenu">
+                    <li><a class="submenu-link" onclick="switchView('view-input-str', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Input Data STR</a></li>
+                    <li><a class="submenu-link" onclick="switchView('view-input-sik', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Input Data SIK</a></li>
+                </ul>
+            </li>
+
+            <li class="menu-item">
+                <a class="menu-link" onclick="toggleDropdown(this)"><span class="menu-link-inner"><i class="fa-solid fa-folder-open"></i>Administrasi</span><i class="fa-solid fa-chevron-down arrow"></i></a>
+                <ul class="submenu">
+                    <li><a class="submenu-link" onclick="switchView('view-cuti', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Pengajuan Cuti</a></li>
+                    <li><a class="submenu-link" onclick="switchView('view-tubel', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Pengajuan Tubel</a></li>
+                    <li id="menu-naik-pangkat" class="hide-element"><a class="submenu-link" onclick="switchView('view-pangkat', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Naik Pangkat (ASN)</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="main-wrapper">
+        <header class="top-nav">
+            <div class="nav-left">
+                <h3 style="font-weight: 700; color: var(--dark-slate)" id="nav-header-title">Overview Profil</h3>
+            </div>
+            <div class="user-profile-box">
+                <div class="user-avatar" id="avatar-singkat">-</div>
+                <div class="user-info">
+                    <h4 id="top-nama-pegawai">Memuat...</h4>
+                    <p id="top-status-pegawai">Pegawai Instansi</p>
+                </div>
+                <button onclick="logoutAksi()" class="btn btn-danger" style="padding: 8px 12px; margin-left: 15px;"><i class="fa-solid fa-power-off"></i> Keluar</button>
+            </div>
+        </header>
+
+        <main class="content-body">
+            
+            <div id="view-overview" class="view-panel active">
+                <div class="page-title-box">
+                    <h2>Selamat Datang Kembali</h2>
+                    <p>Ringkasan berkas data elektronik Anda yang terdaftar pada pangkalan data cloud terpusat.</p>
+                </div>
+                <div class="drh-card" style="display:flex; flex-direction:column; gap:15px; max-width:500px;">
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;"><strong>Nama Lengkap:</strong><span id="ov-nama">-</span></div>
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;"><strong>NIK KTP:</strong><span id="ov-nik">-</span></div>
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;"><strong>Jabatan:</strong><span id="ov-jabatan">-</span></div>
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:8px;"><strong>Kelompok Pegawai:</strong><span id="ov-kelompok" style="font-weight:700; color:var(--primary);">-</span></div>
+                    <div style="display:flex; justify-content:space-between; padding-bottom:8px;"><strong>Masa Kerja RS:</strong><span id="ov-masakerja">-</span></div>
                 </div>
             </div>
 
-            <div class="drh-section">
-                <div class="section-title">✏️ II. Informasi Biodata Pribadi</div>
-                <div class="grid-inputs">
-                    <div class="form-group">
-                        <label>Jenis Kelamin</label>
-                        <select id="jenis_kelamin">
-                            <option>Laki-laki</option><option>Perempuan</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Agama</label>
-                        <select id="agama">
-                            <option>Islam</option><option>Kristen</option><option>Katolik</option><option>Hindu</option><option>Buddha</option>
-                        </select>
-                    </div>
-                    <div class="form-group"><label>Tempat Lahir</label><input type="text" id="tempat_lahir"></div>
-                    <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="tanggal_lahir"></div>
-                    <div class="form-group">
-                        <label>Status Hubungan Keluarga</label>
-                        <select id="status_keluarga">
-                            <option>TK</option><option>K/0</option><option>K/1</option><option>K/2</option><option>K/3</option>
-                        </select>
-                    </div>
-                    <div class="form-group"><label>NPWP</label><input type="text" id="npwp"></div>
+            <div id="view-drh" class="view-panel">
+                <div class="page-title-box">
+                    <h2>Formulir Daftar Riwayat Hidup Elektronik</h2>
+                    <p>Perbarui riwayat informasi berkas Anda secara mandiri di bawah ini.</p>
+                </div>
+                <div class="drh-card">
+                    <form id="form-drh-karyawan">
+                        <input type="hidden" id="id_pegawai">
+                        
+                        <div class="drh-section">
+                            <div class="section-title">👤 I. Identitas & Status Kepegawaian</div>
+                            <div class="grid-inputs">
+                                <div class="form-group"><label>🔒 NIK (Nomor Induk Kependudukan)</label><input type="text" id="nik" readonly></div>
+                                <div class="form-group"><label>NIP / Nomor Pegawai</label><input type="text" id="nip"></div>
+                                <div class="form-group full-width"><label>Nama Lengkap (Sesuai SK)</label><input type="text" id="nama"></div>
+                                <div class="form-group"><label>Status Dinas</label><select id="status"><option>Aktif</option><option>Mutasi</option><option>Pensiun</option><option>Resign</option></select></div>
+                                <div class="form-group"><label>Kelompok Pegawai</label><select id="kelompok_pegawai"><option>ASN</option><option>APBD</option><option>BLUD</option><option>MAGANG</option></select></div>
+                            </div>
+                        </div>
+
+                        <div class="drh-section">
+                            <div class="section-title">✏️ II. Informasi Biodata Pribadi</div>
+                            <div class="grid-inputs">
+                                <div class="form-group"><label>Jenis Kelamin</label><select id="jenis_kelamin"><option>Laki-laki</option><option>Perempuan</option></select></div>
+                                <div class="form-group"><label>Agama</label><select id="agama"><option>Islam</option><option>Kristen</option><option>Katolik</option><option>Hindu</option><option>Buddha</option></select></div>
+                                <div class="form-group"><label>Tempat Lahir</label><input type="text" id="tempat_lahir"></div>
+                                <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="tanggal_lahir"></div>
+                                <div class="form-group"><label>Status Hubungan Keluarga</label><select id="status_keluarga"><option>TK</option><option>K/0</option><option>K/1</option><option>K/2</option><option>K/3</option></select></div>
+                                <div class="form-group"><label>NPWP</label><input type="text" id="npwp"></div>
+                            </div>
+                        </div>
+
+                        <div class="drh-section">
+                            <div class="section-title">💼 III. Kedudukan Jabatan & Struktur Masa Kerja</div>
+                            <div class="grid-inputs">
+                                <div class="form-group"><label>Kelompok Jabatan</label><select id="kelompok_jabatan"><option>Management</option><option>Tenaga Medis</option><option>Tenaga Kesehatan</option><option>Tenaga Administrasi</option></select></div>
+                                <div class="form-group"><label>Nama Jabatan</label><input type="text" id="jabatan"></div>
+                                <div class="form-group"><label>Golongan Ruang</label><input type="text" id="gol"></div>
+                                <div class="form-group"><label>Ruangan / Unit Kerja</label><input type="text" id="ruangan"></div>
+                                <div class="form-group"><label>TMT Pangkat</label><input type="date" id="tmt_pangkat"></div>
+                                <div class="form-group"><label>TMT Berkala Berikutnya</label><input type="date" id="tmt_berikutnya"></div>
+                                <div class="form-group"><label>Tanggal Mulai Masuk RS</label><input type="date" id="masuk_rs"></div>
+                                
+                                <div class="form-group"><label>🔒 Masa Kerja di Instansi RS</label><input type="text" id="masa_kerja_rs" readonly></div>
+                                <div class="form-group"><label>🔒 BUP Usia Pensiun</label><input type="text" id="rentang_bup" readonly></div>
+                                <div class="form-group"><label>🔒 TMT Pensiun</label><input type="date" id="tmt_pensiun" readonly></div>
+                                <div class="form-group"><label>🔒 TMT CPNS</label><input type="date" id="tmt_cpns" readonly></div>
+                            </div>
+                        </div>
+
+                        <div class="drh-section">
+                            <div class="section-title">🎓 IV. Riwayat Pendidikan Akhir</div>
+                            <div class="grid-inputs">
+                                <div class="form-group"><label>Jenjang Kelulusan</label><select id="jenjang"><option>D3</option><option>D4</option><option>S1</option><option>S2</option><option>Profesi</option></select></div>
+                                <div class="form-group"><label>Nama Universitas / Fakultas</label><input type="text" id="fakultas"></div>
+                                <div class="form-group"><label>Program Studi / Jurusan</label><input type="text" id="jurusan"></div>
+                            </div>
+                        </div>
+
+                        <div class="drh-section">
+                            <div class="section-title">🏠 V. Alamat Domisili Kependudukan & Kontak Aktif</div>
+                            <div class="grid-inputs">
+                                <div class="form-group full-width"><label>Alamat Rumah Tinggal Lengkap</label><input type="text" id="alamat"></div>
+                                <div class="form-group"><label>Nomor HP / WhatsApp Aktif</label><input type="tel" id="no_telp"></div>
+                                <div class="form-group"><label>Alamat Surat Elektronik (Email)</label><input type="email" id="email"></div>
+                                <div class="form-group"><label>Nomor Kartu JKN BPJS Kesehatan</label><input type="number" id="no_bpjsn"></div>
+                                <div class="form-group"><label>Nomor BPJS Ketenagakerjaan / Taspen</label><input type="text" id="no_bpjsket_taspen"></div>
+                            </div>
+                        </div>
+
+                        <div style="text-align: right;">
+                            <button type="submit" class="btn btn-primary" id="btn-simpan-drh">💾 Perbarui Dokumen DRH Saya</button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
-            <div class="drh-section">
-                <div class="section-title">💼 III. Kedudukan Jabatan & Struktur Masa Kerja</div>
-                <div class="grid-inputs">
-                    <div class="form-group">
-                        <label>Kelompok Jabatan</label>
-                        <select id="kelompok_jabatan">
-                            <option>Management</option><option>Tenaga Medis</option><option>Tenaga Kesehatan</option><option>Tenaga Penunjang Medis</option><option>Tenaga Administrasi</option><option>Tenaga Non Administrasi</option>
-                        </select>
-                    </div>
-                    <div class="form-group"><label>Nama Jabatan Struktural/Fungsional</label><input type="text" id="jabatan"></div>
-                    <div class="form-group"><label>Golongan Ruang</label><input type="text" id="gol"></div>
-                    <div class="form-group"><label>Ruangan / Unit Kerja Tempat Dinas</label><input type="text" id="ruangan"></div>
-                    <div class="form-group"><label>TMT Pangkat</label><input type="date" id="tmt_pangkat"></div>
-                    <div class="form-group"><label>TMT Berkala Berikutnya</label><input type="date" id="tmt_berikutnya"></div>
-                    <div class="form-group"><label>Tanggal Mulai Masuk RS</label><input type="date" id="masuk_rs"></div>
-                    
-                    <div class="form-group"><label>🔒 Masa Kerja di Instansi RS</label><input type="text" id="masa_kerja_rs" readonly></div>
-                    <div class="form-group"><label>🔒 BUP Usia Pensiun</label><input type="text" id="rentang_bup" readonly></div>
-                    <div class="form-group"><label>🔒 TMT Pensiun</label><input type="date" id="tmt_pensiun" readonly></div>
-                    <div class="form-group"><label>🔒 TMT CPNS</label><input type="date" id="tmt_cpns" readonly></div>
+            <div id="view-general-layanan" class="view-panel">
+                <div class="page-title-box">
+                    <h2 id="layanan-title">Sub Menu</h2>
+                    <p id="layanan-subtitle">Sistem Pengisian Formulir Pengarsipan Berkas Mandiri Karyawan.</p>
+                </div>
+                <div class="placeholder-box">
+                    <i class="fa-solid fa-file-signature"></i>
+                    <h3>Modul Pengisian Formulir Digital</h3>
+                    <p style="margin-top:4px;">Gunakan menu "Data Pegawai (DRH)" untuk operasional pembaruan profil induk Anda.</p>
                 </div>
             </div>
 
-            <div class="drh-section">
-                <div class="section-title">🎓 IV. Riwayat Pendidikan Akhir</div>
-                <div class="grid-inputs">
-                    <div class="form-group">
-                        <label>Jenjang Kelulusan</label>
-                        <select id="jenjang">
-                            <option>D3</option><option>D4</option><option>S1</option><option>S2</option><option>Profesi</option>
-                        </select>
-                    </div>
-                    <div class="form-group"><label>Nama Universitas / Fakultas</label><input type="text" id="fakultas"></div>
-                    <div class="form-group"><label>Program Studi / Jurusan</label><input type="text" id="jurusan"></div>
-                </div>
-            </div>
+        </main>
+    </div>
 
-            <div class="drh-section">
-                <div class="section-title">🏠 V. Alamat Domisili Kependudukan & Kontak Aktif</div>
-                <div class="grid-inputs">
-                    <div class="form-group full-width"><label>Alamat Rumah Tinggal Lengkap</label><input type="text" id="alamat"></div>
-                    <div class="form-group"><label>Nomor HP / WhatsApp Aktif</label><input type="tel" id="no_telp"></div>
-                    <div class="form-group"><label>Alamat Surat Elektronik (Email)</label><input type="email" id="email"></div>
-                    <div class="form-group"><label>Nomor Kartu JKN BPJS Kesehatan</label><input type="number" id="no_bpjsn"></div>
-                    <div class="form-group"><label>Nomor BPJS Ketenagakerjaan / Taspen</label><input type="text" id="no_bpjsket_taspen"></div>
-                </div>
-            </div>
+    <script>
+        // KONEKSI UTAMA SUPABASE CLOUD (KUNCI SINKRON)
+        const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        </div>
+        const dataFields = [
+            'id_pegawai', 'nik', 'nama', 'nip', 'status', 'kelompok_pegawai', 'kelompok_jabatan',
+            'gol', 'tmt_pangkat', 'tmt_berikutnya', 'jabatan', 'jenis_kelamin', 'agama', 
+            'rentang_bup', 'tmt_pensiun', 'tmt_cpns', 'masuk_rs', 'masa_kerja_rs', 
+            'tempat_lahir', 'tanggal_lahir', 'status_keluarga', 'alamat', 'jenjang', 
+            'fakultas', 'jurusan', 'ruangan', 'no_bpjsn', 'no_bpjsket_taspen', 'npwp', 'email', 'no_telp'
+        ];
 
-        <div class="drh-footer">
-            <button type="submit" class="btn-submit" id="btn-simpan-drh">💾 Perbarui Dokumen DRH Saya</button>
-        </div>
-    </form>
-</div>
+        const userKey = sessionStorage.getItem('user_key');
+        const formDRH = document.getElementById('form-drh-karyawan');
+        const btnSimpan = document.getElementById('btn-simpan-drh');
 
-<script>
-    const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const dataFields = [
-        'id_pegawai', 'nik', 'nama', 'nip', 'status', 'kelompok_pegawai', 'kelompok_jabatan',
-        'gol', 'tmt_pangkat', 'tmt_berikutnya', 'jabatan', 'jenis_kelamin', 'agama', 
-        'rentang_bup', 'tmt_pensiun', 'tmt_cpns', 'masuk_rs', 'masa_kerja_rs', 
-        'tempat_lahir', 'tanggal_lahir', 'status_keluarga', 'alamat', 'jenjang', 
-        'fakultas', 'jurusan', 'ruangan', 'no_bpjsn', 'no_bpjsket_taspen', 'npwp', 'email', 'no_telp'
-    ];
-
-    const userKey = sessionStorage.getItem('user_key');
-    const formDRH = document.getElementById('form-drh-karyawan');
-    const btnSimpan = document.getElementById('btn-simpan-drh');
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        document.getElementById('btn-logout').onclick = () => {
-            sessionStorage.clear();
-            window.location.href = 'login.html';
-        };
-
-        if (userKey) {
-            try {
-                const { data, error } = await supabaseClient.from('pegawai').select('*').eq('id_pegawai', userKey).single();
-                if (error) throw error;
-
-                if (data) {
-                    document.getElementById('sub-header-nama').textContent = `Berkas data elektronik milik: ${data.nama || 'User'}`;
-                    
-                    dataFields.forEach(f => {
-                        const inputElement = document.getElementById(f);
-                        if (inputElement) {
-                            inputElement.value = data[f] || '';
-                        }
-                    });
-                }
-            } catch (err) {
-                console.error(err);
-                alert("Gagal memuat profil DRH Anda dari server cloud.");
-            }
-        }
-        
-        const inputMasukRS = document.getElementById('masuk_rs');
-        if (inputMasukRS) {
-            inputMasukRS.onchange = function() {
-                if (!this.value) return;
-                const masuk = new Date(this.value);
-                const hariIni = new Date();
-                let tahun = hariIni.getFullYear() - masuk.getFullYear();
-                let bulan = hariIni.getMonth() - masuk.getMonth();
-                if (bulan < 0) { tahun--; bulan += 12; }
-                document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan`;
-            };
-        }
-        
-        formDRH.onsubmit = async (e) => {
-            e.preventDefault();
-            btnSimpan.disabled = true;
-            btnSimpan.textContent = "⏳ Menyimpan Perubahan...";
-
-            const updatedData = {};
-            dataFields.forEach(f => {
-                const inputElement = document.getElementById(f);
-                if (inputElement) {
-                    updatedData[f] = inputElement.value.trim();
+        // JS SIDEBAR DROPDOWN ACCORDION
+        function toggleDropdown(element) {
+            const submenu = element.nextElementSibling;
+            const arrow = element.querySelector('.arrow');
+            
+            document.querySelectorAll('.submenu').forEach(sub => {
+                if(sub !== submenu && sub.classList.contains('open')) {
+                    sub.classList.remove('open');
+                    sub.previousElementSibling.querySelector('.arrow').classList.replace('fa-chevron-up', 'fa-chevron-down');
                 }
             });
 
-            try {
-                const { error } = await supabaseClient.from('pegawai').update(updatedData).eq('id_pegawai', userKey);
-                if (error) throw error;
-                
-                alert("Selamat! Perubahan dokumen Daftar Riwayat Hidup (DRH) Anda berhasil disimpan ke cloud.");
-            } catch (err) {
-                console.error(err);
-                alert("Eror gagal memperbarui data ke server.");
-            } finally {
-                btnSimpan.disabled = false;
-                btnSimpan.textContent = "💾 Perbarui Dokumen DRH Saya";
+            submenu.classList.toggle('open');
+            if(submenu.classList.contains('open')) {
+                arrow.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            } else {
+                arrow.classList.replace('fa-chevron-up', 'fa-chevron-down');
             }
-        };
-    });
-</script>
+        }
 
+        // SPA ROUTER PANELS VIEW
+        function switchView(viewId, element) {
+            document.querySelectorAll('.menu-item, .submenu-link').forEach(item => item.classList.remove('active'));
+            
+            element.classList.add('active');
+            if(element.classList.contains('submenu-link')) {
+                element.closest('.menu-item').classList.add('active');
+            }
+
+            let menuText = element.textContent.trim();
+            document.getElementById('nav-header-title').textContent = menuText;
+
+            document.querySelectorAll('.view-panel').forEach(panel => panel.classList.remove('active'));
+
+            const targetPanel = document.getElementById(viewId);
+            if(targetPanel) {
+                targetPanel.classList.add('active');
+            } else {
+                const generalView = document.getElementById('view-general-layanan');
+                document.getElementById('layanan-title').textContent = menuText;
+                document.getElementById('layanan-subtitle').textContent = `Formulir Elektronik Ajuan Mandiri Bagian ${menuText}.`;
+                generalView.classList.add('active');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (userKey) {
+                try {
+                    // Ambil data spesifik karyawan dari Supabase
+                    const { data, error } = await supabaseClient.from('pegawai').select('*').eq('id_pegawai', userKey).single();
+                    if (error) throw error;
+
+                    if (data) {
+                        // 1. Set Profil Atas & Overview Ringkas
+                        document.getElementById('top-nama-pegawai').textContent = data.nama || 'User';
+                        document.getElementById('top-status-pegawai').textContent = data.jabatan || 'Pegawai';
+                        document.getElementById('avatar-singkat').textContent = data.nama ? data.nama.substring(0,2) : 'US';
+
+                        document.getElementById('ov-nama').textContent = data.nama || '-';
+                        document.getElementById('ov-nik').textContent = data.nik || '-';
+                        document.getElementById('ov-jabatan').textContent = data.jabatan || '-';
+                        document.getElementById('ov-kelompok').textContent = data.kelompok_pegawai || '-';
+                        document.getElementById('ov-masakerja').textContent = data.masa_kerja_rs || '-';
+
+                        // 💡 LOGIKA STRATEGIS ASN: Jika kelompok pegawai adalah ASN, buka kunci menu Naik Pangkat
+                        if (data.kelompok_pegawai && data.kelompok_pegawai.trim().toUpperCase() === 'ASN') {
+                            document.getElementById('menu-naik-pangkat').classList.remove('hide-element');
+                        }
+
+                        // 2. Isi Otomatis Elemen Form DRH
+                        dataFields.forEach(f => {
+                            const inputElement = document.getElementById(f);
+                            if (inputElement) {
+                                inputElement.value = data[f] || '';
+                            }
+                        });
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
+            // Aksi Hitung Masa Kerja Sisi Karyawan
+            const inputMasukRS = document.getElementById('masuk_rs');
+            if (inputMasukRS) {
+                inputMasukRS.onchange = function() {
+                    if (!this.value) return;
+                    const masuk = new Date(this.value);
+                    const hariIni = new Date();
+                    let tahun = hariIni.getFullYear() - masuk.getFullYear();
+                    let bulan = hariIni.getMonth() - masuk.getMonth();
+                    if (bulan < 0) { tahun--; bulan += 12; }
+                    document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan`;
+                };
+            }
+
+            // Simpan Perubahan Form DRH ke Supabase Cloud
+            if (formDRH) {
+                formDRH.onsubmit = async (e) => {
+                    e.preventDefault();
+                    btnSimpan.disabled = true;
+                    btnSimpan.textContent = "⏳ Menyimpan Perubahan...";
+
+                    const updatedData = {};
+                    dataFields.forEach(f => {
+                        const inputElement = document.getElementById(f);
+                        if (inputElement) {
+                            updatedData[f] = inputElement.value.trim();
+                        }
+                    });
+
+                    try {
+                        const { error } = await supabaseClient.from('pegawai').update(updatedData).eq('id_pegawai', userKey);
+                        if (error) throw error;
+                        
+                        alert("Berhasil! Dokumen Riwayat Hidup (DRH) Anda telah ter-update di database cloud.");
+                        window.location.reload();
+                    } catch (err) {
+                        console.error(err);
+                        alert("Gagal menyimpan perubahan ke server.");
+                    } finally {
+                        btnSimpan.disabled = false;
+                        btnSimpan.textContent = "💾 Perbarui Dokumen DRH Saya";
+                    }
+                };
+            }
+        });
+
+        function logoutAksi() {
+            if(confirm("Apakah Anda yakin ingin keluar dari portal karyawan?")) {
+                sessionStorage.clear();
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
 </body>
 </html>
