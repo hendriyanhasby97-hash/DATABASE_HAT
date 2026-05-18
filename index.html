@@ -27,7 +27,9 @@
         .main-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px 24px; border-radius: 12px; border: 1px solid #e2e8f0; }
         .main-header h1 { font-size: 22px; font-weight: 800; color: var(--primary); }
         .main-header p { font-size: 13px; color: #64748b; }
+        .header-actions { display: flex; gap: 8px; }
         .btn-toggle { background: var(--primary); color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        .btn-nav { background: #475569; color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; text-decoration: none; display: inline-block; }
 
         /* BOX FORM */
         #form-master-wrapper { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
@@ -91,7 +93,10 @@
             <h1>Sistem Data Pegawai Instansi</h1>
             <p>Manajemen Database Karyawan & Administrasi Internal</p>
         </div>
-        <button class="btn-toggle" id="btn-toggle-form">📝 Buka Form Input</button>
+        <div class="header-actions">
+            <a href="dashboard.html" class="btn-nav">📊 Lihat Dashboard</a>
+            <button class="btn-toggle" id="btn-toggle-form">📝 Buka Form Input</button>
+        </div>
     </div>
 
     <div id="form-master-wrapper" class="hide-element">
