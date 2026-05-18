@@ -6,19 +6,20 @@ const fields = [
     'fakultas', 'jurusan', 'ruangan', 'no_bpjsn', 'no_bpjsket_taspen', 'npwp', 'email', 'no_telp'
 ];
 
-let dbPegawai = JSON.parse(localStorage.getItem('pegawai_storage_db')) || [];
+// ⚠️ GANTI LINK DI BAWAH INI DENGAN LINK WEB APP USER/EXEC ANDA SENDIRI DARI GOOGLE APPS SCRIPT
+const API_URL = "https://script.google.com/macros/s/AKfycbzPdL7Ehg23GzcR2nwhCeiQnGrM2E9mPJJEK39032dS_DUc-ew7RKy78UZI1eeEXFZf/exec";
+
+let dbPegawai = [];
 let statusEdit = false;
 
-// Pagination vars
 let currentPage = 1;
 const rowsPerPage = 25;
-let dataFilterAktif = [...dbPegawai];
+let dataFilterAktif = [];
 
-// Cek Sesi Skenario Hak Akses (Role)
 const userRole = sessionStorage.getItem('role');
 const userKey = sessionStorage.getItem('user_key');
 
-// DOM Element Selector
+// DOM Selector
 const wrapperForm = document.getElementById('form-master-wrapper');
 const btnToggle = document.getElementById('btn-toggle-form');
 const btnTutupForm = document.getElementById('btn-tutup-form');
@@ -37,17 +38,19 @@ const btnPrev = document.getElementById('btn-page-prev');
 const btnNext = document.getElementById('btn-page-next');
 const pagInfoText = document.getElementById('pagination-text-info');
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Tombol Logout Global
+document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btn-logout').onclick = () => {
         sessionStorage.clear();
         window.location.href = 'login.html';
     };
 
-    // Pembagian Interface Visual berdasarkan Role Akun
+    document.getElementById('welcome-text').textContent = "Sinkronisasi dengan Google Sheets Cloud...";
+
+    // Ambil Data dari Database Google Sheets Terpusat
+    await muatDataDariCloud();
+
     if (userRole === 'admin') {
-        // Mode Tampilan Penuh Admin
-        document.getElementById('welcome-text').textContent = "Masuk sebagai: Super Admin (Kendali Penuh)";
+        document.getElementById('welcome-text').textContent = "Masuk sebagai: Super Admin (Cloud Terhubung)";
         refreshDataState();
         
         if (btnToggle) btnToggle.onclick = toggleFormAksi;
@@ -61,27 +64,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnNext) btnNext.onclick = () => { const maxPage = Math.ceil(dataFilterAktif.length / rowsPerPage); if(currentPage < maxPage) { currentPage++; renderTabelDenganHalaman(); } };
 
     } else if (userRole === 'pegawai') {
-        // Mode Batasan Tampilan Akun Pegawai Biasa
         const dataSaya = dbPegawai.find(x => x.id_pegawai === userKey);
-        document.getElementById('welcome-text').textContent = `Pegawai: ${dataSaya ? dataSaya.nama : 'User'} (Hak Akses Terbatas)`;
+        document.getElementById('welcome-text').textContent = `Pegawai: ${dataSaya ? dataSaya.nama : 'User'} (Akses Sinkron Terbatas)`;
         
-        // Sembunyikan elemen admin
         document.getElementById('area-tabel-admin').classList.add('hide-element');
         document.getElementById('nav-dashboard').classList.add('hide-element');
         
-        // Modifikasi tombol "+ Tambah Pegawai" menjadi "✏️ Ubah Data Saya"
         btnToggle.textContent = "✏️ Perbarui Data Saya";
-        btnToggle.onclick = () => {
-            pemicuEditPegawai(userKey);
-        };
-        
-        // Tombol batalkan di dalam form menutup form inputan kembali
+        btnToggle.onclick = () => pemicuEditPegawai(userKey);
         btnTutupForm.onclick = () => wrapperForm.classList.add('hide-element');
     }
 
     if (inputMasukRS) inputMasukRS.onchange = hitungMasaKerjaOtomatis;
     if (mainForm) mainForm.onsubmit = simpanFormPegawai;
 });
+
+// Ambil Data Live dari Google Sheets
+async function muatDataDariCloud() {
+    try {
+        const respon = await fetch(API_URL);
+        dbPegawai = await respon.json();
+    } catch (e) {
+        console.error("Gagal memuat database cloud:", e);
+        alert("Gagal mengunduh database terbaru dari Google Sheets.");
+    }
+}
 
 function refreshDataState() {
     dataFilterAktif = [...dbPegawai];
@@ -100,34 +107,59 @@ function toggleFormAksi() {
     }
 }
 
-function simpanFormPegawai(e) {
+// SIMPAN & UPDATE KE GOOGLE SHEETS CLOUD VIA POST
+async function simpanFormPegawai(e) {
     e.preventDefault();
+    const saveBtn = mainForm.querySelector('.btn-save');
+    const textAwal = saveBtn.textContent;
+    
+    saveBtn.disabled = true;
+    saveBtn.textContent = "⏳ Menyimpan ke Cloud Sheets...";
+
     const data = {};
     fields.forEach(f => {
         const el = document.getElementById(f);
         data[f] = el ? el.value.trim() : '';
     });
 
-    if (statusEdit) {
-        const index = dbPegawai.findIndex(x => x.id_pegawai === data.id_pegawai);
-        if (index !== -1) dbPegawai[index] = data;
-        alert('Data berhasil diperbarui!');
-    } else {
+    if (!statusEdit) {
         data.id_pegawai = 'ID-' + Date.now();
-        dbPegawai.push(data);
-        alert('Data baru berhasil disimpan!');
     }
 
-    localStorage.setItem('pegawai_storage_db', JSON.stringify(dbPegawai));
-    
-    if (userRole === 'admin') {
-        refreshDataState();
-        toggleFormAksi();
-    } else {
-        alert('Perubahan data pribadi Anda berhasil disimpan!');
-        wrapperForm.classList.add('hide-element');
-        btnToggle.textContent = "✏️ Perbarui Data Saya";
-        statusEdit = false;
+    // Siapkan kemasan payload data untuk dikirim ke Google Apps Script
+    const payload = {
+        action: 'save',
+        data: data
+    };
+
+    try {
+        const respon = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        const hasil = await respon.json();
+        
+        if (hasil.status === 'success') {
+            alert(hasil.message);
+            await muatDataDariCloud(); // Unduh ulang data terbaru
+            
+            if (userRole === 'admin') {
+                refreshDataState();
+                toggleFormAksi();
+            } else {
+                wrapperForm.classList.add('hide-element');
+                btnToggle.textContent = "✏️ Perbarui Data Saya";
+                statusEdit = false;
+            }
+        } else {
+            alert("Gagal menyimpan: " + hasil.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Terjadi kendala koneksi internet ke sistem cloud.");
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = textAwal;
     }
 }
 
@@ -201,12 +233,26 @@ function pemicuEditPegawai(id) {
     window.scrollTo({ top: wrapperForm.offsetTop - 20, behavior: 'smooth' });
 }
 
-function eksekusiHapusPegawai(id) {
-    if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-        dbPegawai = dbPegawai.filter(x => x.id_pegawai !== id);
-        localStorage.setItem('pegawai_storage_db', JSON.stringify(dbPegawai));
-        refreshDataState();
-        tutupPanelDetail();
+// HAPUS DATA REALTIME DARI GOOGLE SHEETS
+async function eksekusiHapusPegawai(id) {
+    if (confirm('Apakah Anda yakin ingin menghapus data ini dari cloud?')) {
+        try {
+            const respon = await fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'delete', id_pegawai: id })
+            });
+            const hasil = await respon.json();
+            if(hasil.status === 'success') {
+                alert(hasil.message);
+                await muatDataDariCloud();
+                refreshDataState();
+                tutupPanelDetail();
+            } else {
+                alert("Gagal menghapus: " + hasil.message);
+            }
+        } catch (e) {
+            alert("Gagal menghapus data akibat gangguan jaringan.");
+        }
     }
 }
 
@@ -253,33 +299,41 @@ function unduhPDF() {
     doc.save("Laporan_Ringkas_Pegawai.pdf");
 }
 
-function jalankanProsesImportExcel() {
+async function jalankanProsesImportExcel() {
     const file = inputFileExcel.files[0];
     if (!file) return alert('Silakan pilih berkas Excel!');
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         const excelRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false });
+        
+        alert(`Sedang memproses ${excelRows.length} data ke cloud. Mohon tunggu notifikasi sukses...`);
+        
         let totalBarisSukses = 0;
-        excelRows.forEach(row => {
+        for(let row of excelRows) {
             const dataBaru = {};
             fields.forEach(f => {
                 const alt = f.replace(/_/g, ' ').toLowerCase();
                 const key = Object.keys(row).find(k => k.toLowerCase().trim() === f.toLowerCase() || k.toLowerCase().trim() === alt);
                 dataBaru[f] = key ? row[key].toString().trim() : '';
             });
+            
             if (!dataBaru.id_pegawai) dataBaru.id_pegawai = 'ID-' + Date.now() + Math.floor(Math.random() * 100);
+            
             if (dataBaru.nik && dataBaru.nama) {
-                const idx = dbPegawai.findIndex(x => x.nik === dataBaru.nik);
-                if (idx !== -1) dbPegawai[idx] = dataBaru; else dbPegawai.push(dataBaru);
+                await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'save', data: dataBaru })
+                });
                 totalBarisSukses++;
             }
-        });
-        localStorage.setItem('pegawai_storage_db', JSON.stringify(dbPegawai));
+        }
+        
+        await muatDataDariCloud();
         refreshDataState();
         inputFileExcel.value = '';
-        alert(`Sukses memproses file Excel!\nSebanyak ${totalBarisSukses} data pegawai berhasil dimasukkan/diperbarui.`);
+        alert(`Sukses sinkronisasi Excel!\nSebanyak ${totalBarisSukses} data dimasukkan/diperbarui di Google Sheets.`);
     };
     reader.readAsArrayBuffer(file);
 }
