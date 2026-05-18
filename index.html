@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Manajemen Pegawai</title>
+    <title>Sistem Data Pegawai Instansi</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
 
     <style>
-        /* CSS INTERNAL UTAMA - MENJAMIN FORM RAPI 3 KOLOM DAN TIDAK PECAH */
+        /* CSS INTERNAL UTAMA - LAYOUT 3 KOLOM DIKUNCI MATI */
         :root {
             --primary: #1e40af;
             --primary-hover: #1d4ed8;
@@ -23,33 +23,28 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
         .container { max-width: 1300px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
         
-        /* HEADER */
+        /* HEADER BAR */
         .main-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px 24px; border-radius: 12px; border: 1px solid #e2e8f0; }
         .main-header h1 { font-size: 22px; font-weight: 800; color: var(--primary); }
         .main-header p { font-size: 13px; color: #64748b; }
         .btn-toggle { background: var(--primary); color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
 
-        /* BLOK FORM UTAMA */
+        /* BOX FORM */
         #form-master-wrapper { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        
-        /* PENGELOMPOKAN SUB DATA (SECTIONS) */
         .form-section { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
-        .section-title { font-size: 14px; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 16px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
+        .section-title { font-size: 14px; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 16px; letter-spacing: 0.5px; }
         
-        /* GRID INPUT (DIPAKSA 3 KOLOM SEIMBANG) */
+        /* GRID STRUKTUR (3 KOLOM SEIMBANG) */
         .grid-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 
-        /* INPUT DAN LABEL */
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-group label { font-size: 12px; font-weight: 700; color: #475569; }
         .form-group input, .form-group select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background-color: #f8fafc; color: var(--text); outline: none; width: 100%; }
         .form-group input:focus, .form-group select:focus { border-color: var(--primary); background-color: white; box-shadow: 0 0 0 3px rgba(30,64,175,0.1); }
         .form-group input[readonly] { background-color: #e2e8f0; color: #475569; cursor: not-allowed; }
 
-        /* FOOTER / ACTION FORM */
         .form-footer-box { text-align: right; margin-top: 10px; }
         .btn-save { background: #16a34a; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; }
-        .btn-save:hover { background: #15803d; }
         .btn-close { background: #64748b; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; margin-right: 8px; }
 
         /* TABEL DATA */
@@ -66,7 +61,7 @@
         tr:hover { background-color: #f8fafc; }
         .btn-row { padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 4px; color: white; }
 
-        /* PANEL DETAIL (MUNCUL DI BAWAH TABEL) */
+        /* INLINE DETAIL PANEL */
         #detail-panel { display: none; background: #f8fafc; border: 2px solid var(--primary); border-radius: 12px; padding: 24px; }
         #detail-panel.active { display: block; }
         .detail-grid-view { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px; }
@@ -74,7 +69,7 @@
         .detail-card-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
         .detail-card-value { font-size: 14px; font-weight: 600; color: #1e293b; margin-top: 2px; }
 
-        /* BREAKPOINT HP & TABLET UNTUK LAYOUT YANG ADAPTIF */
+        /* RESPONSIF LAYAR HP */
         @media (max-width: 900px) {
             .grid-inputs { grid-template-columns: repeat(2, 1fr); }
             .detail-grid-view { grid-template-columns: repeat(2, 1fr); }
@@ -119,7 +114,37 @@
                 <div class="section-title">💼 Data Pekerjaan</div>
                 <div class="grid-inputs">
                     <div class="form-group"><label>NIP</label><input type="number" id="nip"></div>
-                    <div class="form-group"><label>Status Kepegawaian</label><select id="status"><option>PNS</option><option>PPPK</option><option>Kontrak</option><option>Tetap RS</option></select></div>
+                    <div class="form-group">
+                        <label>Status Kepegawaian</label>
+                        <select id="status">
+                            <option>Aktif</option>
+                            <option>Mutasi</option>
+                            <option>Pensiun</option>
+                            <option>Resign</option>
+                            <option>Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Kelompok Pegawai</label>
+                        <select id="kelompok_pegawai">
+                            <option>ASN</option>
+                            <option>APBD</option>
+                            <option>BLUD</option>
+                            <option>KONSULTAN</option>
+                            <option>MAGANG</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Kelompok Jabatan</label>
+                        <select id="kelompok_jabatan">
+                            <option>Management</option>
+                            <option>Tenaga Medis</option>
+                            <option>Tenaga Kesehatan</option>
+                            <option>Tenaga Penunjang Medis</option>
+                            <option>Tenaga Administrasi</option>
+                            <option>Tenaga Non Administrasi</option>
+                        </select>
+                    </div>
                     <div class="form-group"><label>Jabatan</label><input type="text" id="jabatan"></div>
                     <div class="form-group"><label>Golongan</label><input type="text" id="gol"></div>
                     <div class="form-group"><label>Ruangan</label><input type="text" id="ruangan"></div>
@@ -178,9 +203,9 @@
                         <th>NIK</th>
                         <th>NAMA PEGAWAI</th>
                         <th>STATUS</th>
+                        <th>KELOMPOK</th>
                         <th>JABATAN</th>
                         <th>MASUK RS</th>
-                        <th>PENDIDIKAN</th>
                         <th>RUANGAN</th>
                         <th style="text-align: center;">AKSI UTAMA</th>
                     </tr>
