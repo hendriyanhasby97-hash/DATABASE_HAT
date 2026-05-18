@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Statistik Pegawai</title>
+    <title>Dashboard Statistik Pegawai - Publik</title>
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
     <style>
         /* CSS INTERNAL MURNI - DIJAMIN RAPI & TERSTRUKTUR */
         :root {
@@ -63,14 +66,14 @@
     <div class="main-header">
         <div>
             <h1>Dashboard Analitik & Rekapitulasi Pegawai</h1>
-            <p>Data statistik real-time berdasarkan database internal aktif</p>
+            <p id="status-text">Menghubungkan ke database terpusat Cloud Supabase...</p>
         </div>
-        <a href="index.html" class="btn-nav">📂 Kelola Data Pegawai (CRUD)</a>
+        <a href="login.html" class="btn-nav">🔐 Masuk ke Sistem (CRUD)</a>
     </div>
 
     <div class="metric-card">
         <div class="metric-label">Jumlah Pegawai Aktif</div>
-        <div class="metric-value" id="total-aktif">0</div>
+        <div class="metric-value" id="total-aktif">0 Orang</div>
         <div class="metric-sub">● Berstatus Aktif Bekerja</div>
     </div>
 
@@ -86,7 +89,8 @@
                         <th style="width: 120px;">Persentase</th>
                     </tr>
                 </thead>
-                <tbody id="rekap-kelompok"></tbody>
+                <tbody id="rekap-kelompok">
+                    </tbody>
             </table>
         </div>
 
@@ -100,7 +104,8 @@
                         <th style="width: 120px;">Persentase</th>
                     </tr>
                 </thead>
-                <tbody id="rekap-jabatan"></tbody>
+                <tbody id="rekap-jabatan">
+                    </tbody>
             </table>
         </div>
 
@@ -114,7 +119,8 @@
                         <th style="width: 120px;">Persentase</th>
                     </tr>
                 </thead>
-                <tbody id="rekap-gender"></tbody>
+                <tbody id="rekap-gender">
+                    </tbody>
             </table>
         </div>
 
@@ -128,7 +134,8 @@
                         <th style="width: 120px;">Persentase</th>
                     </tr>
                 </thead>
-                <tbody id="rekap-agama"></tbody>
+                <tbody id="rekap-agama">
+                    </tbody>
             </table>
         </div>
 
@@ -136,33 +143,57 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const dbPegawai = JSON.parse(localStorage.getItem('pegawai_storage_db')) || [];
-        
-        const pegawaiAktif = dbPegawai.filter(p => p.status === 'Aktif');
-        document.getElementById('total-aktif').textContent = pegawaiAktif.length + " Orang";
+    // ⚠️ KUNCI KREDENSIAL UTAMA SUPABASE ANDA
+    const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC";
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const totalSemua = dbPegawai.length;
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            // Ambil data live seluruh pegawai langsung dari database Supabase
+            const { data: dbPegawai, error } = await supabaseClient.from('pegawai').select('*');
+            if (error) throw error;
 
-        const listKelompok = ['ASN', 'APBD', 'BLUD', 'KONSULTAN', 'MAGANG'];
-        const listJabatan = ['Management', 'Tenaga Medis', 'Tenaga Kesehatan', 'Tenaga Penunjang Medis', 'Tenaga Administrasi', 'Tenaga Non Administrasi'];
-        const listGender = ['Laki-laki', 'Perempuan'];
-        const listAgama = ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha'];
+            document.getElementById('status-text').textContent = "Data statistik real-time berdasarkan database cloud aktif";
 
-        hitungDanRender(dbPegawai, 'kelompok_pegawai', listKelompok, 'rekap-kelompok', totalSemua);
-        hitungDanRender(dbPegawai, 'kelompok_jabatan', listJabatan, 'rekap-jabatan', totalSemua);
-        hitungDanRender(dbPegawai, 'jenis_kelamin', listGender, 'rekap-gender', totalSemua);
-        hitungDanRender(dbPegawai, 'agama', listAgama, 'rekap-agama', totalSemua);
+            // 1. Hitung Pegawai Aktif (Filter status == 'Aktif')
+            const pegawaiAktif = dbPegawai.filter(p => p.status && p.status.trim().toLowerCase() === 'aktif');
+            document.getElementById('total-aktif').textContent = pegawaiAktif.length + " Orang";
+
+            const totalSemua = dbPegawai.length;
+
+            // Daftar kategori master data
+            const listKelompok = ['ASN', 'APBD', 'BLUD', 'KONSULTAN', 'MAGANG'];
+            const listJabatan = ['Management', 'Tenaga Medis', 'Tenaga Kesehatan', 'Tenaga Penunjang Medis', 'Tenaga Administrasi', 'Tenaga Non Administrasi'];
+            const listGender = ['Laki-laki', 'Perempuan'];
+            const listAgama = ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha'];
+
+            // Jalankan kalkulasi perhitungan & pasang ke tabel masing-masing
+            hitungDanRender(dbPegawai, 'kelompok_pegawai', listKelompok, 'rekap-kelompok', totalSemua);
+            hitungDanRender(dbPegawai, 'kelompok_jabatan', listJabatan, 'rekap-jabatan', totalSemua);
+            hitungDanRender(dbPegawai, 'jenis_kelamin', listGender, 'rekap-gender', totalSemua);
+            hitungDanRender(dbPegawai, 'agama', listAgama, 'rekap-agama', totalSemua);
+
+        } catch (err) {
+            console.error(err);
+            document.getElementById('status-text').textContent = "⚠️ Gagal memuat data statistik dari database cloud Supabase.";
+        }
     });
 
+    // Fungsi Otomatis Hitung Distribusi Frekuensi Data
     function hitungDanRender(database, propertiKey, daftarKategori, idTargetTbody, totalSemua) {
         const tbody = document.getElementById(idTargetTbody);
         tbody.innerHTML = '';
+
         let akumulasiJumlah = 0;
 
         daftarKategori.forEach(kategori => {
-            const jumlah = database.filter(p => p[propertiKey] && p[propertiKey].trim().toLowerCase() === kategori.toLowerCase()).length;
+            // Hitung jumlah kecocokan string field data
+            const jumlah = database.filter(p => p[propertiKey] && p[propertiKey].toString().trim().toLowerCase() === kategori.toLowerCase()).length;
             akumulasiJumlah += jumlah;
+
+            // Hitung Persentase aman dari pembagian angka 0
             const persentase = totalSemua > 0 ? ((jumlah / totalSemua) * 100).toFixed(1) : 0;
 
             const tr = document.createElement('tr');
@@ -171,45 +202,4 @@
                 <td class="text-right font-bold">${jumlah}</td>
                 <td>
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="width:35px; font-size:12px; color:#475569;">${persentase}%</span>
-                        <div class="progress-container" style="flex:1;">
-                            <div class="progress-bar" style="width: ${persentase}%;"></div>
-                        </div>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        const dataLainnya = totalSemua - akumulasiJumlah;
-        if (dataLainnya > 0) {
-            const pctLainnya = totalSemua > 0 ? ((dataLainnya / totalSemua) * 100).toFixed(1) : 0;
-            const trLain = document.createElement('tr');
-            trLain.innerHTML = `
-                <td style="color:#94a3b8; font-style:italic;">Belum Diisi / Lainnya</td>
-                <td class="text-right font-bold" style="color:#94a3b8;">${dataLainnya}</td>
-                <td>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="width:35px; font-size:12px; color:#94a3b8;">${pctLainnya}%</span>
-                        <div class="progress-container" style="flex:1;">
-                            <div class="progress-bar" style="width: ${pctLainnya}%; background-color:#cbd5e1;"></div>
-                        </div>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(trLain);
-        }
-
-        const trTotal = document.createElement('tr');
-        trTotal.style.backgroundColor = '#f8fafc';
-        trTotal.style.fontWeight = '700';
-        trTotal.innerHTML = `
-            <td class="font-bold" style="border-top: 2px solid #cbd5e1;">TOTAL KESELURUHAN</td>
-            <td class="text-right font-bold" style="border-top: 2px solid #cbd5e1; color: var(--primary);">${totalSemua}</td>
-            <td class="font-bold" style="border-top: 2px solid #cbd5e1; color: var(--primary);">100%</td>
-        `;
-        tbody.appendChild(trTotal);
-    }
-</script>
-</body>
-</html>
+                        <span style="width:35px; font-size:12px; color
