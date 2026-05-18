@@ -11,7 +11,7 @@
         }
     </script>
     
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
@@ -44,7 +44,7 @@
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-group label { font-size: 12px; font-weight: 700; color: #475569; }
         .form-group input, .form-group select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background-color: #f8fafc; color: var(--text); outline: none; width: 100%; }
-        .form-group input:focus, .form-group select:focus { border-color: var(--primary); background-color: white; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary); background-color: white; box-shadow: 0 0 0 3px rgba(30,64,175,0.1); }
         .form-group input[readonly] { background-color: #e2e8f0; color: #475569; cursor: not-allowed; }
 
         .form-footer-box { text-align: right; margin-top: 10px; }
@@ -87,6 +87,7 @@
             .grid-inputs { grid-template-columns: 1fr; }
             .detail-grid-view { grid-template-columns: 1fr; }
             .main-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .pagination-container { flex-direction: column; gap: 12px; text-align: center; }
         }
         .hide-element { display: none !important; }
     </style>
