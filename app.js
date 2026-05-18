@@ -10,6 +10,11 @@ const fields = [
 let dbPegawai = JSON.parse(localStorage.getItem('pegawai_storage_db')) || [];
 let statusEdit = false;
 
+// KONTROL PAGINATION (Hanya Tampil 25 Data per halaman)
+let currentPage = 1;
+const rowsPerPage = 25;
+let dataFilterAktif = [...dbPegawai]; // Cadangan array untuk pencarian
+
 // DOM Elemen Selector
 const wrapperForm = document.getElementById('form-master-wrapper');
 const btnToggle = document.getElementById('btn-toggle-form');
@@ -26,10 +31,15 @@ const btnPdf = document.getElementById('btn-pdf');
 const btnImportExcel = document.getElementById('btn-import-excel');
 const inputFileExcel = document.getElementById('input-file-excel');
 
+// DOM Pagination Selector
+const btnPrev = document.getElementById('btn-page-prev');
+const btnNext = document.getElementById('btn-page-next');
+const pagInfoText = document.getElementById('pagination-text-info');
+
 // Jalankan sistem utama saat halaman siap
 document.addEventListener('DOMContentLoaded', () => {
-    renderTabel();
-
+    refreshDataState();
+    
     if (btnToggle) btnToggle.onclick = toggleFormAksi;
     if (btnTutupForm) btnTutupForm.onclick = toggleFormAksi;
     if (btnTutupDetail) btnTutupDetail.onclick = tutupPanelDetail;
@@ -39,7 +49,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnPdf) btnPdf.onclick = unduhPDF;
     if (mainForm) mainForm.onsubmit = simpanFormPegawai;
     if (btnImportExcel) btnImportExcel.onclick = jalankanProsesImportExcel;
+
+    // Aksi Navigasi Tombol Pagination
+    if (btnPrev) btnPrev.onclick = () => { if(currentPage > 1) { currentPage--; renderTabelDenganHalaman(); } };
+    if (btnNext) btnNext.onclick = () => { const maxPage = Math.ceil(dataFilterAktif.length / rowsPerPage); if(currentPage < maxPage) { currentPage++; renderTabelDenganHalaman(); } };
 });
+
+// Update data state saat ada perubahan isi data
+function refreshDataState() {
+    dataFilterAktif = [...dbPegawai];
+    currentPage = 1;
+    renderTabelDenganHalaman();
+}
 
 // Kontrol Buka/Tutup Form Input
 function toggleFormAksi() {
@@ -73,19 +94,35 @@ function simpanFormPegawai(e) {
     }
 
     simpanDatabase();
-    renderTabel();
+    refreshDataState();
     toggleFormAksi();
 }
 
-// Render data array ke tabel ringkas di halaman depan
-function renderTabel(dataData = dbPegawai) {
+// LOGIKA UTAMA PAGINATION: Memotong array data menjadi hanya 25 baris per halaman
+function renderTabelDenganHalaman() {
     tBody.innerHTML = '';
-    if (dataData.length === 0) {
+    const totalData = dataFilterAktif.length;
+    
+    if (totalData === 0) {
         tBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#94a3b8; padding:30px;">Tidak ada database pegawai terdaftar.</td></tr>`;
+        pagInfoText.textContent = "Menampilkan 0 sampai 0 dari 0 data";
+        btnPrev.disabled = true;
+        btnNext.disabled = true;
         return;
     }
 
-    dataData.forEach(p => {
+    // Tentukan indeks batas potongan data array
+    const maxPage = Math.ceil(totalData / rowsPerPage);
+    if(currentPage > maxPage) currentPage = maxPage;
+    if(currentPage < 1) currentPage = 1;
+
+    const indexMulai = (currentPage - 1) * rowsPerPage;
+    const indexSelesai = Math.min(indexMulai + rowsPerPage, totalData);
+    
+    // Potong data hanya untuk halaman aktif saat ini
+    const dataHalamanIni = dataFilterAktif.slice(indexMulai, indexSelesai);
+
+    dataHalamanIni.forEach(p => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${p.nik || '-'}</td>
@@ -103,6 +140,11 @@ function renderTabel(dataData = dbPegawai) {
         `;
         tBody.appendChild(tr);
     });
+
+    // Update info teks keterangan baris dan status aktif tombol navigasi
+    pagInfoText.textContent = `Menampilkan ${indexMulai + 1} sampai ${indexSelesai} dari ${totalData} data pegawai`;
+    btnPrev.disabled = (currentPage === 1);
+    btnNext.disabled = (currentPage === maxPage);
 }
 
 // Tampilkan semua detail rincian data (31 parameter) di bawah tabel
@@ -151,19 +193,20 @@ function eksekusiHapusPegawai(id) {
     if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
         dbPegawai = dbPegawai.filter(x => x.id_pegawai !== id);
         simpanDatabase();
-        renderTabel();
+        refreshDataState();
         tutupPanelDetail();
     }
 }
 
 // Fungsi Pencarian Filter nama / NIK
 function jalankanPencarian() {
-    const kataKunci = inputCari.value.toLowerCase();
-    const hasilFilter = dbPegawai.filter(p => 
+    const kataKunci = inputCari.value.toLowerCase().trim();
+    dataFilterAktif = dbPegawai.filter(p => 
         (p.nama && p.nama.toLowerCase().includes(kataKunci)) || 
         (p.nik && p.nik.includes(kataKunci))
     );
-    renderTabel(hasilFilter);
+    currentPage = 1;
+    renderTabelDenganHalaman();
 }
 
 // Auto Hitung Masa Kerja
@@ -273,21 +316,20 @@ function jalankanProsesImportExcel() {
                 dataBaru.id_pegawai = 'ID-' + Date.now() + Math.floor(Math.random() * 100);
             }
 
-            // Aturan Minimal: Wajib punya NIK dan Nama agar valid masuk database
             if (dataBaru.nik && dataBaru.nama) {
                 const indexDuplikat = dbPegawai.findIndex(x => x.nik === dataBaru.nik);
                 if (indexDuplikat !== -1) {
-                    dbPegawai[indexDuplikat] = dataBaru; // Timpa data lama jika NIK sama
+                    dbPegawai[indexDuplikat] = dataBaru;
                 } else {
-                    dbPegawai.push(dataBaru); // Tambah baru jika NIK belum ada
+                    dbPegawai.push(dataBaru);
                 }
                 totalBarisSukses++;
             }
         });
 
         simpanDatabase();
-        renderTabel();
-        inputFileExcel.value = ''; // bersihkan input file
+        refreshDataState();
+        inputFileExcel.value = '';
         alert(`Sukses memproses file Excel!\nSebanyak ${totalBarisSukses} data pegawai berhasil dimasukkan/diperbarui.`);
     };
     reader.readAsArrayBuffer(file);
