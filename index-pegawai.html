@@ -79,7 +79,7 @@
     </div>
 
     <div class="notif-bar">
-        💡 Anda dapat memperbarui data pribadi, riwayat kontak, dan domisili secara mandiri. Data kepegawaian dikunci oleh Admin.
+        💡 Anda dapat memperbarui hampir semua data secara mandiri. Kolom dengan tanda gembok (🔒) dikunci oleh sistem.
     </div>
 
     <form id="form-drh-karyawan">
@@ -88,13 +88,23 @@
         <div class="drh-body">
             
             <div class="drh-section">
-                <div class="section-title">🔒 I. Identitas Kepegawaian Utama (Terkunci)</div>
+                <div class="section-title">👤 I. Identitas & Status Kepegawaian</div>
                 <div class="grid-inputs">
-                    <div class="form-group"><label>NIK (Nomor Induk Kependudukan)</label><input type="text" id="nik" readonly></div>
-                    <div class="form-group"><label>NIP / Nomor Pegawai</label><input type="text" id="nip" readonly></div>
-                    <div class="form-group class-full"><label>Nama Lengkap (Sesuai SK)</label><input type="text" id="nama" readonly></div>
-                    <div class="form-group"><label>Status Dinas</label><input type="text" id="status" readonly></div>
-                    <div class="form-group"><label>Kelompok Pegawai</label><input type="text" id="kelompok_pegawai" readonly></div>
+                    <div class="form-group"><label>🔒 NIK (Nomor Induk Kependudukan)</label><input type="text" id="nik" readonly></div>
+                    <div class="form-group"><label>NIP / Nomor Pegawai</label><input type="text" id="nip"></div>
+                    <div class="form-group full-width"><label>Nama Lengkap (Sesuai SK)</label><input type="text" id="nama"></div>
+                    <div class="form-group">
+                        <label>Status Dinas</label>
+                        <select id="status">
+                            <option>Aktif</option><option>Mutasi</option><option>Pensiun</option><option>Resign</option><option>Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Kelompok Pegawai</label>
+                        <select id="kelompok_pegawai">
+                            <option>ASN</option><option>APBD</option><option>BLUD</option><option>KONSULTAN</option><option>MAGANG</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -126,24 +136,30 @@
             </div>
 
             <div class="drh-section">
-                <div class="section-title">🔒 III. Kedudukan Jabatan & Struktur (Terkunci)</div>
+                <div class="section-title">💼 III. Kedudukan Jabatan & Struktur Masa Kerja</div>
                 <div class="grid-inputs">
-                    <div class="form-group"><label>Kelompok Jabatan</label><input type="text" id="kelompok_jabatan" readonly></div>
-                    <div class="form-group"><label>Nama Jabatan Struktural/Fungsional</label><input type="text" id="jabatan" readonly></div>
-                    <div class="form-group"><label>Golongan Ruang</label><input type="text" id="gol" readonly></div>
-                    <div class="form-group"><label>Ruangan / Unit Kerja Tempat Dinas</label><input type="text" id="ruangan" readonly></div>
-                    <div class="form-group"><label>TMT Pangkat</label><input type="date" id="tmt_pangkat" readonly></div>
-                    <div class="form-group"><label>TMT Berkala Berikutnya</label><input type="date" id="tmt_berikutnya" readonly></div>
-                    <div class="form-group"><label>Tanggal Mulai Masuk RS</label><input type="date" id="masuk_rs" readonly></div>
-                    <div class="form-group"><label>Masa Kerja di Instansi RS</label><input type="text" id="masa_kerja_rs" readonly></div>
-                    <div class="form-group"><label>BUP Usia Pensiun</label><input type="text" id="rentang_bup" readonly></div>
-                    <div class="form-group"><label>TMT Pensiun</label><input type="date" id="tmt_pensiun" readonly></div>
-                    <div class="form-group"><label>TMT CPNS</label><input type="date" id="tmt_cpns" readonly></div>
+                    <div class="form-group">
+                        <label>Kelompok Jabatan</label>
+                        <select id="kelompok_jabatan">
+                            <option>Management</option><option>Tenaga Medis</option><option>Tenaga Kesehatan</option><option>Tenaga Penunjang Medis</option><option>Tenaga Administrasi</option><option>Tenaga Non Administrasi</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Nama Jabatan Struktural/Fungsional</label><input type="text" id="jabatan"></div>
+                    <div class="form-group"><label>Golongan Ruang</label><input type="text" id="gol"></div>
+                    <div class="form-group"><label>Ruangan / Unit Kerja Tempat Dinas</label><input type="text" id="ruangan"></div>
+                    <div class="form-group"><label>TMT Pangkat</label><input type="date" id="tmt_pangkat"></div>
+                    <div class="form-group"><label>TMT Berkala Berikutnya</label><input type="date" id="tmt_berikutnya"></div>
+                    <div class="form-group"><label>Tanggal Mulai Masuk RS</label><input type="date" id="masuk_rs"></div>
+                    
+                    <div class="form-group"><label>🔒 Masa Kerja di Instansi RS</label><input type="text" id="masa_kerja_rs" readonly></div>
+                    <div class="form-group"><label>🔒 BUP Usia Pensiun</label><input type="text" id="rentang_bup" readonly></div>
+                    <div class="form-group"><label>🔒 TMT Pensiun</label><input type="date" id="tmt_pensiun" readonly></div>
+                    <div class="form-group"><label>🔒 TMT CPNS</label><input type="date" id="tmt_cpns" readonly></div>
                 </div>
             </div>
 
             <div class="drh-section">
-                <div class="section-title">✏️ IV. Riwayat Pendidikan Akhir</div>
+                <div class="section-title">🎓 IV. Riwayat Pendidikan Akhir</div>
                 <div class="grid-inputs">
                     <div class="form-group">
                         <label>Jenjang Kelulusan</label>
@@ -157,7 +173,7 @@
             </div>
 
             <div class="drh-section">
-                <div class="section-title">✏️ V. Alamat Domisili Kependudukan & Kontak Aktif</div>
+                <div class="section-title">🏠 V. Alamat Domisili Kependudukan & Kontak Aktif</div>
                 <div class="grid-inputs">
                     <div class="form-group full-width"><label>Alamat Rumah Tinggal Lengkap</label><input type="text" id="alamat"></div>
                     <div class="form-group"><label>Nomor HP / WhatsApp Aktif</label><input type="tel" id="no_telp"></div>
@@ -176,7 +192,6 @@
 </div>
 
 <script>
-    // KONEKSI UTAMA SUPABASE CLOUD
     const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -194,23 +209,19 @@
     const btnSimpan = document.getElementById('btn-simpan-drh');
 
     document.addEventListener('DOMContentLoaded', async () => {
-        // Aksi Keluar Sistem
         document.getElementById('btn-logout').onclick = () => {
             sessionStorage.clear();
             window.location.href = 'login.html';
         };
 
-        // Ambil Data Khusus Pegawai yang Sedang Login
         if (userKey) {
             try {
                 const { data, error } = await supabaseClient.from('pegawai').select('*').eq('id_pegawai', userKey).single();
                 if (error) throw error;
 
                 if (data) {
-                    // Isi nama ke Sub Header
                     document.getElementById('sub-header-nama').textContent = `Berkas data elektronik milik: ${data.nama || 'User'}`;
                     
-                    // Isi data field form secara otomatis
                     dataFields.forEach(f => {
                         const inputElement = document.getElementById(f);
                         if (inputElement) {
@@ -224,7 +235,20 @@
             }
         }
         
-        // Kirim Data Hasil Perubahan
+        // Handler Hitung Masa Kerja Otomatis untuk Sisi Pegawai jika mengubah Tanggal Masuk RS
+        const inputMasukRS = document.getElementById('masuk_rs');
+        if (inputMasukRS) {
+            inputMasukRS.onchange = function() {
+                if (!this.value) return;
+                const masuk = new Date(this.value);
+                const hariIni = new Date();
+                let tahun = hariIni.getFullYear() - masuk.getFullYear();
+                let bulan = hariIni.getMonth() - masuk.getMonth();
+                if (bulan < 0) { tahun--; bulan += 12; }
+                document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan`;
+            };
+        }
+        
         formDRH.onsubmit = async (e) => {
             e.preventDefault();
             btnSimpan.disabled = true;
