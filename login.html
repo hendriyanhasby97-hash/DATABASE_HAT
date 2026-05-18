@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistem Informasi Pegawai</title>
+    <title>Login - Sistem Informasi Pegawai Terpusat</title>
     <style>
         :root {
             --primary: #1e40af;
@@ -22,7 +22,7 @@
         .form-group input { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; }
         .form-group input:focus { border-color: var(--primary); }
         .btn-login { background: var(--primary); color: white; border: none; width: 100%; padding: 12px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 8px; }
-        .btn-login:hover { background: var(--primary-hover); }
+        .btn-login:disabled { background: #94a3b8; cursor: not-allowed; }
         .info-box { background: #f8fafc; border: 1px dashed var(--border); padding: 12px; border-radius: 6px; margin-top: 16px; font-size: 12px; color: #475569; }
     </style>
 </head>
@@ -30,7 +30,7 @@
 
 <div class="login-card">
     <div class="login-title">Sistem Informasi Pegawai</div>
-    <div class="login-sub">Silakan masuk ke akun Anda</div>
+    <div class="login-sub">Verifikasi Database Cloud Terpusat</div>
     
     <form id="login-form">
         <div class="form-group">
@@ -41,20 +41,28 @@
             <label>Password</label>
             <input type="password" id="password" placeholder="Masukkan password" required>
         </div>
-        <button type="submit" class="btn-login">Masuk ke Sistem</button>
+        <button type="submit" id="submit-btn" class="btn-login">Masuk ke Sistem</button>
     </form>
 
     <div class="info-box">
-        <strong>Petunjuk Akses:</strong><br>
+        <strong>Akses Sistem Live:</strong><br>
+        • Admin: User <code style="color:red">admin</code> | Pass <code style="color:red">admin</code><br>
         • Pegawai: Masukkan <code style="color:blue">NIK Anda</code> | Pass Default <code style="color:blue">Masuk123</code>
     </div>
 </div>
 
 <script>
-    document.getElementById('login-form').onsubmit = function(e) {
+    // ⚠️ GANTI LINK DI BAWAH INI DENGAN LINK WEB APP USER/EXEC ANDA SENDIRI DARI GOOGLE APPS SCRIPT
+    const API_URL = "https://script.google.com/macros/s/AKfycbzPdL7Ehg23GzcR2nwhCeiQnGrM2E9mPJJEK39032dS_DUc-ew7RKy78UZI1eeEXFZf/exec";
+
+    document.getElementById('login-form').onsubmit = async function(e) {
         e.preventDefault();
         const userIn = document.getElementById('username').value.trim();
         const passIn = document.getElementById('password').value;
+        const btn = document.getElementById('submit-btn');
+
+        btn.disabled = true;
+        btn.textContent = "Memverifikasi...";
 
         // 1. Cek Login Akses Admin
         if (userIn === 'admin' && passIn === 'admin') {
@@ -65,17 +73,27 @@
             return;
         }
 
-        // 2. Cek Login Akses Pegawai berdasarkan database lokal
-        const dbPegawai = JSON.parse(localStorage.getItem('pegawai_storage_db')) || [];
-        const ketemuPegawai = dbPegawai.find(p => p.nik === userIn);
+        // 2. Cek Login Akses Pegawai secara langsung ke Google Sheets (Real-time)
+        try {
+            const respon = await fetch(API_URL);
+            const dbPegawai = await respon.json();
+            
+            const ketemuPegawai = dbPegawai.find(p => p.nik === userIn);
 
-        if (ketemuPegawai && passIn === 'Masuk123') {
-            sessionStorage.setItem('role', 'pegawai');
-            sessionStorage.setItem('user_key', ketemuPegawai.id_pegawai); // simpan ID Pegawai aktif
-            alert(`Login berhasil! Selamat datang, ${ketemuPegawai.nama}`);
-            window.location.href = 'index.html';
-        } else {
-            alert('Username (NIK) tidak terdaftar, atau password Anda salah!');
+            if (ketemuPegawai && passIn === 'Masuk123') {
+                sessionStorage.setItem('role', 'pegawai');
+                sessionStorage.setItem('user_key', ketemuPegawai.id_pegawai);
+                alert(`Login Cloud Berhasil!\nSelamat datang, ${ketemuPegawai.nama}`);
+                window.location.href = 'index.html';
+            } else {
+                alert('Username (NIK) tidak ditemukan dalam Google Sheets, atau password Anda salah!');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Gagal terhubung ke Server Cloud Google Sheets. Pastikan Deployment Apps Script sudah diset ke "Anyone".');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Masuk ke Sistem";
         }
     };
 </script>
