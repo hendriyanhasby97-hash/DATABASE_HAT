@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Sistem Terpusat Supabase</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
     <style>
         :root { --primary: #1e40af; --primary-hover: #1d4ed8; --bg: #f1f5f9; --text: #0f172a; --border: #cbd5e1; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,7 +26,7 @@
 
 <div class="login-card">
     <div class="login-title">Sistem Informasi Pegawai</div>
-    <div class="login-sub font-weight: bold; color:green">Koneksi Database Instan Supabase</div>
+    <div class="login-sub" style="font-weight: bold; color:green">Koneksi Database Instan Supabase</div>
     
     <form id="login-form">
         <div class="form-group">
@@ -46,11 +48,12 @@
 </div>
 
 <script>
-    // ⚠️ ISI DENGAN KUNCI PROYEK SUPABASE ANDA SENDIRI
     const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
-    const SUPABASE_ANON_KEY = "process.env.SUPABASE_KEY";
+    // ⚠️ MASUKKAN KEY ANON PUBLIC SUPABASE ANDA DI DALAM TANDA KUTIP DI BAWAH INI
+    const SUPABASE_ANON_KEY = "MASUKKAN_ANON_PUBLIC_KEY_ANDA_DI_SINI";
     
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Inisialisasi client global menggunakan objek 'supabase' dari CDN
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     document.getElementById('login-form').onsubmit = async function(e) {
         e.preventDefault();
@@ -70,8 +73,7 @@
         }
 
         try {
-            // Tarik data NIK secara spesifik (Instan)
-            const { data, error } = await supabase.from('pegawai').select('*').eq('nik', userIn);
+            const { data, error } = await supabaseClient.from('pegawai').select('*').eq('nik', userIn);
             
             if (error) throw error;
 
@@ -86,7 +88,7 @@
             }
         } catch (error) {
             console.error(error);
-            alert('Gagal login: Periksa koneksi atau setelan tabel Supabase.');
+            alert('Gagal login: Periksa koneksi internet atau token API Supabase Anda.');
         } finally {
             btn.disabled = false;
             btn.textContent = "Masuk ke Sistem";
