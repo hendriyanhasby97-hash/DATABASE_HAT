@@ -63,6 +63,14 @@
         tr:hover { background-color: #f8fafc; }
         .btn-row { padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 4px; color: white; }
 
+        /* PAGINATION NAVIGASI BAR */
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+        .pagination-info { font-size: 13px; color: #64748b; font-weight: 600; }
+        .pagination-buttons { display: flex; gap: 6px; }
+        .btn-page { background: white; color: #334155; border: 1px solid var(--border); padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .btn-page:hover:not(:disabled) { background: #f1f5f9; color: var(--primary); border-color: var(--primary); }
+        .btn-page:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; border-color: #e2e8f0; }
+
         /* INLINE DETAIL PANEL */
         #detail-panel { display: none; background: #f8fafc; border: 2px solid var(--primary); border-radius: 12px; padding: 24px; }
         #detail-panel.active { display: block; }
@@ -82,6 +90,7 @@
             .grid-inputs { grid-template-columns: 1fr; }
             .detail-grid-view { grid-template-columns: 1fr; }
             .main-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .pagination-container { flex-direction: column; gap: 12px; text-align: center; }
         }
 
         .hide-element { display: none !important; }
@@ -226,6 +235,14 @@
                 </thead>
                 <tbody id="body-tabel-pegawai"></tbody>
             </table>
+        </div>
+
+        <div class="pagination-container">
+            <div class="pagination-info" id="pagination-text-info">Menampilkan 0 sampai 0 dari 0 data</div>
+            <div class="pagination-buttons">
+                <button class="btn-page" id="btn-page-prev">Sebelumnya</button>
+                <button class="btn-page" id="btn-page-next">Selanjutnya</button>
+            </div>
         </div>
     </div>
 
