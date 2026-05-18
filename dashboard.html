@@ -86,8 +86,7 @@
                         <th style="width: 120px;">Persentase</th>
                     </tr>
                 </thead>
-                <tbody id="rekap-kelompok">
-                    </tbody>
+                <tbody id="rekap-kelompok"></tbody>
             </table>
         </div>
 
@@ -101,8 +100,7 @@
                         <th style="width: 120px;">Persentase</th>
                     </tr>
                 </thead>
-                <tbody id="rekap-jabatan">
-                    </tbody>
+                <tbody id="rekap-jabatan"></tbody>
             </table>
         </div>
 
@@ -116,8 +114,7 @@
                         <th style="width: 120px;">Persentase</th>
                     </tr>
                 </thead>
-                <tbody id="rekap-gender">
-                    </tbody>
+                <tbody id="rekap-gender"></tbody>
             </table>
         </div>
 
@@ -131,8 +128,7 @@
                         <th style="width: 120px;">Persentase</th>
                     </tr>
                 </thead>
-                <tbody id="rekap-agama">
-                    </tbody>
+                <tbody id="rekap-agama"></tbody>
             </table>
         </div>
 
@@ -141,42 +137,32 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Mengambil database yang sama dengan index.html
         const dbPegawai = JSON.parse(localStorage.getItem('pegawai_storage_db')) || [];
         
-        // 1. Hitung Pegawai Aktif (Filter status == 'Aktif')
         const pegawaiAktif = dbPegawai.filter(p => p.status === 'Aktif');
         document.getElementById('total-aktif').textContent = pegawaiAktif.length + " Orang";
 
-        // Total data keseluruhan sebagai pembagi persentase
         const totalSemua = dbPegawai.length;
 
-        // Master list kategori sesuai struktur drop-down/input form sebelumnya
         const listKelompok = ['ASN', 'APBD', 'BLUD', 'KONSULTAN', 'MAGANG'];
         const listJabatan = ['Management', 'Tenaga Medis', 'Tenaga Kesehatan', 'Tenaga Penunjang Medis', 'Tenaga Administrasi', 'Tenaga Non Administrasi'];
         const listGender = ['Laki-laki', 'Perempuan'];
         const listAgama = ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha'];
 
-        // Jalankan kalkulasi & render tabel rekapitulasi
         hitungDanRender(dbPegawai, 'kelompok_pegawai', listKelompok, 'rekap-kelompok', totalSemua);
         hitungDanRender(dbPegawai, 'kelompok_jabatan', listJabatan, 'rekap-jabatan', totalSemua);
         hitungDanRender(dbPegawai, 'jenis_kelamin', listGender, 'rekap-gender', totalSemua);
         hitungDanRender(dbPegawai, 'agama', listAgama, 'rekap-agama', totalSemua);
     });
 
-    // Fungsi Otomatis Hitung Distribusi Frekuensi Data
     function hitungDanRender(database, propertiKey, daftarKategori, idTargetTbody, totalSemua) {
         const tbody = document.getElementById(idTargetTbody);
         tbody.innerHTML = '';
-
         let akumulasiJumlah = 0;
 
         daftarKategori.forEach(kategori => {
-            // Hitung kecocokan data (abaikan case sensitive huruf besar/kecil)
             const jumlah = database.filter(p => p[propertiKey] && p[propertiKey].trim().toLowerCase() === kategori.toLowerCase()).length;
             akumulasiJumlah += jumlah;
-
-            // Hitung Persentase aman dari pembagian dengan angka 0
             const persentase = totalSemua > 0 ? ((jumlah / totalSemua) * 100).toFixed(1) : 0;
 
             const tr = document.createElement('tr');
@@ -195,7 +181,6 @@
             tbody.appendChild(tr);
         });
 
-        // Hitung kategori di luar master list (jika ada data kosong / ketikan manual yang tidak cocok)
         const dataLainnya = totalSemua - akumulasiJumlah;
         if (dataLainnya > 0) {
             const pctLainnya = totalSemua > 0 ? ((dataLainnya / totalSemua) * 100).toFixed(1) : 0;
@@ -215,7 +200,6 @@
             tbody.appendChild(trLain);
         }
 
-        // Tambahkan Baris Total di paling bawah tabel rekap
         const trTotal = document.createElement('tr');
         trTotal.style.backgroundColor = '#f8fafc';
         trTotal.style.fontWeight = '700';
@@ -227,6 +211,5 @@
         tbody.appendChild(trTotal);
     }
 </script>
-
 </body>
 </html>
