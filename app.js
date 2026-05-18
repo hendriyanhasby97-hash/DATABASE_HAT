@@ -6,8 +6,11 @@ const fields = [
     'fakultas', 'jurusan', 'ruangan', 'no_bpjsn', 'no_bpjsket_taspen', 'npwp', 'email', 'no_telp'
 ];
 
-// ⚠️ GANTI LINK DI BAWAH INI DENGAN LINK WEB APP USER/EXEC ANDA SENDIRI DARI GOOGLE APPS SCRIPT
-const API_URL = "https://script.google.com/macros/s/AKfycbzPdL7Ehg23GzcR2nwhCeiQnGrM2E9mPJJEK39032dS_DUc-ew7RKy78UZI1eeEXFZf/exec";
+// ⚠️ ISI DENGAN KUNCI PROYEK SUPABASE ANDA SENDIRI (HARUS SAMA DENGAN DI FILE LOGIN)
+const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
+const SUPABASE_ANON_KEY = "process.env.SUPABASE_KEY";
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let dbPegawai = [];
 let statusEdit = false;
@@ -44,13 +47,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = 'login.html';
     };
 
-    document.getElementById('welcome-text').textContent = "Sinkronisasi dengan Google Sheets Cloud...";
+    if (pagInfoText) pagInfoText.textContent = "Menghubungkan ke database Supabase PostgreSQL...";
 
-    // Ambil Data dari Database Google Sheets Terpusat
     await muatDataDariCloud();
 
     if (userRole === 'admin') {
-        document.getElementById('welcome-text').textContent = "Masuk sebagai: Super Admin (Cloud Terhubung)";
+        const welcomeEl = document.getElementById('welcome-text');
+        if (welcomeEl) welcomeEl.textContent = "Super Admin (Terhubung Ke Supabase Database)";
         refreshDataState();
         
         if (btnToggle) btnToggle.onclick = toggleFormAksi;
@@ -65,10 +68,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } else if (userRole === 'pegawai') {
         const dataSaya = dbPegawai.find(x => x.id_pegawai === userKey);
-        document.getElementById('welcome-text').textContent = `Pegawai: ${dataSaya ? dataSaya.nama : 'User'} (Akses Sinkron Terbatas)`;
+        const welcomeEl = document.getElementById('welcome-text');
+        if (welcomeEl) welcomeEl.textContent = `Pegawai: ${dataSaya ? dataSaya.nama : 'User'} (Akses Sinkron Terbatas)`;
         
-        document.getElementById('area-tabel-admin').classList.add('hide-element');
-        document.getElementById('nav-dashboard').classList.add('hide-element');
+        const areaAdmin = document.getElementById('area-tabel-admin');
+        if (areaAdmin) areaAdmin.classList.add('hide-element');
         
         btnToggle.textContent = "✏️ Perbarui Data Saya";
         btnToggle.onclick = () => pemicuEditPegawai(userKey);
@@ -79,14 +83,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (mainForm) mainForm.onsubmit = simpanFormPegawai;
 });
 
-// Ambil Data Live dari Google Sheets
 async function muatDataDariCloud() {
     try {
-        const respon = await fetch(API_URL);
-        dbPegawai = await respon.json();
+        // Ambil data instan dari Supabase
+        const { data, error } = await supabaseClient.from('pegawai').select('*');
+        if (error) throw error;
+        dbPegawai = data || [];
     } catch (e) {
-        console.error("Gagal memuat database cloud:", e);
-        alert("Gagal mengunduh database terbaru dari Google Sheets.");
+        console.error("Gagal memuat database Supabase:", e);
+        dbPegawai = [];
     }
 }
 
@@ -107,59 +112,47 @@ function toggleFormAksi() {
     }
 }
 
-// SIMPAN & UPDATE KE GOOGLE SHEETS CLOUD VIA POST
 async function simpanFormPegawai(e) {
     e.preventDefault();
     const saveBtn = mainForm.querySelector('.btn-save');
-    const textAwal = saveBtn.textContent;
-    
     saveBtn.disabled = true;
-    saveBtn.textContent = "⏳ Menyimpan ke Cloud Sheets...";
+    saveBtn.textContent = "⏳ Menyimpan Ke Supabase...";
 
-    const data = {};
+    const dataObj = {};
     fields.forEach(f => {
         const el = document.getElementById(f);
-        data[f] = el ? el.value.trim() : '';
+        dataObj[f] = el ? el.value.trim() : '';
     });
 
-    if (!statusEdit) {
-        data.id_pegawai = 'ID-' + Date.now();
-    }
-
-    // Siapkan kemasan payload data untuk dikirim ke Google Apps Script
-    const payload = {
-        action: 'save',
-        data: data
-    };
-
     try {
-        const respon = await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        const hasil = await respon.json();
-        
-        if (hasil.status === 'success') {
-            alert(hasil.message);
-            await muatDataDariCloud(); // Unduh ulang data terbaru
-            
-            if (userRole === 'admin') {
-                refreshDataState();
-                toggleFormAksi();
-            } else {
-                wrapperForm.classList.add('hide-element');
-                btnToggle.textContent = "✏️ Perbarui Data Saya";
-                statusEdit = false;
-            }
+        if (statusEdit) {
+            // Perbarui Data (Update)
+            const { error } = await supabaseClient.from('pegawai').update(dataObj).eq('id_pegawai', dataObj.id_pegawai);
+            if (error) throw error;
+            alert('Data pegawai berhasil diperbarui!');
         } else {
-            alert("Gagal menyimpan: " + hasil.message);
+            // Tambah Baru (Create)
+            dataObj.id_pegawai = 'ID-' + Date.now();
+            const { error } = await supabaseClient.from('pegawai').insert([dataObj]);
+            if (error) throw error;
+            alert('Data pegawai baru sukses ditambahkan!');
+        }
+
+        await muatDataDariCloud();
+        if (userRole === 'admin') {
+            refreshDataState();
+            toggleFormAksi();
+        } else {
+            wrapperForm.classList.add('hide-element');
+            btnToggle.textContent = "✏️ Perbarui Data Saya";
+            statusEdit = false;
         }
     } catch (err) {
         console.error(err);
-        alert("Terjadi kendala koneksi internet ke sistem cloud.");
+        alert("Eror saat menyimpan data ke database cloud Supabase.");
     } finally {
         saveBtn.disabled = false;
-        saveBtn.textContent = textAwal;
+        saveBtn.textContent = "💾 Simpan Data";
     }
 }
 
@@ -169,9 +162,7 @@ function renderTabelDenganHalaman() {
     
     if (totalData === 0) {
         tBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#94a3b8; padding:30px;">Tidak ada database pegawai terdaftar.</td></tr>`;
-        pagInfoText.textContent = "Menampilkan 0 data";
-        btnPrev.disabled = true;
-        btnNext.disabled = true;
+        if (pagInfoText) pagInfoText.textContent = "Menampilkan 0 data";
         return;
     }
 
@@ -200,9 +191,9 @@ function renderTabelDenganHalaman() {
         tBody.appendChild(tr);
     });
 
-    pagInfoText.textContent = `Menampilkan ${indexMulai + 1}-${indexSelesai} dari ${totalData} pegawai`;
-    btnPrev.disabled = (currentPage === 1);
-    btnNext.disabled = (currentPage === maxPage);
+    if (pagInfoText) pagInfoText.textContent = `Menampilkan ${indexMulai + 1}-${indexSelesai} dari ${totalData} pegawai`;
+    if (btnPrev) btnPrev.disabled = (currentPage === 1);
+    if (btnNext) btnNext.disabled = (currentPage === maxPage);
 }
 
 function tampilkanDetailPanel(id) {
@@ -233,25 +224,17 @@ function pemicuEditPegawai(id) {
     window.scrollTo({ top: wrapperForm.offsetTop - 20, behavior: 'smooth' });
 }
 
-// HAPUS DATA REALTIME DARI GOOGLE SHEETS
 async function eksekusiHapusPegawai(id) {
-    if (confirm('Apakah Anda yakin ingin menghapus data ini dari cloud?')) {
+    if (confirm('Apakah Anda yakin ingin menghapus data ini dari cloud Supabase?')) {
         try {
-            const respon = await fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'delete', id_pegawai: id })
-            });
-            const hasil = await respon.json();
-            if(hasil.status === 'success') {
-                alert(hasil.message);
-                await muatDataDariCloud();
-                refreshDataState();
-                tutupPanelDetail();
-            } else {
-                alert("Gagal menghapus: " + hasil.message);
-            }
+            const { error } = await supabaseClient.from('pegawai').delete().eq('id_pegawai', id);
+            if (error) throw error;
+            alert("Data sukses terhapus!");
+            await muatDataDariCloud();
+            refreshDataState();
+            tutupPanelDetail();
         } catch (e) {
-            alert("Gagal menghapus data akibat gangguan jaringan.");
+            alert("Gagal menghapus data.");
         }
     }
 }
@@ -299,41 +282,45 @@ function unduhPDF() {
     doc.save("Laporan_Ringkas_Pegawai.pdf");
 }
 
-async function jalankanProsesImportExcel() {
+// Unggah Excel Massal Cepat via Supabase Upsert
+function jalankanProsesImportExcel() {
     const file = inputFileExcel.files[0];
     if (!file) return alert('Silakan pilih berkas Excel!');
     const reader = new FileReader();
     reader.onload = async function(e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const dataBytes = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(dataBytes, { type: 'array' });
         const excelRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false });
         
-        alert(`Sedang memproses ${excelRows.length} data ke cloud. Mohon tunggu notifikasi sukses...`);
-        
-        let totalBarisSukses = 0;
-        for(let row of excelRows) {
+        let batchData = [];
+        excelRows.forEach(row => {
             const dataBaru = {};
             fields.forEach(f => {
                 const alt = f.replace(/_/g, ' ').toLowerCase();
                 const key = Object.keys(row).find(k => k.toLowerCase().trim() === f.toLowerCase() || k.toLowerCase().trim() === alt);
                 dataBaru[f] = key ? row[key].toString().trim() : '';
             });
-            
-            if (!dataBaru.id_pegawai) dataBaru.id_pegawai = 'ID-' + Date.now() + Math.floor(Math.random() * 100);
-            
+            if (!dataBaru.id_pegawai || dataBaru.id_pegawai === '') {
+                dataBaru.id_pegawai = 'ID-' + Date.now() + Math.floor(Math.random() * 100);
+            }
             if (dataBaru.nik && dataBaru.nama) {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'save', data: dataBaru })
-                });
-                totalBarisSukses++;
+                batchData.push(dataBaru);
+            }
+        });
+
+        if (batchData.length > 0) {
+            // Gunakan metode upsert milik Supabase untuk pemrosesan super cepat sekaligus
+            const { error } = await supabaseClient.from('pegawai').upsert(batchData, { onConflict: 'nik' });
+            if (error) {
+                console.error(error);
+                alert("Gagal mengunggah data massal.");
+            } else {
+                alert(`Sukses! ${batchData.length} data berhasil tersinkronisasi ke Supabase Cloud.`);
             }
         }
-        
         await muatDataDariCloud();
         refreshDataState();
         inputFileExcel.value = '';
-        alert(`Sukses sinkronisasi Excel!\nSebanyak ${totalBarisSukses} data dimasukkan/diperbarui di Google Sheets.`);
     };
     reader.readAsArrayBuffer(file);
 }
