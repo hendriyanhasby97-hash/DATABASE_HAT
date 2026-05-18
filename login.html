@@ -42,6 +42,7 @@
 
     <div class="info-box">
         <strong>Akses Sistem Live:</strong><br>
+        • Admin: User <code style="color:red">admin</code> | Pass <code style="color:red">admin</code><br>
         • Pegawai: Masukkan <code style="color:blue">NIK Anda</code> | Pass Default <code style="color:blue">Masuk123</code>
     </div>
 </div>
@@ -62,14 +63,16 @@
         btn.disabled = true;
         btn.textContent = "Memverifikasi...";
 
+        // 🛡️ Skenario 1: Login Akses Admin
         if (userIn === 'admin' && passIn === 'admin') {
             sessionStorage.setItem('role', 'admin');
             sessionStorage.setItem('user_key', 'admin');
             alert('Login berhasil sebagai Admin!');
-            window.location.href = 'index.html';
+            window.location.href = 'index.html'; // Admin dilempar ke tabel control
             return;
         }
 
+        // 🛡️ Skenario 2: Login Akses Pegawai Massal via Supabase
         try {
             const { data, error } = await supabaseClient.from('pegawai').select('*').eq('nik', userIn);
             
@@ -80,9 +83,9 @@
                 sessionStorage.setItem('role', 'pegawai');
                 sessionStorage.setItem('user_key', ketemuPegawai.id_pegawai);
                 alert(`Login Berhasil!\nSelamat datang, ${ketemuPegawai.nama}`);
-                window.location.href = 'index.html';
+                window.location.href = 'index-pegawai.html'; // Pegawai otomatis dilempar ke halaman DRH khusus
             } else {
-                alert('Username (NIK) tidak ditemukan atau password salah!');
+                alert('Username (NIK) tidak ditemukan dalam cloud atau password salah!');
             }
         } catch (error) {
             console.error(error);
