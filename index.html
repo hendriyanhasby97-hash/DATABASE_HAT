@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Manajemen Pegawai</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        /* CSS INTERNAL UTAMA - MENJAMIN FORM RAPI 3 KOLOM DAN TIDAK PECAH */
+        :root {
+            --primary: #1e40af;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --text: #0f172a;
+            --border: #cbd5e1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
+        .container { max-width: 1300px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* HEADER */
+        .main-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px 24px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .main-header h1 { font-size: 22px; font-weight: 800; color: var(--primary); }
+        .main-header p { font-size: 13px; color: #64748b; }
+        .btn-toggle { background: var(--primary); color: white; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+
+        /* BLOK FORM UTAMA */
+        #form-master-wrapper { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        
+        /* PENGELOMPOKAN SUB DATA (SECTIONS) */
+        .form-section { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+        .section-title { font-size: 14px; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 16px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
+        
+        /* GRID INPUT (DIPAKSA 3 KOLOM SEIMBANG) */
+        .grid-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+        /* INPUT DAN LABEL */
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 12px; font-weight: 700; color: #475569; }
+        .form-group input, .form-group select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background-color: #f8fafc; color: var(--text); outline: none; width: 100%; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--primary); background-color: white; box-shadow: 0 0 0 3px rgba(30,64,175,0.1); }
+        .form-group input[readonly] { background-color: #e2e8f0; color: #475569; cursor: not-allowed; }
+
+        /* FOOTER / ACTION FORM */
+        .form-footer-box { text-align: right; margin-top: 10px; }
+        .btn-save { background: #16a34a; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; }
+        .btn-save:hover { background: #15803d; }
+        .btn-close { background: #64748b; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; margin-right: 8px; }
+
+        /* TABEL DATA */
+        .card { background: white; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .action-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+        .search-input { padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; width: 300px; }
+        .btn-xls { background: #15803d; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; margin-right: 5px; }
+        .btn-pdf { background: #b91c1c; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        
+        .table-responsive { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; background: white; font-size: 14px; }
+        th { background: #1e293b; color: white; padding: 14px; font-weight: 600; font-size: 11px; text-transform: uppercase; }
+        td { padding: 14px; border-bottom: 1px solid #e2e8f0; color: #334155; }
+        tr:hover { background-color: #f8fafc; }
+        .btn-row { padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 4px; color: white; }
+
+        /* PANEL DETAIL (MUNCUL DI BAWAH TABEL) */
+        #detail-panel { display: none; background: #f8fafc; border: 2px solid var(--primary); border-radius: 12px; padding: 24px; }
+        #detail-panel.active { display: block; }
+        .detail-grid-view { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px; }
+        .detail-card-item { background: white; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; }
+        .detail-card-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+        .detail-card-value { font-size: 14px; font-weight: 600; color: #1e293b; margin-top: 2px; }
+
+        /* BREAKPOINT HP & TABLET UNTUK LAYOUT YANG ADAPTIF */
+        @media (max-width: 900px) {
+            .grid-inputs { grid-template-columns: repeat(2, 1fr); }
+            .detail-grid-view { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .grid-inputs { grid-template-columns: 1fr; }
+            .detail-grid-view { grid-template-columns: 1fr; }
+            .main-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+
+        .hide-element { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="main-header">
+        <div>
+            <h1>Sistem Data Pegawai Instansi</h1>
+            <p>Manajemen Database Karyawan & Administrasi Internal</p>
+        </div>
+        <button class="btn-toggle" id="btn-toggle-form">📝 Buka Form Input</button>
+    </div>
+
+    <div id="form-master-wrapper" class="hide-element">
+        <form id="main-crud-form">
+            <input type="hidden" id="id_pegawai">
+
+            <div class="form-section">
+                <div class="section-title">👤 Data Pribadi</div>
+                <div class="grid-inputs">
+                    <div class="form-group"><label>NIK</label><input type="number" id="nik" required></div>
+                    <div class="form-group"><label>Nama Lengkap</label><input type="text" id="nama" required></div>
+                    <div class="form-group"><label>Jenis Kelamin</label><select id="jenis_kelamin"><option>Laki-laki</option><option>Perempuan</option></select></div>
+                    <div class="form-group"><label>Agama</label><select id="agama"><option>Islam</option><option>Kristen</option><option>Katolik</option><option>Hindu</option><option>Buddha</option></select></div>
+                    <div class="form-group"><label>Tempat Lahir</label><input type="text" id="tempat_lahir"></div>
+                    <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="tanggal_lahir"></div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-title">💼 Data Pekerjaan</div>
+                <div class="grid-inputs">
+                    <div class="form-group"><label>NIP</label><input type="number" id="nip"></div>
+                    <div class="form-group"><label>Status Kepegawaian</label><select id="status"><option>PNS</option><option>PPPK</option><option>Kontrak</option><option>Tetap RS</option></select></div>
+                    <div class="form-group"><label>Jabatan</label><input type="text" id="jabatan"></div>
+                    <div class="form-group"><label>Golongan</label><input type="text" id="gol"></div>
+                    <div class="form-group"><label>Ruangan</label><input type="text" id="ruangan"></div>
+                    <div class="form-group"><label>TMT Pangkat</label><input type="date" id="tmt_pangkat"></div>
+                    <div class="form-group"><label>TMT Berikutnya</label><input type="date" id="tmt_berikutnya"></div>
+                    <div class="form-group"><label>Rentang BUP (Usia Pensiun)</label><input type="number" id="rentang_bup"></div>
+                    <div class="form-group"><label>TMT Pensiun</label><input type="date" id="tmt_pensiun"></div>
+                    <div class="form-group"><label>TMT CPNS</label><input type="date" id="tmt_cpns"></div>
+                    <div class="form-group"><label>Masuk RS</label><input type="date" id="masuk_rs"></div>
+                    <div class="form-group"><label>Masa Kerja RS</label><input type="text" id="masa_kerja_rs" readonly placeholder="Otomatis terhitung"></div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-title">🎓 Data Pendidikan</div>
+                <div class="grid-inputs">
+                    <div class="form-group"><label>Jenjang Pendidikan</label><select id="jenjang"><option>D3</option><option>D4</option><option>S1</option><option>S2</option><option>Profesi</option></select></div>
+                    <div class="form-group"><label>Fakultas</label><input type="text" id="fakultas"></div>
+                    <div class="form-group"><label>Jurusan</label><input type="text" id="jurusan"></div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="section-title">🏠 Keluarga & Kontak</div>
+                <div class="grid-inputs">
+                    <div class="form-group"><label>Status Keluarga</label><select id="status_keluarga"><option>TK</option><option>K/0</option><option>K/1</option><option>K/2</option><option>K/3</option></select></div>
+                    <div class="form-group"><label>Alamat Tinggal</label><input type="text" id="alamat"></div>
+                    <div class="form-group"><label>No. BPJS Kesehatan</label><input type="number" id="no_bpjsn"></div>
+                    <div class="form-group"><label>No. BPJS Ketenagakerjaan / Taspen</label><input type="text" id="no_bpjsket_taspen"></div>
+                    <div class="form-group"><label>NPWP</label><input type="text" id="npwp"></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="email"></div>
+                    <div class="form-group"><label>No. Telepon / WA</label><input type="tel" id="no_telp"></div>
+                </div>
+            </div>
+
+            <div class="form-footer-box">
+                <button type="button" class="btn-close" id="btn-tutup-form">Tutup Form</button>
+                <button type="submit" class="btn-save">💾 Simpan Data Pegawai</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="action-bar">
+            <input type="text" class="search-input" id="input-cari" placeholder="Cari Nama / NIK...">
+            <div>
+                <button class="btn-xls" id="btn-excel">📥 Unduh Excel</button>
+                <button class="btn-pdf" id="btn-pdf">📥 Cetak PDF</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>NIK</th>
+                        <th>NAMA PEGAWAI</th>
+                        <th>STATUS</th>
+                        <th>JABATAN</th>
+                        <th>MASUK RS</th>
+                        <th>PENDIDIKAN</th>
+                        <th>RUANGAN</th>
+                        <th style="text-align: center;">AKSI UTAMA</th>
+                    </tr>
+                </thead>
+                <tbody id="body-tabel-pegawai"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="detail-panel" class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
+            <h3 style="color: var(--primary)">🔍 Panel Ringkasan Informasi Lengkap Pegawai</h3>
+            <button id="btn-tutup-detail" style="background:#cbd5e1; border:none; padding:4px 10px; cursor:pointer; font-weight:bold; border-radius:4px;">Tutup Panel [X]</button>
+        </div>
+        <div class="detail-grid-view" id="wadah-detail-item"></div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
