@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistem Informasi Pegawai</title>
+    <style>
+        :root {
+            --primary: #1e40af;
+            --primary-hover: #1d4ed8;
+            --bg: #f1f5f9;
+            --text: #0f172a;
+            --border: #cbd5e1;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .login-card { background: white; padding: 32px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        .login-title { font-size: 20px; font-weight: 800; text-align: center; color: var(--primary); margin-bottom: 6px; }
+        .login-sub { font-size: 13px; text-align: center; color: #64748b; margin-bottom: 24px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+        .form-group label { font-size: 12px; font-weight: 700; color: #475569; }
+        .form-group input { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; }
+        .form-group input:focus { border-color: var(--primary); }
+        .btn-login { background: var(--primary); color: white; border: none; width: 100%; padding: 12px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 8px; }
+        .btn-login:hover { background: var(--primary-hover); }
+        .info-box { background: #f8fafc; border: 1px dashed var(--border); padding: 12px; border-radius: 6px; margin-top: 16px; font-size: 12px; color: #475569; }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="login-title">Sistem Informasi Pegawai</div>
+    <div class="login-sub">Silakan masuk ke akun Anda</div>
+    
+    <form id="login-form">
+        <div class="form-group">
+            <label>Username / NIK</label>
+            <input type="text" id="username" placeholder="Masukkan admin atau NIK Anda" required>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="Masukkan password" required>
+        </div>
+        <button type="submit" class="btn-login">Masuk ke Sistem</button>
+    </form>
+
+    <div class="info-box">
+        <strong>Petunjuk Akses:</strong><br>
+        • Admin: User <code style="color:red">admin</code> | Pass <code style="color:red">admin</code><br>
+        • Pegawai: Masukkan <code style="color:blue">NIK Anda</code> | Pass Default <code style="color:blue">Masuk123</code>
+    </div>
+</div>
+
+<script>
+    document.getElementById('login-form').onsubmit = function(e) {
+        e.preventDefault();
+        const userIn = document.getElementById('username').value.trim();
+        const passIn = document.getElementById('password').value;
+
+        // 1. Cek Login Akses Admin
+        if (userIn === 'admin' && passIn === 'admin') {
+            sessionStorage.setItem('role', 'admin');
+            sessionStorage.setItem('user_key', 'admin');
+            alert('Login berhasil sebagai Admin!');
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // 2. Cek Login Akses Pegawai berdasarkan database lokal
+        const dbPegawai = JSON.parse(localStorage.getItem('pegawai_storage_db')) || [];
+        const ketemuPegawai = dbPegawai.find(p => p.nik === userIn);
+
+        if (ketemuPegawai && passIn === 'Masuk123') {
+            sessionStorage.setItem('role', 'pegawai');
+            sessionStorage.setItem('user_key', ketemuPegawai.id_pegawai); // simpan ID Pegawai aktif
+            alert(`Login berhasil! Selamat datang, ${ketemuPegawai.nama}`);
+            window.location.href = 'index.html';
+        } else {
+            alert('Username (NIK) tidak terdaftar, atau password Anda salah!');
+        }
+    };
+</script>
+
+</body>
+</html>
