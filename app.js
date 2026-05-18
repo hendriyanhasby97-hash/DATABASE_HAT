@@ -6,6 +6,7 @@ const fields = [
     'fakultas', 'jurusan', 'ruangan', 'no_bpjsn', 'no_bpjsket_taspen', 'npwp', 'email', 'no_telp'
 ];
 
+// ⚠️ PASTIKAN URL & KEY INI TIDAK BERUBAH ATAU TERTIMPA
 const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC";
 
@@ -17,9 +18,6 @@ let statusEdit = false;
 let currentPage = 1;
 const rowsPerPage = 25;
 let dataFilterAktif = [];
-
-const userRole = sessionStorage.getItem('role');
-const userKey = sessionStorage.getItem('user_key');
 
 // DOM Selector
 const wrapperForm = document.getElementById('form-master-wrapper');
@@ -40,13 +38,16 @@ const btnPrev = document.getElementById('btn-page-prev');
 const btnNext = document.getElementById('btn-page-next');
 const pagInfoText = document.getElementById('pagination-text-info');
 
+const userRole = sessionStorage.getItem('role');
+const userKey = sessionStorage.getItem('user_key');
+
 document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btn-logout').onclick = () => {
         sessionStorage.clear();
         window.location.href = 'login.html';
     };
 
-    if (pagInfoText) pagInfoText.textContent = "Menghubungkan ke database Supabase PostgreSQL...";
+    if (pagInfoText) pagInfoText.textContent = "Menghubungkan ke database Supabase...";
 
     await muatDataDariCloud();
 
@@ -278,43 +279,86 @@ function unduhPDF() {
     doc.save("Laporan_Ringkas_Pegawai.pdf");
 }
 
+// 🚀 FITUR BARU: PROSES IMPORT AMAN & KEBAL EROR DATA INCOMPATIBLE
 function jalankanProsesImportExcel() {
     const file = inputFileExcel.files[0];
     if (!file) return alert('Silakan pilih berkas Excel!');
+    
+    const btnImport = document.getElementById('btn-import-excel');
+    btnImport.disabled = true;
+    btnImport.textContent = "⏳ Memproses...";
+
     const reader = new FileReader();
     reader.onload = async function(e) {
-        const dataBytes = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(dataBytes, { type: 'array' });
-        const excelRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false });
-        
-        let batchData = [];
-        excelRows.forEach(row => {
-            const dataBaru = {};
-            fields.forEach(f => {
-                const alt = f.replace(/_/g, ' ').toLowerCase();
-                const key = Object.keys(row).find(k => k.toLowerCase().trim() === f.toLowerCase() || k.toLowerCase().trim() === alt);
-                dataBaru[f] = key ? row[key].toString().trim() : '';
-            });
-            if (!dataBaru.id_pegawai || dataBaru.id_pegawai === '') {
-                dataBaru.id_pegawai = 'ID-' + Date.now() + Math.floor(Math.random() * 100);
-            }
-            if (dataBaru.nik && dataBaru.nama) {
-                batchData.push(dataBaru);
-            }
-        });
+        try {
+            const dataBytes = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(dataBytes, { type: 'array' });
+            const excelRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { raw: false });
+            
+            let batchData = [];
+            let nikTerdaftar = new Set(); // Mencegah duplikasi NIK internal di dalam satu file Excel
 
-        if (batchData.length > 0) {
-            const { error } = await supabaseClient.from('pegawai').upsert(batchData, { onConflict: 'nik' });
-            if (error) {
-                console.error(error);
-                alert("Gagal mengunggah data massal.");
-            } else {
-                alert(`Sukses! ${batchData.length} data berhasil tersinkronisasi ke Supabase Cloud.`);
+            excelRows.forEach(row => {
+                const dataBaru = {};
+                fields.forEach(f => {
+                    const alt = f.replace(/_/g, ' ').toLowerCase().trim();
+                    const key = Object.keys(row).find(k => k.toLowerCase().trim() === f.toLowerCase() || k.toLowerCase().trim() === alt);
+                    
+                    let nilaiData = key ? row[key].toString().trim() : '';
+                    
+                    // Bersihkan karakter jika kolom adalah NIK atau NIP
+                    if ((f === 'nik' || f === 'nip') && nilaiData !== '') {
+                        nilaiData = nilaiData.replace(/[^0-Cloud90-9]/g, ''); // Hapus spasi gaib atau simbol strip '-'
+                    }
+                    dataBaru[f] = nilaiData;
+                });
+
+                // Validasi Ketat Sisi Client agar tidak memicu Crash Database di Supabase
+                if (dataBaru.nik && dataBaru.nik !== '' && dataBaru.nama && dataBaru.nama !== '') {
+                    if (!nikTerdaftar.has(dataBaru.nik)) {
+                        nikTerdaftar.add(dataBaru.nik);
+                        
+                        if (!dataBaru.id_pegawai || dataBaru.id_pegawai === '') {
+                            dataBaru.id_pegawai = 'ID-' + Math.floor(Math.random() * 100000) + '-' + Date.now();
+                        }
+                        batchData.push(dataBaru);
+                    }
+                }
+            });
+
+            if (batchData.length === 0) {
+                alert("Eror: Tidak ditemukan data Baris NIK & Nama yang valid di dalam file Excel Anda.");
+                btnImport.disabled = false;
+                btnImport.textContent = "Unggah Excel";
+                return;
             }
+
+            // Eksekusi pemisahan chunk per 50 baris agar tidak memicu limit buffer browser/postgrest
+            const chunkSize = 50;
+            let totalSukses = 0;
+
+            for (let i = 0; i < batchData.length; i += chunkSize) {
+                const chunk = batchData.slice(i, i + chunkSize);
+                // Lakukan upsert ke Supabase
+                const { error } = await supabaseClient.from('pegawai').upsert(chunk, { onConflict: 'nik' });
+                if (error) {
+                    console.error("Eror pada potongan baris: ", error);
+                } else {
+                    totalSukses += chunk.length;
+                }
+            }
+
+            alert(`Sukses Sinkronisasi Excel!\nSebanyak ${totalSukses} data baris valid berhasil masuk ke Supabase.`);
+        } catch (err) {
+            console.error(err);
+            alert("Gagal membaca struktur file Excel.");
+        } finally {
+            await muatDataDariCloud();
+            refreshDataState();
+            inputFileExcel.value = '';
+            btnImport.disabled = false;
+            btnImport.textContent = "Unggah Excel";
         }
-        await muatDataDariCloud();
-        refreshDataState();
-        inputFileExcel.value = '';
     };
     reader.readAsArrayBuffer(file);
 }
