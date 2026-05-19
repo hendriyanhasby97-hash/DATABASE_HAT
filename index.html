@@ -418,6 +418,102 @@
                 </div>
             </div>
 
+            <div id="view-surat-masuk" class="view-panel">
+                <div class="page-title-box">
+                    <h2>Arsip Elektronik Surat Masuk</h2>
+                    <p>Manajemen pencatatan dokumen surat masuk eksternal dan status disposisi instruksi pimpinan.</p>
+                </div>
+
+                <div id="form-surat-masuk-wrapper" class="panel-form-box hide-element">
+                    <h3 style="font-size:15px; font-weight:700; color:var(--dark-slate); margin-bottom:10px;"><i class="fa-solid fa-envelope"></i> Registrasi Surat Masuk Baru</h3>
+                    <form id="form-add-surat-masuk" onsubmit="saveDataSekunder(event, 'surat_masuk', 'form-add-surat-masuk', 'form-surat-masuk-wrapper', 'view-surat-masuk')">
+                        <div class="grid-inputs">
+                            <div class="form-group"><label>Nomor Surat</label><input type="text" name="no_surat" required></div>
+                            <div class="form-group"><label>Tanggal Surat</label><input type="date" name="tgl_surat" required></div>
+                            <div class="form-group"><label>Instruksi Utama (Disposisi)</label><select name="instruksi"><option>Tindak Lanjuti</option><option>Arsipankan</option></select></div>
+                            <div class="form-group"><label>Status Tindak Lanjut</label><select name="status_tindak_lanjut"><option>Belum Dibaca</option><option>Proses Telaah</option><option>Proses TTE</option><option>Selesai</option></select></div>
+                            <div class="form-group" style="grid-column: span 2;"><label>Uraian Informasi / Ringkasan Isi Surat</label><input type="text" name="uraian" required></div>
+                            <div class="form-group" style="grid-column: span 3;"><label>Instruksi Tambahan Pimpinan</label><input type="text" name="instruksi_tambahan"></div>
+                            <div class="form-group" style="grid-column: span 3;"><label>Link URL Berkas Digital Surat Masuk (PDF/Scan)</label><input type="url" name="lampiran_url" placeholder="https://drive.google.com/..." required></div>
+                        </div>
+                        <div style="margin-top:15px; text-align:right;">
+                            <button type="button" class="btn" style="background:#cbd5e1;" onclick="toggleFormInput('form-surat-masuk-wrapper')">Batal</button>
+                            <button type="submit" class="btn btn-primary">💾 Simpan Surat Masuk</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="data-card">
+                    <div class="action-bar" style="justify-content: flex-end;">
+                        <button class="btn btn-primary" onclick="toggleFormInput('form-surat-masuk-wrapper')"><i class="fa-solid fa-plus"></i> Tambah Surat Masuk</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nomor Surat</th>
+                                    <th>Tgl Surat</th>
+                                    <th>Uraian Informasi</th>
+                                    <th>Instruksi</th>
+                                    <th>Instruksi Tambahan</th>
+                                    <th>Status</th>
+                                    <th style="text-align: center;">Lampiran</th>
+                                </tr>
+                            </thead>
+                            <tbody id="body-tabel-surat-masuk"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-surat-keluar" class="view-panel">
+                <div class="page-title-box">
+                    <h2>Arsip Elektronik Surat Keluar</h2>
+                    <p>Pencatatan registrasi penomoran surat keluar instansi resmi beserta pelacakan fisik dokumen.</p>
+                </div>
+
+                <div id="form-surat-keluar-wrapper" class="panel-form-box hide-element">
+                    <h3 style="font-size:15px; font-weight:700; color:var(--dark-slate); margin-bottom:10px;"><i class="fa-solid fa-paper-plane"></i> Registrasi Surat Keluar Baru</h3>
+                    <form id="form-add-surat-keluar" onsubmit="saveDataSekunder(event, 'surat_keluar', 'form-add-surat-keluar', 'form-surat-keluar-wrapper', 'view-surat-keluar')">
+                        <div class="grid-inputs">
+                            <div class="form-group"><label>Nomor Surat</label><input type="text" name="no_surat" required></div>
+                            <div class="form-group"><label>Tanggal Surat</label><input type="date" name="tgl_surat" required></div>
+                            <div class="form-group"><label>Keberadaan Berkas Terakhir</label><input type="text" name="keberadaan_berkas" placeholder="Contoh: Di Meja Direktur / Bagian Umum" required></div>
+                            <div class="form-group"><label>Status Tindak Lanjut</label><select name="status_tindak_lanjut"><option>Belum Dibaca</option><option>Proses Telaah</option><option>Proses TTE</option><option>Selesai</option></select></div>
+                            <div class="form-group" style="grid-column: span 2;"><label>Uraian Informasi / Ringkasan Surat</label><input type="text" name="uraian" required></div>
+                            <div class="form-group" style="grid-column: span 3;"><label>Instruksi Tambahan</label><input type="text" name="instruksi_tambahan"></div>
+                            <div class="form-group" style="grid-column: span 3;"><label>Link URL Berkas Digital Surat Keluar (PDF/Scan)</label><input type="url" name="lampiran_url" placeholder="https://drive.google.com/..." required></div>
+                        </div>
+                        <div style="margin-top:15px; text-align:right;">
+                            <button type="button" class="btn" style="background:#cbd5e1;" onclick="toggleFormInput('form-surat-keluar-wrapper')">Batal</button>
+                            <button type="submit" class="btn btn-primary">💾 Simpan Surat Keluar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="data-card">
+                    <div class="action-bar" style="justify-content: flex-end;">
+                        <button class="btn btn-primary" onclick="toggleFormInput('form-surat-keluar-wrapper')"><i class="fa-solid fa-plus"></i> Tambah Surat Keluar</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nomor Surat</th>
+                                    <th>Tgl Surat</th>
+                                    <th>Uraian Informasi</th>
+                                    <th>Instruksi Tambahan</th>
+                                    <th>Status</th>
+                                    <th>Keberadaan Berkas</th>
+                                    <th style="text-align: center;">Lampiran</th>
+                                </tr>
+                            </thead>
+                            <tbody id="body-tabel-surat-keluar"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <div id="view-general-layanan" class="view-panel">
                 <div class="page-title-box"><h2 id="layanan-title">Sub Menu</h2><p id="layanan-subtitle">Sistem Pengarsipan Dokumen</p></div>
                 <div class="placeholder-box"><i class="fa-solid fa-folder-closed"></i><h3>Arsip Kosong</h3><p>Modul kearsipan elektronik internal dalam tahap sinkronisasi data.</p></div>
@@ -464,7 +560,6 @@
             const targetPanel = document.getElementById(viewId);
             if(targetPanel) {
                 targetPanel.classList.add('active');
-                // Trigger reload data otomatis via fake click hook app.js jika ada fungsi global
                 if (typeof window.switchViewHook === 'function') window.switchViewHook(viewId);
             } else {
                 const generalView = document.getElementById('view-general-layanan');
@@ -510,9 +605,8 @@
                 toggleFormInput(idWrapper);
                 
                 // Segarkan view tampilan tabel di layar saat itu juga
-                if (typeof window.switchView === 'function') {
-                    const activeMenu = document.querySelector('.submenu-link.active');
-                    if (activeMenu) window.switchView(viewId, activeMenu);
+                if (typeof window.switchViewHook === 'function') {
+                    window.switchViewHook(viewId);
                 }
             } catch (err) {
                 console.error(err);
