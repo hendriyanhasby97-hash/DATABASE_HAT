@@ -1,4 +1,4 @@
-// Konfigurasi Fields Utama Tabel Induk Pegawai
+// Konfigurasi Fields Utama Tabel Induk Pegawai (31 Kolom)
 const fields = [
     'id_pegawai', 'nik', 'nama', 'nip', 'status', 'kelompok_pegawai', 'kelompok_jabatan',
     'gol', 'tmt_pangkat', 'tmt_berikutnya', 'jabatan', 'jenis_kelamin', 'agama', 
@@ -62,7 +62,7 @@ function refreshDataState() {
     renderTabelDenganHalaman();
 }
 
-// 📊 HITUNG METRIK DASHBOARD UTAMA
+// 📊 HITUNG METRIK DASHBOARD UTAMA SISI ADMIN
 async function hitungStatistikDashboard() {
     if (document.getElementById('stat-total-pegawai')) {
         document.getElementById('stat-total-pegawai').textContent = dbPegawai.length;
@@ -93,7 +93,7 @@ async function simpanFormPegawai(e) {
         if (statusEdit) {
             const { error } = await supabaseClient.from('pegawai').update(dataObj).eq('id_pegawai', dataObj.id_pegawai);
             if (error) throw error;
-            alert('Data pegawai sukses diperbarui!');
+            alert('Data perubahan pegawai sukses diperbarui!');
         } else {
             dataObj.id_pegawai = 'ID-' + Date.now();
             const { error } = await supabaseClient.from('pegawai').insert([dataObj]);
@@ -106,6 +106,7 @@ async function simpanFormPegawai(e) {
             alert('Data pegawai baru & histori masuk berhasil direkam!');
         }
 
+        statusEdit = false;
         await muatDataDariCloud();
         hitungStatistikDashboard();
         refreshDataState();
@@ -119,7 +120,7 @@ async function simpanFormPegawai(e) {
     }
 }
 
-// 👥 RENDERING UTAMA DAFTAR PEGAWAI INDUK
+// 👥 RENDERING UTAMA DAFTAR PEGAWAI INDUK (TERMASUK FITUR VIEW POP-UP)
 function renderTabelDenganHalaman() {
     if (!tBody) return;
     tBody.innerHTML = '';
@@ -143,7 +144,8 @@ function renderTabelDenganHalaman() {
             <td>${p.kelompok_pegawai || '-'}</td>
             <td>${p.jabatan || '-'}</td>
             <td>${p.ruangan || '-'}</td>
-            <td style="text-align: center;">
+            <td style="text-align: center; white-space: nowrap;">
+                <button type="button" class="btn-action" style="background:#0284c7;" onclick="window.bukaModalViewDetailSistem('${p.id_pegawai}')"><i class="fa-solid fa-eye"></i> View</button>
                 <button type="button" class="btn-action" style="background:#d97706;" onclick="pemicuEditPegawai('${p.id_pegawai}')"><i class="fa-solid fa-user-pen"></i> Edit</button>
                 <button type="button" class="btn-action" style="background:#dc2626;" onclick="mutasiKeluarAksi('${p.id_pegawai}')"><i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar</button>
             </td>
@@ -209,14 +211,12 @@ async function muatTabelSpesifik(namaTabel, idTbodyTarget, headersArray, rowBuil
     }
 }
 
-// 🕒 UTILITY HITUNG SISA WAKTU SIK (SUDAH DIPERBAIKI - ANTI CRASH)
+// 🕒 UTILITY HITUNG SISA WAKTU SIK (ANTI-CRASH)
 function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
     if (!tglBerakhirStr) return "-";
-    
     const akhir = new Date(tglBerakhirStr);
     const sekarang = new Date();
     
-    // Hitung selisih hari secara akurat
     const selisihWaktu = akhir - sekarang;
     const totalHari = Math.ceil(selisihWaktu / (1000 * 60 * 60 * 24));
     
@@ -231,13 +231,12 @@ function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
     const bulan = Math.floor(sisaHariDariTahun / 30);
     const hari = sisaHariDariTahun % 30;
 
-    // Memberikan warna alarm jika masa aktif mau habis
     if (totalHari <= 90) {
         elementTr.style.backgroundColor = "#fee2e2"; 
-        elementTr.style.color = "#b91c1c"; // Merah jika < 3 bulan
+        elementTr.style.color = "#b91c1c";
     } else if (totalHari <= 180) {
         elementTr.style.backgroundColor = "#fef3c7"; 
-        elementTr.style.color = "#b45309"; // Kuning jika < 6 bulan
+        elementTr.style.color = "#b45309";
     }
 
     return `${tahun} Thn ${bulan} Bln ${hari} Hari`;
@@ -297,15 +296,26 @@ window.switchViewHook('view-data-pegawai');
 function pemicuEditPegawai(id) {
     const dataPeg = dbPegawai.find(x => x.id_pegawai === id);
     if (!dataPeg) return;
+    
+    // Aktifkan kunci NIK pada mode edit admin
+    const nikInput = document.getElementById('nik');
+    if(nikInput) nikInput.disabled = true;
+
     fields.forEach(f => { const el = document.getElementById(f); if (el) el.value = dataPeg[f] || ''; });
     statusEdit = true;
-    if (typeof window.toggleFormInput === 'function') window.toggleFormInput('form-master-wrapper');
+    
+    document.getElementById('main-form-title').innerHTML = `<i class="fa-solid fa-user-pen"></i> Modifikasi / Ubah Berkas Pegawai: ${dataPeg.nama}`;
+    const wrapper = document.getElementById('form-master-wrapper');
+    if (wrapper) wrapper.classList.remove('hide-element');
+    window.scrollTo({ top: wrapper.offsetTop - 20, behavior: 'smooth' });
 }
+
 function jalankanPencarian() {
     const kataKunci = inputCari.value.toLowerCase().trim();
     dataFilterAktif = dbPegawai.filter(p => (p.nama?.toLowerCase().includes(kataKunci)) || (p.nik?.includes(kataKunci)));
     currentPage = 1; renderTabelDenganHalaman();
 }
+
 function hitungMasaKerjaOtomatis() {
     if (!this.value) return;
     const masuk = new Date(this.value); const hariIni = new Date();
@@ -313,13 +323,15 @@ function hitungMasaKerjaOtomatis() {
     if (bulan < 0) { tahun--; bulan += 12; }
     if (document.getElementById('masa_kerja_rs')) document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan`;
 }
+
 function unduhExcel() {
-    if (dbPegawai.length === 0) return alert('Kosong.');
+    if (dbPegawai.length === 0) return alert('Data kosong.');
     const dataFormatted = dbPegawai.map((p, i) => { const row = { "NO": i + 1 }; fields.forEach(f => { row[f.replace(/_/g, ' ').toUpperCase()] = p[f] || '-'; }); return row; });
     const ws = XLSX.utils.json_to_sheet(dataFormatted); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Pegawai"); XLSX.writeFile(wb, "Data_Karyawan.xlsx");
 }
+
 function unduhPDF() {
-    if (dbPegawai.length === 0) return alert('Kosong.');
+    if (dbPegawai.length === 0) return alert('Data kosong.');
     const { jsPDF } = window.jspdf; const doc = new jsPDF('l', 'pt', 'a4');
     doc.setFontSize(14); doc.text("LAPORAN INDUK KEPEGAWAIAN", 24, 30);
     const headerPDF = [['NIK', 'NAMA PEGAWAI', 'STATUS', 'KELOMPOK', 'JABATAN', 'UNIT RUANGAN']];
