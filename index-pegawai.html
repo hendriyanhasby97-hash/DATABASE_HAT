@@ -167,7 +167,6 @@
                     <h2>Ringkasan Eksekutif Profil Anda</h2>
                     <p>Statistik berkas dokumen pribadi yang terintegrasi di database cloud.</p>
                 </div>
-                
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-details"><p>Kelompok Pegawai</p><h3 id="stat-user-kelompok">-</h3></div>
@@ -182,7 +181,6 @@
                         <div class="stat-icon" style="background:#fff7ed; color:#ea580c;"><i class="fa-solid fa-shield-check"></i></div>
                     </div>
                 </div>
-
                 <div class="drh-card" style="max-width: 600px;">
                     <h3 style="font-size:15px; margin-bottom:15px; color:var(--dark-slate)"><i class="fa-solid fa-address-card" style="color:var(--primary)"></i> Sekilas Informasi Profil Anda</h3>
                     <div style="display:flex; justify-content:space-between; border-bottom:1px solid #e2e8f0; padding:10px 0;"><strong>Nama Lengkap:</strong><span id="ov-nama">-</span></div>
@@ -228,24 +226,13 @@
                         <div class="drh-section">
                             <div class="section-title">💼 III. Kedudukan Jabatan & Struktur Masa Kerja</div>
                             <div class="grid-inputs">
-                                <div class="form-group">
-                                    <label>Kelompok Jabatan</label>
-                                    <select id="kelompok_jabatan">
-                                        <option>Management</option>
-                                        <option>Tenaga Medis</option>
-                                        <option>Tenaga Kesehatan</option>
-                                        <option>Tenaga Penunjang Medis</option>
-                                        <option>Tenaga Administrasi</option>
-                                        <option>Tenaga Non Administrasi</option>
-                                    </select>
-                                </div>
+                                <div class="form-group"><label>Kelompok Jabatan</label><select id="kelompok_jabatan"><option>Management</option><option>Tenaga Medis</option><option>Tenaga Kesehatan</option><option>Tenaga Penunjang Medis</option><option>Tenaga Administrasi</option><option>Tenaga Non Administrasi</option></select></div>
                                 <div class="form-group"><label>Nama Jabatan</label><input type="text" id="jabatan"></div>
                                 <div class="form-group"><label>Golongan Ruang</label><input type="text" id="gol"></div>
                                 <div class="form-group"><label>Ruangan / Unit Kerja Tempat Dinas</label><input type="text" id="ruangan"></div>
                                 <div class="form-group"><label>TMT Pangkat</label><input type="date" id="tmt_pangkat"></div>
                                 <div class="form-group"><label>TMT Berkala Berikutnya</label><input type="date" id="tmt_berikutnya"></div>
-                                <div class="form-group"><label>Tanggal Mulai Masuk RS</label><input type="date" id="masuk_rs" onchange="window.jalankanSemuaOtimatisasiPegawai()"></div>
-                                
+                                <div class="form-group"><label>Tanggal Mulai Masuk RS</label><input type="date" id="masuk_rs" onchange="window.jalankanSemuaOtomatisasiPegawai()"></div>
                                 <div class="form-group"><label>🔒 Masa Kerja (Otomatis)</label><input type="text" id="masa_kerja_rs" readonly placeholder="Terhitung otomatis"></div>
                                 <div class="form-group"><label>BUP Usia Pensiun</label><input type="number" id="rentang_bup" placeholder="Contoh: 58 atau 60" oninput="window.jalankanSemuaOtomatisasiPegawai()"></div>
                                 <div class="form-group"><label>🔒 TMT Pensiun (Otomatis)</label><input type="date" id="tmt_pensiun" readonly></div>
@@ -272,10 +259,7 @@
                                 <div class="form-group"><label>Nomor BPJS Ketenagakerjaan / Taspen</label><input type="text" id="no_bpjsket_taspen"></div>
                             </div>
                         </div>
-
-                        <div style="text-align: right;">
-                            <button type="submit" class="btn btn-primary" id="btn-simpan-drh">💾 Perbarui Dokumen DRH Saya</button>
-                        </div>
+                        <div style="text-align: right;"><button type="submit" class="btn btn-primary" id="btn-simpan-drh">💾 Perbarui Dokumen DRH Saya</button></div>
                     </form>
                 </div>
             </div>
@@ -283,14 +267,24 @@
             <div id="view-input-str" class="view-panel">
                 <div class="panel-form-box">
                     <div class="page-title-box"><h2>Registrasi Berkas STR Baru</h2></div>
-                    <form id="form-add-str" onsubmit="saveDataIzinKerja(event, 'berkas_str', 'form-add-str', 'view-input-str')">
+                    <form id="form-add-str" onsubmit="saveDataSTRUserMandiri(event)">
                         <div class="grid-inputs">
                             <div class="form-group"><label>NIK Pegawai</label><input type="text" name="nik" id="str-nik" readonly required></div>
                             <div class="form-group" style="grid-column: span 2;"><label>Nama Lengkap Anda</label><input type="text" name="nama" id="str-nama" readonly required></div>
                             <div class="form-group"><label>Bidang Profesi</label><input type="text" name="bidang" placeholder="Contoh: Perawat, Dokter" required></div>
                             <div class="form-group"><label>Nomor STR</label><input type="text" name="no_str" required></div>
                             <div class="form-group"><label>Tanggal Terbit STR</label><input type="date" name="tgl_terbit" required></div>
-                            <div class="form-group"><label>Tanggal Berakhir STR</label><input type="date" name="tgl_berakhir" required></div>
+                            
+                            <div class="form-group">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2px;">
+                                    <label>Tanggal Berakhir STR</label>
+                                    <label style="font-size:11px; font-weight:700; color:var(--primary); display:inline-flex; align-items:center; gap:4px; text-transform:none; cursor:pointer;">
+                                        <input type="checkbox" id="user-str-seumur-hidup" onchange="toggleSTRSeumurHidupPegawai('user-str-seumur-hidup', 'user-tgl-berakhir-str')"> Seumur Hidup
+                                    </label>
+                                </div>
+                                <input type="date" name="tgl_berakhir" id="user-tgl-berakhir-str" required>
+                            </div>
+                            
                             <div class="form-group full-width"><label>Unggah Berkas Lampiran STR</label><input type="file" name="lampiran_file" accept=".pdf, .png, .jpg, .jpeg" required></div>
                         </div>
                         <div style="margin-top:20px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Jalankan Unggah Berkas STR</button></div>
@@ -347,6 +341,61 @@
         let userNIKGlobal = "";
         const formDRH = document.getElementById('form-drh-karyawan');
         const btnSimpan = document.getElementById('btn-simpan-drh');
+
+        // 👁️ LIVE LOGIC: SWITCH LOCK INPUT STR PEGAWAI MANDIRI
+        function toggleSTRSeumurHidupPegawai(checkboxId, inputTglId) {
+            const cb = document.getElementById(checkboxId);
+            const inputTgl = document.getElementById(inputTglId);
+            if(!cb || !inputTgl) return;
+
+            if(cb.checked) {
+                inputTgl.type = "text"; 
+                inputTgl.value = "Seumur Hidup";
+                inputTgl.readOnly = true;
+                inputTgl.style.backgroundColor = "#e2e8f0";
+            } else {
+                inputTgl.type = "date";
+                inputTgl.value = "";
+                inputTgl.readOnly = false;
+                inputTgl.style.backgroundColor = "#ffffff";
+            }
+        }
+
+        // CUSTOM UPLOAD STR SISI PEGAWAI MANDIRI
+        async function saveDataSTRUserMandiri(event) {
+            event.preventDefault();
+            const form = document.getElementById('form-add-str');
+            const btnSubmit = form.querySelector('button[type="submit"]');
+            btnSubmit.disabled = true; btnSubmit.innerHTML = "Memproses...";
+            
+            const fileInput = form.querySelector('input[type="file"]');
+            let finalUrl = "";
+            try {
+                if (fileInput && fileInput.files.length > 0) {
+                    const fileObj = fileInput.files[0];
+                    const fileName = `berkas_str_${Date.now()}.${fileObj.name.split('.').pop()}`;
+                    await supabaseClient.storage.from('lampiran').upload(fileName, fileObj);
+                    finalUrl = supabaseClient.storage.from('lampiran').getPublicUrl(fileName).data.publicUrl;
+                }
+                const formData = new FormData(form);
+                const dataObj = {};
+                formData.forEach((v, k) => { if (k !== 'lampiran_file') dataObj[k] = v.trim(); });
+                
+                if(document.getElementById('user-str-seumur-hidup').checked) {
+                    dataObj['tgl_berakhir'] = "Seumur Hidup";
+                }
+
+                dataObj['lampiran_url'] = finalUrl;
+                await supabaseClient.from('berkas_str').insert([dataObj]);
+                
+                alert(`STR Berhasil diunggah!`); 
+                form.reset();
+                document.getElementById('user-str-seumur-hidup').checked = false;
+                toggleSTRSeumurHidupPegawai('user-str-seumur-hidup', 'user-tgl-berakhir-str');
+                muatTabelHistoriSTR(userNIKGlobal);
+            } catch (err) { alert("Gagal mengunggah STR."); } 
+            finally { btnSubmit.disabled = false; btnSubmit.textContent = "💾 Jalankan Unggah Berkas STR"; }
+        }
 
         function toggleDropdown(element) {
             const submenu = element.nextElementSibling;
@@ -405,7 +454,6 @@
                             if (inputElement) inputElement.value = data[f] || '';
                         });
 
-                        // 🔥 ENGINE AUTOMATION PEMICU AWAL SISI PEGAWAI SETELAH DATA LOAD
                         window.jalankanSemuaOtomatisasiPegawai();
                     }
                 } catch (err) { console.error(err); }
@@ -432,14 +480,12 @@
             }
         });
 
-        // 🔥 MASTER ENGINE PENANGGALAN OTOMATIS PORTAL PEGAWAI
         window.jalankanSemuaOtomatisasiPegawai = function() {
             const inputMasukRS = document.getElementById('masuk_rs');
             const inputTglLahir = document.getElementById('tanggal_lahir');
             const inputBUP = document.getElementById('rentang_bup');
             const inputNIP = document.getElementById('nip');
 
-            // 1. Hitung Masa Kerja (Hari)
             if (inputMasukRS && inputMasukRS.value) {
                 const masuk = new Date(inputMasukRS.value); const hariIni = new Date();
                 let tahun = hariIni.getFullYear() - masuk.getFullYear(); let bulan = hariIni.getMonth() - masuk.getMonth(); let hari = hariIni.getDate() - masuk.getDate();
@@ -448,7 +494,6 @@
                 if (document.getElementById('masa_kerja_rs')) document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan ${hari} Hari`;
             }
 
-            // 2. Hitung TMT Pensiun (Bulatan Tanggal 1 Bulan Berikutnya)
             if (inputTglLahir && inputTglLahir.value && inputBUP && inputBUP.value) {
                 const bupVal = parseInt(inputBUP.value);
                 if (!isNaN(bupVal)) {
@@ -461,7 +506,6 @@
                 }
             }
 
-            // 3. Hitung TMT CPNS (8 Digit Awal NIP)
             if (inputNIP && inputNIP.value.trim().length >= 8) {
                 const nipVal = inputNIP.value.trim();
                 const tahunStr = nipVal.substring(0, 4); const bulanStr = nipVal.substring(4, 6); const hariStr = nipVal.substring(6, 8);
@@ -473,11 +517,6 @@
             }
         }
 
-        // Mapping trigger cadangan input
-        window.hitungMasaKerjaOtomatisPegawai = () => window.jalankanSemuaOtomatisasiPegawai();
-        window.hitungTMTPensiunOtomatisPegawai = () => window.jalankanSemuaOtomatisasiPegawai();
-        window.hitungTMTCPNSOtomatisPegawai = () => window.jalankanSemuaOtomatisasiPegawai();
-
         async function muatTabelHistoriSTR(nik) {
             const tbody = document.getElementById('user-tabel-str'); if (!tbody) return;
             try {
@@ -485,7 +524,7 @@
                 tbody.innerHTML = "";
                 if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:#94a3b8;">Belum ada berkas STR.</td></tr>`; return; }
                 data.forEach(r => {
-                    tbody.innerHTML += `<tr><td><strong>${r.no_str || '-'}</strong></td><td>${r.bidang || '-'}</td><td>${r.tgl_terbit || '-'}</td><td>${r.tgl_berakhir || '-'}</td><td style="text-align:center;"><a href="${r.lampiran_url || '#'}" target="_blank" class="btn" style="padding:4px 10px; font-size:12px; background:#475569; color:white;"><i class="fa-solid fa-file-pdf"></i> Lihat File</a></td></tr>`;
+                    tbody.innerHTML += `<tr><td><strong>${r.no_str || '-'}</strong></td><td>${r.bidang || '-'}</td><td>${r.tgl_terbit || '-'}</td><td><span style="padding:4px 8px; border-radius:4px; font-weight:700; ${r.tgl_berakhir === 'Seumur Hidup' ? 'background:#e0f2fe; color:#0369a1;' : ''}">${r.tgl_berakhir || '-'}</span></td><td style="text-align:center;"><a href="${r.lampiran_url || '#'}" target="_blank" class="btn" style="padding:4px 10px; font-size:12px; background:#475569; color:white;"><i class="fa-solid fa-file-pdf"></i> Lihat File</a></td></tr>`;
                 });
             } catch (e) { }
         }
