@@ -239,7 +239,7 @@
                             <div class="grid-inputs">
                                 <div class="form-group"><label>NIK (Nomor Induk Kependudukan) *</label><input type="number" id="nik" required></div>
                                 <div class="form-group"><label>Nama Lengkap Pegawai *</label><input type="text" id="nama" required></div>
-                                <div class="form-group"><label>NIP / Nomor Karyawan</label><input type="number" id="nip"></div>
+                                <div class="form-group"><label>NIP / Nomor Karyawan</label><input type="text" id="nip" oninput="window.hitungTMTCPNSOtomatis()"></div>
                                 <div class="form-group"><label>Status Dinas *</label><select id="status" required><option>Aktif</option><option>Mutasi</option><option>Pensiun</option><option>Resign</option></select></div>
                                 <div class="form-group"><label>Kelompok Pegawai</label><select id="kelompok_pegawai"><option>ASN</option><option>APBD</option><option>BLUD</option><option>MAGANG</option></select></div>
                                 <div class="form-group"><label>Kelompok Jabatan *</label>
@@ -251,7 +251,7 @@
                                         <option>Tenaga Administrasi</option>
                                         <option>Tenaga Non Administrasi</option>
                                     </select>
-                                node</div>
+                                </div>
                                 <div class="form-group"><label>Nama Jabatan Spesifik</label><input type="text" id="jabatan"></div>
                                 <div class="form-group"><label>Ruangan / Unit Kerja Tempat Tugas</label><input type="text" id="ruangan"></div>
                             </div>
@@ -263,7 +263,7 @@
                                 <div class="form-group"><label>Jenis Kelamin</label><select id="jenis_kelamin"><option>Laki-laki</option><option>Perempuan</option></select></div>
                                 <div class="form-group"><label>Agama</label><select id="agama"><option>Islam</option><option>Kristen</option><option>Katolik</option><option>Hindu</option><option>Buddha</option></select></div>
                                 <div class="form-group"><label>Tempat Lahir</label><input type="text" id="tempat_lahir"></div>
-                                <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="tanggal_lahir"></div>
+                                <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="tanggal_lahir" onchange="window.hitungTMTPensiunOtomatis()"></div>
                                 <div class="form-group"><label>Status Hubungan Keluarga</label><select id="status_keluarga"><option>TK</option><option>K/0</option><option>K/1</option><option>K/2</option><option>K/3</option></select></div>
                                 <div class="form-group"><label>Nomor Pokok Wajib Pajak (NPWP)</label><input type="text" id="npwp"></div>
                             </div>
@@ -275,11 +275,11 @@
                                 <div class="form-group"><label>Golongan Ruang</label><input type="text" id="gol"></div>
                                 <div class="form-group"><label>TMT Pangkat</label><input type="date" id="tmt_pangkat"></div>
                                 <div class="form-group"><label>TMT Berkala Berikutnya</label><input type="date" id="tmt_berikutnya"></div>
-                                <div class="form-group"><label>Tanggal Mulai Masuk RS</label><input type="date" id="masuk_rs"></div>
+                                <div class="form-group"><label>Tanggal Mulai Masuk RS</label><input type="date" id="masuk_rs" onchange="window.hitungMasaKerjaOtomatis()"></div>
                                 <div class="form-group"><label>🔒 Masa Kerja (Otomatis)</label><input type="text" id="masa_kerja_rs" readonly placeholder="Terhitung otomatis"></div>
-                                <div class="form-group"><label>BUP (Batas Usia Pensiun)</label><input type="number" id="rentang_bup" placeholder="Contoh: 56 atau 60"></div>
-                                <div class="form-group"><label>TMT Pensiun</label><input type="date" id="tmt_pensiun"></div>
-                                <div class="form-group"><label>TMT CPNS</label><input type="date" id="tmt_cpns"></div>
+                                <div class="form-group"><label>BUP (Batas Usia Pensiun)</label><input type="number" id="rentang_bup" placeholder="Contoh: 58 atau 60" oninput="window.hitungTMTPensiunOtomatis()"></div>
+                                <div class="form-group"><label>🔒 TMT Pensiun (Otomatis)</label><input type="date" id="tmt_pensiun" readonly></div>
+                                <div class="form-group"><label>🔒 TMT CPNS (Otomatis dari NIP)</label><input type="date" id="tmt_cpns" readonly></div>
                             </div>
                         </div>
 
@@ -346,7 +346,6 @@
                         <button class="btn btn-primary" id="btn-tambah-masuk-trigger" onclick="toggleFormInput('form-masuk-wrapper')"><i class="fa-solid fa-plus"></i> Tambah Pegawai Masuk</button>
                     </div>
                     <div id="form-masuk-wrapper" class="panel-form-box hide-element">
-                        <h3 style="font-size:14px; margin-bottom:10px;">Input Manual Pegawai Masuk</h3>
                         <form id="form-add-masuk" onsubmit="saveDataSekunder(event, 'pegawai_masuk', 'form-add-masuk', 'form-masuk-wrapper', 'view-pegawai-masuk')">
                             <div class="grid-inputs">
                                 <div class="form-group"><label>NIK</label><input type="number" name="nik" required></div>
@@ -371,7 +370,6 @@
                         <button class="btn btn-primary" id="btn-tambah-keluar-trigger" onclick="toggleFormInput('form-keluar-wrapper')"><i class="fa-solid fa-plus"></i> Tambah Pegawai Keluar</button>
                     </div>
                     <div id="form-keluar-wrapper" class="panel-form-box hide-element">
-                        <h3 style="font-size:14px; margin-bottom:10px;">Input Manual Pegawai Keluar</h3>
                         <form id="form-add-keluar" onsubmit="saveDataSekunder(event, 'pegawai_keluar', 'form-add-keluar', 'form-keluar-wrapper', 'view-pegawai-keluar')">
                             <div class="grid-inputs">
                                 <div class="form-group"><label>NIK</label><input type="number" name="nik" required></div>
@@ -504,7 +502,6 @@
     </div>
 
     <script>
-        // Set info profil header atas sesuai status role login
         const roleLogin = sessionStorage.getItem('role');
         if(roleLogin) {
             document.getElementById('top-role-title').textContent = roleLogin === 'superadmin' ? 'Super Admin' : 'Admin Kepegawaian (Read-Only)';
