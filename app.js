@@ -120,12 +120,19 @@ async function simpanFormPegawai(e) {
     }
 }
 
-// 👥 RENDERING UTAMA DAFTAR PEGAWAI INDUK (TERMASUK FITUR VIEW POP-UP)
+// 👥 RENDERING DAFTAR PEGAWAI INDUK DENGAN PROTEKSI ROLE
 function renderTabelDenganHalaman() {
     if (!tBody) return;
     tBody.innerHTML = '';
     const totalData = dataFilterAktif.length;
+    const roleSekarang = sessionStorage.getItem('role');
     
+    // Kontrol Visibilitas Tombol Tambah Master
+    const btnTambahMaster = document.getElementById('btn-tambah-master-trigger');
+    if (btnTambahMaster) {
+        btnTambahMaster.style.display = (roleSekarang === 'admin') ? 'none' : 'inline-flex';
+    }
+
     if (totalData === 0) {
         tBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#94a3b8;"><i class="fa-solid fa-folder-open"></i> Data Kosong.</td></tr>`;
         return;
@@ -137,6 +144,20 @@ function renderTabelDenganHalaman() {
 
     dataHalamanIni.forEach(p => {
         const tr = document.createElement('tr');
+        
+        let tombolKontrolOtoritas = "";
+        if (roleSekarang === 'admin') {
+            tombolKontrolOtoritas = `
+                <button type="button" class="btn-action" style="background:#0284c7;" onclick="window.bukaModalViewDetailSistem('${p.id_pegawai}')"><i class="fa-solid fa-eye"></i> View</button>
+            `;
+        } else {
+            tombolKontrolOtoritas = `
+                <button type="button" class="btn-action" style="background:#0284c7;" onclick="window.bukaModalViewDetailSistem('${p.id_pegawai}')"><i class="fa-solid fa-eye"></i> View</button>
+                <button type="button" class="btn-action" style="background:#d97706;" onclick="pemicuEditPegawai('${p.id_pegawai}')"><i class="fa-solid fa-user-pen"></i> Edit</button>
+                <button type="button" class="btn-action" style="background:#dc2626;" onclick="mutasiKeluarAksi('${p.id_pegawai}')"><i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar</button>
+            `;
+        }
+
         tr.innerHTML = `
             <td style="font-weight:600;">${p.nik || '-'}</td>
             <td style="font-weight:700; color:#1e3a8a;">${p.nama || '-'}</td>
@@ -144,11 +165,7 @@ function renderTabelDenganHalaman() {
             <td>${p.kelompok_pegawai || '-'}</td>
             <td>${p.jabatan || '-'}</td>
             <td>${p.ruangan || '-'}</td>
-            <td style="text-align: center; white-space: nowrap;">
-                <button type="button" class="btn-action" style="background:#0284c7;" onclick="window.bukaModalViewDetailSistem('${p.id_pegawai}')"><i class="fa-solid fa-eye"></i> View</button>
-                <button type="button" class="btn-action" style="background:#d97706;" onclick="pemicuEditPegawai('${p.id_pegawai}')"><i class="fa-solid fa-user-pen"></i> Edit</button>
-                <button type="button" class="btn-action" style="background:#dc2626;" onclick="mutasiKeluarAksi('${p.id_pegawai}')"><i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar</button>
-            </td>
+            <td style="text-align: center; white-space: nowrap;">${tombolKontrolOtoritas}</td>
         `;
         tBody.appendChild(tr);
     });
@@ -156,7 +173,7 @@ function renderTabelDenganHalaman() {
     if (pagInfoText) pagInfoText.textContent = `Menampilkan ${((currentPage-1)*rowsPerPage)+1}-${Math.min(currentPage*rowsPerPage, totalData)} dari ${totalData} pegawai`;
 }
 
-// 🚪 PROSES PEGAWAI KELUAR (OTOMATIS PINDAH TABEL HISTORI)
+// 🚪 PROSES PEGAWAI KELUAR
 async function mutasiKeluarAksi(id) {
     const p = dbPegawai.find(x => x.id_pegawai === id);
     if (!p) return;
@@ -164,7 +181,7 @@ async function mutasiKeluarAksi(id) {
     const jenis = prompt(`Masukkan Jenis Keluar untuk ${p.nama}:\n(MUTASI / PENSIUN / RESIGN / LAINNYA)`);
     if (!jenis) return;
     const jenisUpper = jenis.toUpperCase();
-    if (!['MUTASI', 'PENSIUN', 'RESIGN', 'LAINNYA'].includes(jenisUpper)) return alert('Jenis keluar tidak valid! Pembatalan sistem.');
+    if (!['MUTASI', 'PENSIUN', 'RESIGN', 'LAINNYA'].includes(jenisUpper)) return alert('Jenis keluar tidak valid!');
 
     const ket = prompt("Masukkan Keterangan Tambahan Alasan Keluar:");
     const tglKeluar = new Date().toISOString().split('T')[0];
@@ -173,10 +190,8 @@ async function mutasiKeluarAksi(id) {
         await supabaseClient.from('pegawai_keluar').insert([{
             nik: p.nik, nama: p.nama, bagian: p.kelompok_jabatan, unit_tugas: p.ruangan, tmt_keluar: tglKeluar, jenis_keluar: jenisUpper, keterangan: ket
         }]);
-
         await supabaseClient.from('pegawai').delete().eq('id_pegawai', id);
-
-        alert(`Sukses! ${p.nama} telah dipindahkan ke daftar Pegawai Keluar.`);
+        alert(`Sukses! ${p.nama} dipindahkan ke daftar Pegawai Keluar.`);
         await muatDataDariCloud();
         hitungStatistikDashboard();
         refreshDataState();
@@ -216,7 +231,6 @@ function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
     if (!tglBerakhirStr) return "-";
     const akhir = new Date(tglBerakhirStr);
     const sekarang = new Date();
-    
     const selisihWaktu = akhir - sekarang;
     const totalHari = Math.ceil(selisihWaktu / (1000 * 60 * 60 * 24));
     
@@ -231,19 +245,23 @@ function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
     const bulan = Math.floor(sisaHariDariTahun / 30);
     const hari = sisaHariDariTahun % 30;
 
-    if (totalHari <= 90) {
-        elementTr.style.backgroundColor = "#fee2e2"; 
-        elementTr.style.color = "#b91c1c";
-    } else if (totalHari <= 180) {
-        elementTr.style.backgroundColor = "#fef3c7"; 
-        elementTr.style.color = "#b45309";
-    }
+    if (totalHari <= 90) { elementTr.style.backgroundColor = "#fee2e2"; elementTr.style.color = "#b91c1c"; }
+    else if (totalHari <= 180) { elementTr.style.backgroundColor = "#fef3c7"; elementTr.style.color = "#b45309"; }
 
     return `${tahun} Thn ${bulan} Bln ${hari} Hari`;
 }
 
-// 📝 RE-HOOK ROUTER UNTUK OPERASIONAL UPDATE TABEL LIVE AUTOMATIC
+// 📝 RE-HOOK ROUTER UNTUK MONITOR LIVE OPERASIONAL TABEL ARSIP
 window.switchViewHook = function(viewId) {
+    const roleSekarang = sessionStorage.getItem('role');
+    
+    // Kontrol tombol pemicu form input di sub-menu arsip sekunder
+    const triggerIds = ['btn-tambah-masuk-trigger', 'btn-tambah-keluar-trigger', 'btn-tambah-str-trigger', 'btn-tambah-sik-trigger', 'btn-tambah-surat-masuk-trigger', 'btn-tambah-surat-keluar-trigger'];
+    triggerIds.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.style.display = (roleSekarang === 'admin') ? 'none' : 'inline-flex';
+    });
+
     if (viewId === 'view-data-pegawai') {
         muatDataDariCloud().then(() => { refreshDataState(); hitungStatistikDashboard(); });
     }
@@ -272,9 +290,8 @@ window.switchViewHook = function(viewId) {
         muatTabelSpesifik('surat_masuk', 'body-tabel-surat-masuk', [1,2,3,4,5,6,7,8], (tr, r) => {
             let colorBadge = "background:#cbd5e1; color:#1e293b;"; 
             if (r.status_tindak_lanjut === 'Selesai') colorBadge = "background:#dcfce7; color:#15803d; font-weight:700;";
-            if (r.status_tindak_lanjut === 'Proses Telaah') colorBadge = "background:#fef3c7; color:#b45309;";
-            if (r.status_tindak_lanjut === 'Proses TTE') colorBadge = "background:#e0f2fe; color:#0369a1;";
-
+            else if (r.status_tindak_lanjut === 'Proses Telaah') colorBadge = "background:#fef3c7; color:#b45309;";
+            else if (r.status_tindak_lanjut === 'Proses TTE') colorBadge = "background:#e0f2fe; color:#0369a1;";
             tr.innerHTML = `<td><strong>${r.no_surat}</strong></td><td>${r.tgl_surat}</td><td>${r.uraian}</td><td><span style="background:#f1f5f9; padding:3px 6px; border-radius:4px; font-size:12px; font-weight:600;">${r.instruksi}</span></td><td>${r.instruksi_tambahan || '-'}</td><td><span style="padding:4px 8px; border-radius:6px; font-size:12px; ${colorBadge}">${r.status_tindak_lanjut}</span></td><td><a href="${r.lampiran_url || '#'}" target="_blank" class="btn" style="padding:4px 8px; font-size:12px; background:#475569; color:white;"><i class="fa-solid fa-file-pdf"></i> Lihat</a></td>`;
         });
     }
@@ -282,25 +299,20 @@ window.switchViewHook = function(viewId) {
         muatTabelSpesifik('surat_keluar', 'body-tabel-surat-keluar', [1,2,3,4,5,6,7,8], (tr, r) => {
             let colorBadge = "background:#cbd5e1; color:#1e293b;";
             if (r.status_tindak_lanjut === 'Selesai') colorBadge = "background:#dcfce7; color:#15803d; font-weight:700;";
-            if (r.status_tindak_lanjut === 'Proses Telaah') colorBadge = "background:#fef3c7; color:#b45309;";
-            if (r.status_tindak_lanjut === 'Proses TTE') colorBadge = "background:#e0f2fe; color:#0369a1;";
-
+            else if (r.status_tindak_lanjut === 'Proses Telaah') colorBadge = "background:#fef3c7; color:#b45309;";
+            else if (r.status_tindak_lanjut === 'Proses TTE') colorBadge = "background:#e0f2fe; color:#0369a1;";
             tr.innerHTML = `<td><strong>${r.no_surat}</strong></td><td>${r.tgl_surat}</td><td>${r.uraian}</td><td>${r.instruksi_tambahan || '-'}</td><td><span style="padding:4px 8px; border-radius:6px; font-size:12px; ${colorBadge}">${r.status_tindak_lanjut}</span></td><td><i class="fa-solid fa-location-dot" style="color:#94a3b8"></i> ${r.keberadaan_berkas}</td><td><a href="${r.lampiran_url || '#'}" target="_blank" class="btn" style="padding:4px 8px; font-size:12px; background:#475569; color:white;"><i class="fa-solid fa-file-pdf"></i> Lihat</a></td>`;
         });
     }
 };
 
-// Pasang hook pemicu awal ke fungsi router bawaan HTML
 window.switchViewHook('view-data-pegawai');
 
 function pemicuEditPegawai(id) {
     const dataPeg = dbPegawai.find(x => x.id_pegawai === id);
     if (!dataPeg) return;
     
-    // Aktifkan kunci NIK pada mode edit admin
-    const nikInput = document.getElementById('nik');
-    if(nikInput) nikInput.disabled = true;
-
+    if(document.getElementById('nik')) document.getElementById('nik').disabled = true;
     fields.forEach(f => { const el = document.getElementById(f); if (el) el.value = dataPeg[f] || ''; });
     statusEdit = true;
     
