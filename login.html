@@ -87,7 +87,7 @@
             btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Memverifikasi...";
 
             try {
-                // 🔒 CEK AKSI 1: Jika login sebagai Super Admin / Admin (Gunakan Hardcode atau Tabel Khusus)
+                // 🔒 AKSI 1: Validasi Akses Tingkat Administrator Terpusat
                 if (userInput.toLowerCase() === "superadmin" && passInput === "super123") {
                     sessionStorage.setItem('role', 'superadmin');
                     sessionStorage.setItem('user_key', 'SUPER-ADMIN-KEY');
@@ -103,24 +103,31 @@
                     return;
                 }
 
-                // 🔒 CEK AKSI 2: Jika bukan admin, cek ke tabel 'pegawai' menggunakan NIK (Password sementara disamakan dengan NIK atau kolom password jika ada)
-                // Di sini dicocokkan: NIK sebagai username, dan password default-nya adalah NIK-nya sendiri (atau silakan ganti logic-nya)
+                // 🔒 AKSI 2: Validasi Akses Tingkat Karyawan (Mencari di Tabel Pegawai via NIK)
                 const { data: pegawai, error } = await supabaseClient
                     .from('pegawai')
-                    .select('id_pegawai, nik, nama')
+                    .select('id_pegawai, nik, nama, password')
                     .eq('nik', userInput)
                     .maybeSingle();
 
                 if (error) throw error;
 
-                if (pegawai && passInput === pegawai.nik) {
-                    sessionStorage.setItem('role', 'pegawai');
-                    sessionStorage.setItem('user_key', pegawai.id_pegawai);
-                    alert(`Login Sukses! Selamat datang di Portal Mandiri, ${pegawai.nama}.`);
-                    window.location.href = "index-pegawai.html";
-                } else {
-                    alert("⚠️ Kredensial salah! NIK tidak terdaftar atau kata sandi tidak cocok.");
+                if (pegawai) {
+                    // Validasi Pengaman: Jika data kolom password baru di database Anda kosong/null,
+                    // maka otomatis password default yang digunakan adalah nomor NIK-nya sendiri.
+                    const passwordValid = pegawai.password ? pegawai.password.trim() : pegawai.nik.trim();
+                    
+                    if (passInput === passwordValid) {
+                        sessionStorage.setItem('role', 'pegawai');
+                        sessionStorage.setItem('user_key', pegawai.id_pegawai);
+                        alert(`Login Sukses! Selamat datang di Portal Mandiri, ${pegawai.nama}.`);
+                        window.location.href = "index-pegawai.html";
+                        return;
+                    }
                 }
+
+                // Jika alur pengetikan kredensial tidak ada yang cocok
+                alert("⚠️ Kredensial salah! NIK tidak terdaftar atau kata sandi tidak cocok.");
 
             } catch (err) {
                 console.error(err);
