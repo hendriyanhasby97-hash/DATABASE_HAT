@@ -120,7 +120,7 @@
                 <a class="menu-link"><span class="menu-link-inner"><i class="fa-solid fa-file-invoice"></i>Ubah Data Mandiri (DRH)</span></a>
             </li>
 
-            <li class="menu-item">
+            <li id="menu-izin-kerja" class="menu-item hide-element">
                 <a class="menu-link" onclick="toggleDropdown(this)"><span class="menu-link-inner"><i class="fa-solid fa-id-card-clip"></i>Izin Kerja Mandiri</span><i class="fa-solid fa-chevron-down arrow"></i></a>
                 <ul class="submenu">
                     <li><a class="submenu-link" onclick="switchView('view-input-str', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Input Data STR</a></li>
@@ -221,7 +221,17 @@
                         <div class="drh-section">
                             <div class="section-title">💼 III. Kedudukan Jabatan & Struktur Masa Kerja</div>
                             <div class="grid-inputs">
-                                <div class="form-group"><label>Kelompok Jabatan</label><select id="kelompok_jabatan"><option>Management</option><option>Tenaga Medis</option><option>Tenaga Kesehatan</option><option>Tenaga Administrasi</option></select></div>
+                                <div class="form-group">
+                                    <label>Kelompok Jabatan</label>
+                                    <select id="kelompok_jabatan">
+                                        <option>Management</option>
+                                        <option>Tenaga Medis</option>
+                                        <option>Tenaga Kesehatan</option>
+                                        <option>Tenaga Penunjang Medis</option>
+                                        <option>Tenaga Administrasi</option>
+                                        <option>Tenaga Non Administrasi</option>
+                                    </select>
+                                </div>
                                 <div class="form-group"><label>Nama Jabatan</label><input type="text" id="jabatan"></div>
                                 <div class="form-group"><label>Golongan Ruang</label><input type="text" id="gol"></div>
                                 <div class="form-group"><label>Ruangan / Unit Kerja Tempat Dinas</label><input type="text" id="ruangan"></div>
@@ -272,7 +282,7 @@
                     <form id="form-add-str" onsubmit="saveDataIzinKerja(event, 'berkas_str', 'form-add-str')">
                         <div class="grid-inputs">
                             <div class="form-group"><label>NIK Pegawai (Terkunci)</label><input type="text" name="nik" id="str-nik" readonly required></div>
-                            <div class="form-group style" style="grid-column: span 2;"><label>Nama Lengkap Anda (Terkunci)</label><input type="text" name="nama" id="str-nama" readonly required></div>
+                            <div class="form-group" style="grid-column: span 2;"><label>Nama Lengkap Anda (Terkunci)</label><input type="text" name="nama" id="str-nama" readonly required></div>
                             <div class="form-group"><label>Bidang Profesi</label><input type="text" name="bidang" placeholder="Contoh: Perawat, Dokter" required></div>
                             <div class="form-group"><label>Nomor STR</label><input type="text" name="no_str" required></div>
                             <div class="form-group"><label>Tanggal Terbit STR</label><input type="date" name="tgl_terbit" required></div>
@@ -293,7 +303,7 @@
                     <form id="form-add-sik" onsubmit="saveDataIzinKerja(event, 'berkas_sik', 'form-add-sik')">
                         <div class="grid-inputs">
                             <div class="form-group"><label>NIK Pegawai (Terkunci)</label><input type="text" name="nik" id="sik-nik" readonly required></div>
-                            <div class="form-group style" style="grid-column: span 2;"><label>Nama Lengkap Anda (Terkunci)</label><input type="text" name="nama" id="sik-nama" readonly required></div>
+                            <div class="form-group" style="grid-column: span 2;"><label>Nama Lengkap Anda (Terkunci)</label><input type="text" name="nama" id="sik-nama" readonly required></div>
                             <div class="form-group"><label>Bidang Profesi / Unit Kerja</label><input type="text" name="bidang" placeholder="Contoh: Bidan, Apoteker" required></div>
                             <div class="form-group"><label>Nomor SIP / SIK</label><input type="text" name="no_sip" required></div>
                             <div class="form-group"><label>Tanggal Terbit SIK</label><input type="date" name="tgl_terbit" required></div>
@@ -326,7 +336,6 @@
             'fakultas', 'jurusan', 'ruangan', 'no_bpjsn', 'no_bpjsket_taspen', 'npwp', 'email', 'no_telp'
         ];
 
-        // Ambil ID Pegawai dari Sesi Hasil Login murni
         const userKey = sessionStorage.getItem('user_key');
         const formDRH = document.getElementById('form-drh-karyawan');
         const btnSimpan = document.getElementById('btn-simpan-drh');
@@ -361,7 +370,6 @@
         document.addEventListener('DOMContentLoaded', async () => {
             if (userKey) {
                 try {
-                    // Ambil data langsung dari tabel induk 'pegawai'
                     const { data, error } = await supabaseClient.from('pegawai').select('*').eq('id_pegawai', userKey).single();
                     if (error) throw error;
 
@@ -387,6 +395,11 @@
                         document.getElementById('sik-nik').value = data.nik || '';
                         document.getElementById('sik-nama').value = data.nama || '';
 
+                        // 🔒 LOGIKA AMAN SYARAT JABATAN: Munculkan menu Izin Kerja Mandiri jika kelompok jabatan BUKAN Tenaga Administrasi
+                        if (data.kelompok_jabatan && data.kelompok_jabatan.trim().toLowerCase() !== 'tenaga administrasi') {
+                            document.getElementById('menu-izin-kerja').classList.remove('hide-element');
+                        }
+
                         // Logika filter menu ASN khusus Naik Pangkat
                         if (data.kelompok_pegawai && data.kelompok_pegawai.trim().toUpperCase() === 'ASN') {
                             document.getElementById('menu-naik-pangkat').classList.remove('hide-element');
@@ -405,7 +418,6 @@
                 }
             }
 
-            // Hitung Masa Kerja Otomatis Karyawan jika merubah data kalender masuk RS
             const inputMasukRS = document.getElementById('masuk_rs');
             if (inputMasukRS) {
                 inputMasukRS.onchange = function() {
@@ -419,7 +431,6 @@
                 };
             }
 
-            // Aksi Update Perubahan Mandiri ke tabel pegawai
             if (formDRH) {
                 formDRH.onsubmit = async (e) => {
                     e.preventDefault();
@@ -448,7 +459,6 @@
             }
         });
 
-        // Simpan Berkas Layanan Tambahan STR/SIK Otomatis File Upload
         async function saveDataIzinKerja(event, namaTabel, idForm) {
             event.preventDefault();
             const form = document.getElementById(idForm);
