@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Input Izin Kerja & STR Karyawan</title>
+    <title>Dashboard Pegawai & Input Berkas Kepegawaian</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -20,26 +20,44 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg-light); color: #334155; padding: 40px 20px; display: flex; justify-content: center; }
+        body { background-color: var(--bg-light); color: #334155; display: flex; min-height: 100vh; }
 
-        .container { width: 100%; max-width: 900px; }
-        .panel-form-box { background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 30px; }
-        
-        .page-header { margin-bottom: 25px; border-bottom: 2px solid var(--bg-light); padding-bottom: 15px; }
-        .page-header h2 { font-size: 20px; font-weight: 800; color: var(--dark-slate); display: flex; align-items: center; gap: 10px; }
-        .page-header h2 i { color: var(--primary); }
-        .page-header p { font-size: 13px; color: #64748b; margin-top: 4px; }
+        /* 📊 SIDEBAR NAVIGASI */
+        .sidebar { width: 260px; background: var(--dark-slate); color: white; padding: 25px 15px; display: flex; flex-direction: column; gap: 30px; }
+        .sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; padding-left: 10px; }
+        .sidebar-brand i { color: var(--primary); }
+        .sidebar-menu { display: flex; flex-direction: column; gap: 8px; list-style: none; }
+        .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; color: #94a3b8; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .menu-item:hover, .menu-item.active { background: rgba(255,255,255,0.05); color: white; }
+        .menu-item.active { background: var(--primary); }
+
+        /* 🖥️ KONTEN UTAMA */
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+
+        /* 🎫 KARTU DASHBOARD */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; border: 1px solid var(--border-color); padding: 20px; border-radius: 12px; display: flex; align-items: center; gap: 15px; }
+        .stat-icon { width: 48px; height: 48px; border-radius: 10px; background: rgba(37, 99, 235, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .stat-info h3 { font-size: 24px; font-weight: 700; color: var(--dark-slate); }
+        .stat-info p { font-size: 12px; color: #64748b; font-weight: 500; }
+
+        /* 📝 PANEL FORMULIR & TABEL */
+        .panel-box { background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .panel-header { margin-bottom: 20px; border-bottom: 2px solid var(--bg-light); padding-bottom: 12px; }
+        .panel-header h2 { font-size: 18px; font-weight: 800; color: var(--dark-slate); display: flex; align-items: center; gap: 10px; }
+        .panel-header p { font-size: 13px; color: #64748b; margin-top: 4px; }
 
         .grid-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-group.full-width { grid-column: span 3; }
         .form-group label { font-size: 12px; font-weight: 700; color: #475569; }
         
-        /* Gaya khusus untuk kolom NIK yang memiliki tombol cek */
         .nik-search-box { display: flex; gap: 8px; }
         .nik-search-box input { flex: 1; }
         
-        .form-group input, .form-group select { padding: 11px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; background: #f8fafc; transition: all 0.2s; }
+        .form-group input, .form-group select, .form-group textarea { padding: 11px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; background: #f8fafc; transition: all 0.2s; }
         .form-group input:focus, .form-group select:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         .form-group input[readonly] { background-color: #e2e8f0; color: #475569; cursor: not-allowed; font-weight: 600; }
         
@@ -49,203 +67,295 @@
         .btn-secondary { background-color: #64748b; color: white; }
         .btn-secondary:hover { background-color: #475569; }
 
-        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-top: 5px; }
-        .badge-success { background: #dcfce7; color: #15803d; }
-        .badge-error { background: #fee2e2; color: #b91c1c; }
+        /* 📅 GAYA TABEL DRH */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background: #f1f5f9; color: #475569; font-weight: 700; font-size: 13px; text-align: left; padding: 12px; border-bottom: 2px solid var(--border-color); }
+        td { padding: 12px; font-size: 14px; border-bottom: 1px solid var(--border-color); }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-hospital"></i>
+            <span>Portal Karyawan</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-item active" onclick="switchView('view-dashboard')"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
+            <li class="menu-item" onclick="switchView('view-drh')"><i class="fa-solid fa-address-card"></i> Riwayat Hidup (DRH)</li>
+            <li class="menu-item" onclick="switchView('view-input-str')"><i class="fa-solid fa-id-card"></i> Input Berkas STR</li>
+            <li class="menu-item" onclick="switchView('view-input-sik')"><i class="fa-solid fa-file-signature"></i> Input Berkas SIK / SIP</li>
+        </ul>
+    </div>
 
-        <div class="panel-form-box">
-            <div class="page-header">
-                <h2><i class="fa-solid fa-id-card"></i> Formulir Registrasi STR Baru</h2>
-                <p>Masukkan NIK pegawai, sistem akan otomatis mencocokkan data ke database induk admin.</p>
+    <div class="main-content">
+
+        <div id="view-dashboard" class="view-section active">
+            <div class="panel-header" style="margin-bottom: 25px;">
+                <h2><i class="fa-solid fa-chart-pie"></i> Ringkasan Data Dashboard</h2>
+                <p>Selamat datang kembali di sistem informasi manajemen kepegawaian internal.</p>
             </div>
             
-            <form id="form-add-str" onsubmit="saveDataIzinKerja(event, 'berkas_str', 'form-add-str')">
-                <div class="grid-inputs">
-                    <div class="form-group">
-                        <label>NIK Pegawai (Tekan Enter/Cek)</label>
-                        <div class="nik-search-box">
-                            <input type="number" name="nik" id="str-nik" placeholder="Masukkan NIK Karyawan" required onchange="cariDataPegawaiByNIK('str-nik', 'str-nama')">
-                            <button type="button" class="btn btn-secondary" style="padding: 0 12px;" onclick="cariDataPegawaiByNIK('str-nik', 'str-nama')"><i class="fa-solid fa-magnifying-glass"></i></button>
-                        </div>
-                    </div>
-                    <div class="form-group" style="grid-column: span 2;">
-                        <label>Nama Lengkap Karyawan (Otomatis Terisi)</label>
-                        <input type="text" name="nama" id="str-nama" readonly placeholder="Ketik NIK terlebih dahulu untuk memunculkan nama" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Bidang Profesi</label>
-                        <input type="text" name="bidang" placeholder="Contoh: Perawat, Dokter" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Nomor STR</label>
-                        <input type="text" name="no_str" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Tanggal Terbit STR</label>
-                        <input type="date" name="tgl_terbit" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Tanggal Berakhir STR</label>
-                        <input type="date" name="tgl_berakhir" required>
-                    </div>
-                    <div class="form-group full-width">
-                        <label>Unggah Berkas Lampiran STR (PDF/Gambar)</label>
-                        <input type="file" name="lampiran_file" accept=".pdf, .png, .jpg, .jpeg" required>
-                    </div>
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa-solid fa-id-card"></i></div>
+                    <div class="stat-info"><h3 id="dash-total-str">0</h3><p>Total Berkas STR</p></div>
                 </div>
-                <div style="margin-top: 25px; text-align: right;">
-                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Berkas STR</button>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:rgba(16,185,129,0.1); color:#10b981;"><i class="fa-solid fa-file-contract"></i></div>
+                    <div class="stat-info"><h3 id="dash-total-sik">0</h3><p>Total Berkas SIK</p></div>
                 </div>
-            </form>
+            </div>
         </div>
 
-
-        <div class="panel-form-box">
-            <div class="page-header">
-                <h2><i class="fa-solid fa-file-signature"></i> Formulir Registrasi SIK / SIP Baru</h2>
-                <p>Masukkan NIK pegawai, sistem akan otomatis menyinkronkan data nama dari database kepegawaian.</p>
+        <div id="view-drh" class="view-section">
+            <div class="panel-box">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-address-card"></i> Riwayat Hidup Karyawan</h2>
+                    <p>Masukkan NIK Anda untuk melacak riwayat masuk kerja ke dalam sistem.</p>
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <input type="number" id="cari-drh-nik" placeholder="Masukkan NIK Karyawan Anda" style="padding:10px; border:1px solid var(--border-color); border-radius:8px; width: 250px;">
+                    <button class="btn btn-primary" onclick="loadRiwayatHidupPegawai()"><i class="fa-solid fa-magnifying-glass"></i> Cari Data DRH</button>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>NIK</th>
+                            <th>Nama Pegawai</th>
+                            <th>Jenis Kelamin</th>
+                            <th>Agama</th>
+                            <th>Bagian / Unit</th>
+                            <th>TMT Masuk</th>
+                            <th>Pendidikan terakhir</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-drh-pegawai">
+                        <tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 20px;">Silakan masukkan NIK untuk menampilkan data DRH.</td></tr>
+                    </tbody>
+                </table>
             </div>
-            
-            <form id="form-add-sik" onsubmit="saveDataIzinKerja(event, 'berkas_sik', 'form-add-sik')">
-                <div class="grid-inputs">
-                    <div class="form-group">
-                        <label>NIK Pegawai (Tekan Enter/Cek)</label>
-                        <div class="nik-search-box">
-                            <input type="number" name="nik" id="sik-nik" placeholder="Masukkan NIK Karyawan" required onchange="cariDataPegawaiByNIK('sik-nik', 'sik-nama')">
-                            <button type="button" class="btn btn-secondary" style="padding: 0 12px;" onclick="cariDataPegawaiByNIK('sik-nik', 'sik-nama')"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </div>
+
+        <div id="view-input-str" class="view-section">
+            <div class="panel-box">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-id-card"></i> Formulir Registrasi STR Baru</h2>
+                    <p>Masukkan NIK, sistem akan otomatis mengambil nama Anda dari database induk kepegawaian.</p>
+                </div>
+                
+                <form id="form-add-str" onsubmit="saveDataIzinKerja(event, 'berkas_str', 'form-add-str')">
+                    <div class="grid-inputs">
+                        <div class="form-group">
+                            <label>NIK Pegawai (Tekan Enter/Cek)</label>
+                            <div class="nik-search-box">
+                                <input type="number" name="nik" id="str-nik" placeholder="Masukkan NIK Anda" required onchange="cariDataPegawaiByNIK('str-nik', 'str-nama')">
+                                <button type="button" class="btn btn-secondary" style="padding: 0 12px;" onclick="cariDataPegawaiByNIK('str-nik', 'str-nama')"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>Nama Lengkap Karyawan (Otomatis)</label>
+                            <input type="text" name="nama" id="str-nama" readonly placeholder="Nama muncul otomatis setelah NIK diverifikasi" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Bidang Profesi</label>
+                            <input type="text" name="bidang" placeholder="Contoh: Perawat, Dokter" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nomor STR</label>
+                            <input type="text" name="no_str" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tanggal Terbit STR</label>
+                            <input type="date" name="tgl_terbit" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tanggal Berakhir STR</label>
+                            <input type="date" name="tgl_berakhir" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Unggah Berkas Lampiran STR (PDF/Gambar)</label>
+                            <input type="file" name="lampiran_file" accept=".pdf, .png, .jpg, .jpeg" required>
                         </div>
                     </div>
-                    <div class="form-group" style="grid-column: span 2;">
-                        <label>Nama Lengkap Karyawan (Otomatis Terisi)</label>
-                        <input type="text" name="nama" id="sik-nama" readonly placeholder="Ketik NIK terlebih dahulu untuk memunculkan nama" required>
+                    <div style="margin-top: 25px; text-align: right;">
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Berkas STR</button>
                     </div>
-                    <div class="form-group">
-                        <label>Bidang Profesi / Unit</label>
-                        <input type="text" name="bidang" placeholder="Contoh: Bidan, Apoteker" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Nomor SIP / SIK</label>
-                        <input type="text" name="no_sip" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Tanggal Terbit SIK</label>
-                        <input type="date" name="tgl_terbit" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Tanggal Berakhir SIK</label>
-                        <input type="date" name="tgl_berakhir" required>
-                    </div>
-                    <div class="form-group full-width">
-                        <label>Unggah Berkas Lampiran SIK (PDF/Gambar)</label>
-                        <input type="file" name="lampiran_file" accept=".pdf, .png, .jpg, .jpeg" required>
-                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="view-input-sik" class="view-section">
+            <div class="panel-box">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-file-signature"></i> Formulir Registrasi SIK / SIP Baru</h2>
+                    <p>Masukkan NIK, sistem akan otomatis mengambil nama Anda dari database induk kepegawaian.</p>
                 </div>
-                <div style="margin-top: 25px; text-align: right;">
-                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Berkas SIK</button>
-                </div>
-            </form>
+                
+                <form id="form-add-sik" onsubmit="saveDataIzinKerja(event, 'berkas_sik', 'form-add-sik')">
+                    <div class="grid-inputs">
+                        <div class="form-group">
+                            <label>NIK Pegawai (Tekan Enter/Cek)</label>
+                            <div class="nik-search-box">
+                                <input type="number" name="nik" id="sik-nik" placeholder="Masukkan NIK Anda" required onchange="cariDataPegawaiByNIK('sik-nik', 'sik-nama')">
+                                <button type="button" class="btn btn-secondary" style="padding: 0 12px;" onclick="cariDataPegawaiByNIK('sik-nik', 'sik-nama')"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>Nama Lengkap Karyawan (Otomatis)</label>
+                            <input type="text" name="nama" id="sik-nama" readonly placeholder="Nama muncul otomatis setelah NIK diverifikasi" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Bidang Profesi / Unit</label>
+                            <input type="text" name="bidang" placeholder="Contoh: Bidan, Apoteker" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nomor SIP / SIK</label>
+                            <input type="text" name="no_sip" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tanggal Terbit SIK</label>
+                            <input type="date" name="tgl_terbit" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tanggal Berakhir SIK</label>
+                            <input type="date" name="tgl_berakhir" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Unggah Berkas Lampiran SIK (PDF/Gambar)</label>
+                            <input type="file" name="lampiran_file" accept=".pdf, .png, .jpg, .jpeg" required>
+                        </div>
+                    </div>
+                    <div style="margin-top: 25px; text-align: right;">
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Berkas SIK</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
     </div>
 
     <script>
-        // Inisialisasi Klien Supabase Anda
+        // Konfigurasi Supabase Klien
         const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // 🔍 1. FUNGSI SMART PENCARIAN NIK KE TABEL PEGAWAI (INDUK DATA ADMIN)
+        document.addEventListener("DOMContentLoaded", () => {
+            hitungMetrikDashboardKaryawan();
+        });
+
+        // 🔄 1. TAB MENU SWITCHER (NAVIGASI)
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
+            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+            
+            document.getElementById(viewId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // 📊 2. HITUNG METRIK DASHBOARD PEGAWAI
+        async function hitungMetrikDashboardKaryawan() {
+            try {
+                const { count: totalSTR } = await supabaseClient.from('berkas_str').select('*', { count: 'exact', head: true });
+                const { count: totalSIK } = await supabaseClient.from('berkas_sik').select('*', { count: 'exact', head: true });
+                
+                document.getElementById('dash-total-str').textContent = totalSTR || 0;
+                document.getElementById('dash-total-sik').textContent = totalSIK || 0;
+            } catch(e) { console.error(e); }
+        }
+
+        // 🔍 3. AUTO-FILL: CARI NIK KE TABEL PEGAWAI UTAMA
         async function cariDataPegawaiByNIK(idInputNIK, idInputNama) {
             const nikValue = document.getElementById(idInputNIK).value.trim();
             const namaField = document.getElementById(idInputNama);
-
             if (!nikValue) return;
 
-            namaField.value = "Sedang mencari data NIK...";
-
+            namaField.value = "Memverifikasi NIK...";
             try {
-                // Mencari nama ke tabel 'pegawai' berdasarkan nik yang diinputkan
-                const { data, error } = await supabaseClient
-                    .from('pegawai')
-                    .select('nama')
-                    .eq('nik', nikValue)
-                    .maybeSingle(); // Mengambil satu data saja jika cocok
-
+                const { data, error } = await supabaseClient.from('pegawai').select('nama').eq('nik', nikValue).maybeSingle();
                 if (error) throw error;
 
                 if (data) {
-                    namaField.value = data.nama; // Masukkan nama otomatis jika ketemu
-                    namaField.style.color = "#1e3a8a";
+                    namaField.value = data.nama;
                 } else {
                     namaField.value = "";
-                    alert(`⚠️ NIK [${nikValue}] tidak terdaftar di database induk admin kepegawaian. Pastikan NIK sudah benar.`);
+                    alert(`⚠️ NIK [${nikValue}] tidak terdaftar di sistem pusat. Silakan hubungi admin HRD.`);
                 }
             } catch (err) {
-                console.error("Gagal verifikasi NIK:", err);
                 namaField.value = "";
-                alert("Gagal menghubungkan ke server untuk pengecekan NIK.");
+                alert("Gagal melakukan verifikasi data NIK.");
             }
         }
 
-        // 🚀 2. FUNGSI UPLOAD FILE & SIMPAN DATA SELESAI AUTO-FILL
+        // 🔍 4. LAUNCH DATA RIWAYAT HIDUP (DRH) BERDASARKAN TABEL PEGAWAI_MASUK
+        async function loadRiwayatHidupPegawai() {
+            const nikInput = document.getElementById('cari-drh-nik').value.trim();
+            const tbody = document.getElementById('tbody-drh-pegawai');
+            if(!nikInput) return alert("Ketik NIK terlebih dahulu!");
+
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Mencari berkas DRH...</td></tr>`;
+
+            try {
+                const { data, error } = await supabaseClient.from('pegawai_masuk').select('*').eq('nik', nikInput);
+                if (error) throw error;
+
+                tbody.innerHTML = '';
+                if(!data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Data Riwayat Hidup tidak ditemukan.</td></tr>`;
+                    return;
+                }
+
+                data.forEach(r => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${r.nik}</td><td><strong>${r.nama}</strong></td><td>${r.jenis_kelamin}</td><td>${r.agama}</td><td>${r.bagian}</td><td>${r.tmt_masuk}</td><td>${r.pendidikan}</td>`;
+                    tbody.appendChild(tr);
+                });
+            } catch(err) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Gagal memuat arsip data.</td></tr>`;
+            }
+        }
+
+        // 🚀 5. OPERASI FILE UPLOAD & INSERT DATA FORM STR/SIK
         async function saveDataIzinKerja(event, namaTabel, idForm) {
             event.preventDefault();
             const form = document.getElementById(idForm);
             const btnSubmit = form.querySelector('button[type="submit"]');
             
             btnSubmit.disabled = true;
-            btnSubmit.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Memproses Berkas...";
+            btnSubmit.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Menyimpan Berkas...";
 
             const fileInput = form.querySelector('input[type="file"]');
             let finalUrl = "";
 
             try {
-                // Proses upload otomatis ke Storage Bucket bernama 'lampiran'
                 if (fileInput && fileInput.files.length > 0) {
                     const fileObj = fileInput.files[0];
                     const fileExt = fileObj.name.split('.').pop();
                     const fileName = `${namaTabel}_${Date.now()}.${fileExt}`;
                     
-                    const { data: uploadData, error: uploadError } = await supabaseClient
-                        .storage
-                        .from('lampiran')
-                        .upload(fileName, fileObj);
-
+                    const { data: uploadData, error: uploadError } = await supabaseClient.storage.from('lampiran').upload(fileName, fileObj);
                     if (uploadError) throw uploadError;
 
-                    const { data: publicUrlData } = supabaseClient
-                        .storage
-                        .from('lampiran')
-                        .getPublicUrl(fileName);
-                        
+                    const { data: publicUrlData } = supabaseClient.storage.from('lampiran').getPublicUrl(fileName);
                     finalUrl = publicUrlData.publicUrl;
                 }
 
-                // Ambil semua data inputan form
                 const formData = new FormData(form);
                 const dataObj = {};
-                formData.forEach((value, key) => { 
-                    if (key !== 'lampiran_file') { dataObj[key] = value.trim(); } 
-                });
-
-                // Pasangkan URL hasil upload otomatis
+                formData.forEach((value, key) => { if (key !== 'lampiran_file') dataObj[key] = value.trim(); });
                 dataObj['lampiran_url'] = finalUrl;
 
-                // Kirim objek data final ke Supabase
                 const { error: insertError } = await supabaseClient.from(namaTabel).insert([dataObj]);
                 if (insertError) throw insertError;
 
-                alert(`Sukses! Berkas ${namaTabel.replace('_', ' ').toUpperCase()} berhasil disimpan & terkoneksi dengan NIK.`);
+                alert(`Sukses! Berkas berhasil terekam ke sistem cloud.`);
                 form.reset();
-                
+                hitungMetrikDashboardKaryawan();
             } catch (err) {
-                console.error("Sistem gagal:", err);
-                alert("Gagal merekam berkas. Pastikan ukuran file kecil dan hak akses Policy Storage sudah bernilai Public.");
+                console.error(err);
+                alert("Gagal memproses berkas file. Pastikan ukuran file kecil.");
             } finally {
                 btnSubmit.disabled = false;
                 btnSubmit.innerHTML = "<i class='fa-solid fa-floppy-disk'></i> Simpan Berkas";
