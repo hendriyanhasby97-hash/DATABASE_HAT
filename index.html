@@ -394,17 +394,27 @@
                         <button class="btn btn-primary" id="btn-tambah-str-trigger" onclick="toggleFormInput('form-str-wrapper')"><i class="fa-solid fa-plus"></i> Tambah STR</button>
                     </div>
                     <div id="form-str-wrapper" class="panel-form-box hide-element">
-                        <form id="form-add-str" onsubmit="saveDataSekunder(event, 'berkas_str', 'form-add-str', 'form-str-wrapper', 'view-str')">
+                        <form id="form-add-str" onsubmit="saveDataSekunderSTRAdmin(event)">
                             <div class="grid-inputs">
                                 <div class="form-group"><label>NIK</label><input type="number" name="nik" required></div>
                                 <div class="form-group"><label>Nama</label><input type="text" name="nama" required></div>
                                 <div class="form-group"><label>Bidang</label><input type="text" name="bidang" required></div>
                                 <div class="form-group"><label>No STR</label><input type="text" name="no_str" required></div>
                                 <div class="form-group"><label>Tgl Terbit</label><input type="date" name="tgl_terbit" required></div>
-                                <div class="form-group"><label>Tgl Berakhir</label><input type="date" name="tgl_berakhir" required></div>
+                                
+                                <div class="form-group">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2px;">
+                                        <label>Tgl Berakhir STR</label>
+                                        <label style="font-size:11px; font-weight:700; color:var(--primary); display:inline-flex; align-items:center; gap:4px; text-transform:none; cursor:pointer;">
+                                            <input type="checkbox" id="admin-str-seumur-hidup" onchange="toggleSTRSeumurHidup('admin-str-seumur-hidup', 'admin-tgl-berakhir-str')"> Seumur Hidup
+                                        </label>
+                                    </div>
+                                    <input type="date" name="tgl_berakhir" id="admin-tgl-berakhir-str" required>
+                                </div>
+                                
                                 <div class="form-group full-width"><label>File</label><input type="file" name="lampiran_file" required></div>
                             </div>
-                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Unggah</button></div>
+                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Unggah Berkas STR</button></div>
                         </form>
                     </div>
                     <div class="table-responsive"><table><thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Bidang Profesi</th><th>No. STR</th><th>Tgl Terbit</th><th>Tgl Berakhir</th><th>Lampiran</th></tr></thead><tbody id="body-tabel-str"></tbody></table></div>
@@ -508,6 +518,65 @@
             document.getElementById('top-role-avatar').textContent = roleLogin === 'superadmin' ? 'SA' : 'AD';
         }
 
+        // 👁️ LIVE LOGIC: SWITCH LOCK INPUT JIKA CEKLISAN SEUMUR HIDUP AKTIF
+        function toggleSTRSeumurHidup(checkboxId, inputTglId) {
+            const cb = document.getElementById(checkboxId);
+            const inputTgl = document.getElementById(inputTglId);
+            if(!cb || !inputTgl) return;
+
+            if(cb.checked) {
+                inputTgl.type = "text"; 
+                inputTgl.value = "Seumur Hidup";
+                inputTgl.readOnly = true;
+                inputTgl.style.backgroundColor = "#e2e8f0";
+            } else {
+                inputTgl.type = "date";
+                inputTgl.value = "";
+                inputTgl.readOnly = false;
+                inputTgl.style.backgroundColor = "#ffffff";
+            }
+        }
+
+        // CUSTOM ASYNC SAVE KHUSUS STR ADMIN AGAR FORMAT KATA SEUMUR HIDUP AMAN KE DATABASE
+        async function saveDataSekunderSTRAdmin(event) {
+            event.preventDefault();
+            const form = document.getElementById('form-add-str');
+            const btnSubmit = form.querySelector('button[type="submit"]');
+            btnSubmit.disabled = true; btnSubmit.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Memproses...";
+            
+            const fileInput = form.querySelector('input[type="file"]');
+            let finalUrl = "";
+            try {
+                if (fileInput && fileInput.files.length > 0) {
+                    const fileObj = fileInput.files[0];
+                    const fileName = `berkas_str_${Date.now()}.${fileObj.name.split('.').pop()}`;
+                    await supabaseClient.storage.from('lampiran').upload(fileName, fileObj);
+                    finalUrl = supabaseClient.storage.from('lampiran').getPublicUrl(fileName).data.publicUrl;
+                }
+
+                const formData = new FormData(form);
+                const dataObj = {};
+                formData.forEach((value, key) => { if (key !== 'lampiran_file') dataObj[key] = value.trim(); });
+                
+                // Jika diceklis seumur hidup, paksa simpan teks penanda ke DB
+                if(document.getElementById('admin-str-seumur-hidup').checked) {
+                    dataObj['tgl_berakhir'] = "Seumur Hidup";
+                }
+
+                dataObj['lampiran_url'] = finalUrl;
+                const { error } = await supabaseClient.from('berkas_str').insert([dataObj]);
+                if (error) throw error;
+                
+                alert(`Sukses! Data STR berhasil direkam.`); 
+                form.reset();
+                document.getElementById('admin-str-seumur-hidup').checked = false;
+                toggleSTRSeumurHidup('admin-str-seumur-hidup', 'admin-tgl-berakhir-str');
+                toggleFormInput('form-str-wrapper');
+                if (typeof window.switchViewHook === 'function') window.switchViewHook('view-str');
+            } catch (err) { alert("Gagal mengunggah berkas STR."); } 
+            finally { btnSubmit.disabled = false; btnSubmit.textContent = "💾 Unggah Berkas STR"; }
+        }
+
         function toggleDropdown(element) {
             const submenu = element.nextElementSibling;
             const arrow = element.querySelector('.arrow');
@@ -589,32 +658,6 @@
 
         function tutupModalDetail(e) { if(e.target.classList.contains('modal-overlay')) tutupModalDetailAksi(); }
         function tutupModalDetailAksi() { document.getElementById('modal-view-detail').classList.remove('open'); }
-
-        async function saveDataSekunder(event, namaTabel, idForm, idWrapper, viewId) {
-            event.preventDefault();
-            const form = document.getElementById(idForm);
-            const btnSubmit = form.querySelector('button[type="submit"]');
-            btnSubmit.disabled = true; btnSubmit.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Memproses...";
-            const fileInput = form.querySelector('input[type="file"]');
-            let finalUrl = "";
-            try {
-                if (fileInput && fileInput.files.length > 0) {
-                    const fileObj = fileInput.files[0];
-                    const fileExt = fileObj.name.split('.').pop();
-                    const fileName = `${namaTabel}_${Date.now()}.${fileExt}`;
-                    const { data, error } = await supabaseClient.storage.from('lampiran').upload(fileName, fileObj);
-                    if (error) throw error;
-                    finalUrl = supabaseClient.storage.from('lampiran').getPublicUrl(fileName).data.publicUrl;
-                }
-                const formData = new FormData(form); const dataObj = {};
-                formData.forEach((value, key) => { if (key !== 'lampiran_file') dataObj[key] = value.trim(); });
-                dataObj['lampiran_url'] = finalUrl;
-                const { error } = await supabaseClient.from(namaTabel).insert([dataObj]);
-                if (error) throw error;
-                alert(`Sukses! Data tersimpan.`); form.reset(); toggleFormInput(idWrapper);
-                if (typeof window.switchViewHook === 'function') window.switchViewHook(viewId);
-            } catch (err) { alert("Gagal mengunggah."); } finally { btnSubmit.disabled = false; btnSubmit.textContent = "💾 Simpan Data"; }
-        }
 
         function logoutAksi() { if(confirm("Keluar?")) { sessionStorage.clear(); window.location.href = 'login.html'; } }
     </script>
