@@ -86,7 +86,6 @@
         .form-group label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
         .form-group input, .form-group select { padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; outline: none; background: white; }
         
-        /* Proteksi Kolom Sensitif Readonly Sesuai Aturan Kunci Pertama */
         .form-group input[readonly] { background-color: #e2e8f0; color: #475569; cursor: not-allowed; font-weight: 600; }
 
         .btn { padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; text-decoration: none; }
@@ -94,6 +93,14 @@
         .btn-primary:hover { background-color: var(--primary-dark); }
         .btn-danger { background-color: #dc2626; color: white; }
 
+        /* TABLE STRUCT SINKRON SISI ADMIN */
+        .table-responsive { overflow-x: auto; border: 1px solid var(--border-color); border-radius: 8px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; background: white; }
+        th { background: #1e293b; color: white; padding: 12px; font-weight: 700; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid var(--border-color); }
+        td { padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+        tr:hover { background-color: #f8fafc; }
+
+        .panel-form-box { background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         .placeholder-box { text-align: center; padding: 50px 20px; background: white; border: 2px dashed var(--border-color); border-radius: 12px; color: #64748b; }
         .placeholder-box i { font-size: 40px; margin-bottom: 12px; color: #cbd5e1; }
         .hide-element { display: none !important; }
@@ -123,8 +130,8 @@
             <li id="menu-izin-kerja" class="menu-item hide-element">
                 <a class="menu-link" onclick="toggleDropdown(this)"><span class="menu-link-inner"><i class="fa-solid fa-id-card-clip"></i>Izin Kerja Mandiri</span><i class="fa-solid fa-chevron-down arrow"></i></a>
                 <ul class="submenu">
-                    <li><a class="submenu-link" onclick="switchView('view-input-str', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Input Data STR</a></li>
-                    <li><a class="submenu-link" onclick="switchView('view-input-sik', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Input Data SIK</a></li>
+                    <li><a class="submenu-link" onclick="switchView('view-input-str', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Data & Input STR</a></li>
+                    <li><a class="submenu-link" onclick="switchView('view-input-sik', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Data & Input SIK</a></li>
                 </ul>
             </li>
 
@@ -256,7 +263,7 @@
                         </div>
 
                         <div class="drh-section">
-                            <div class="section-title">🏠 V. Alamat Domisili Kependudukan & Kontak Aktif</div>
+                            <div class="section-title">🏠 V. Alamat Domisili Kependudukan & Kontak Akhif</div>
                             <div class="grid-inputs">
                                 <div class="form-group full-width"><label>Alamat Rumah Tinggal Lengkap</label><input type="text" id="alamat"></div>
                                 <div class="form-group"><label>Nomor HP / WhatsApp Aktif</label><input type="tel" id="no_telp"></div>
@@ -276,10 +283,10 @@
             <div id="view-input-str" class="view-panel">
                 <div class="panel-form-box">
                     <div class="page-title-box">
-                        <h2>Input Data Berkas STR</h2>
-                        <p>Sistem otomatis mengunci berkas dokumen agar terkoneksi tepat dengan data induk Anda.</p>
+                        <h2>Registrasi Berkas STR Baru</h2>
+                        <p>Lengkapi formulir di bawah ini untuk mengunggah dan merelasikan berkas STR pribadi Anda.</p>
                     </div>
-                    <form id="form-add-str" onsubmit="saveDataIzinKerja(event, 'berkas_str', 'form-add-str')">
+                    <form id="form-add-str" onsubmit="saveDataIzinKerja(event, 'berkas_str', 'form-add-str', 'view-input-str')">
                         <div class="grid-inputs">
                             <div class="form-group"><label>NIK Pegawai (Terkunci)</label><input type="text" name="nik" id="str-nik" readonly required></div>
                             <div class="form-group" style="grid-column: span 2;"><label>Nama Lengkap Anda (Terkunci)</label><input type="text" name="nama" id="str-nama" readonly required></div>
@@ -289,18 +296,38 @@
                             <div class="form-group"><label>Tanggal Berakhir STR</label><input type="date" name="tgl_berakhir" required></div>
                             <div class="form-group full-width"><label>Unggah Berkas Lampiran STR (PDF/Gambar)</label><input type="file" name="lampiran_file" accept=".pdf, .png, .jpg, .jpeg" required></div>
                         </div>
-                        <div style="margin-top:20px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Unggah Berkas STR</button></div>
+                        <div style="margin-top:20px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Jalankan Unggah Berkas STR</button></div>
                     </form>
+                </div>
+
+                <div class="panel-form-box" style="margin-top:25px;">
+                    <h3 style="font-size:14px; font-weight:800; color:var(--dark-slate); margin-bottom:10px;"><i class="fa-solid fa-clock-rotate-left" style="color:var(--primary);"></i> Histori Dokumen STR Koleksi Anda</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nomor STR</th>
+                                    <th>Bidang Profesi</th>
+                                    <th>Tanggal Terbit</th>
+                                    <th>Tanggal Berakhir</th>
+                                    <th style="text-align: center;">Berkas File</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-tabel-str">
+                                <tr><td colspan="5" style="text-align:center; color:#94a3b8;">Memuat histori berkas...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
             <div id="view-input-sik" class="view-panel">
                 <div class="panel-form-box">
                     <div class="page-title-box">
-                        <h2>Input Data Berkas SIK / SIP</h2>
-                        <p>Sistem otomatis merekam sisa masa berlaku dokumen operasional praktik kerja klinis Anda.</p>
+                        <h2>Registrasi Berkas SIK / SIP Baru</h2>
+                        <p>Lengkapi berkas operasional praktik klinis Anda agar terus terpantau validitasnya oleh sistem.</p>
                     </div>
-                    <form id="form-add-sik" onsubmit="saveDataIzinKerja(event, 'berkas_sik', 'form-add-sik')">
+                    <form id="form-add-sik" onsubmit="saveDataIzinKerja(event, 'berkas_sik', 'form-add-sik', 'view-input-sik')">
                         <div class="grid-inputs">
                             <div class="form-group"><label>NIK Pegawai (Terkunci)</label><input type="text" name="nik" id="sik-nik" readonly required></div>
                             <div class="form-group" style="grid-column: span 2;"><label>Nama Lengkap Anda (Terkunci)</label><input type="text" name="nama" id="sik-nama" readonly required></div>
@@ -310,8 +337,29 @@
                             <div class="form-group"><label>Tanggal Berakhir SIK</label><input type="date" name="tgl_berakhir" required></div>
                             <div class="form-group full-width"><label>Unggah Berkas Lampiran SIK (PDF/Gambar)</label><input type="file" name="lampiran_file" accept=".pdf, .png, .jpg, .jpeg" required></div>
                         </div>
-                        <div style="margin-top:20px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Unggah Berkas SIK</button></div>
+                        <div style="margin-top:20px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Jalankan Unggah Berkas SIK</button></div>
                     </form>
+                </div>
+
+                <div class="panel-form-box" style="margin-top:25px;">
+                    <h3 style="font-size:14px; font-weight:800; color:var(--dark-slate); margin-bottom:10px;"><i class="fa-solid fa-clock-rotate-left" style="color:var(--primary);"></i> Histori Dokumen SIK Koleksi Anda</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nomor SIP/SIK</th>
+                                    <th>Bidang Profesi</th>
+                                    <th>Tanggal Terbit</th>
+                                    <th>Tanggal Berakhir</th>
+                                    <th>Sisa Masa Aktif</th>
+                                    <th style="text-align: center;">Berkas File</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-tabel-sik">
+                                <tr><td colspan="6" style="text-align:center; color:#94a3b8;">Memuat histori berkas...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -337,6 +385,7 @@
         ];
 
         const userKey = sessionStorage.getItem('user_key');
+        let userNIKGlobal = ""; // Sebagai jembatan pencarian data histori mandiri
         const formDRH = document.getElementById('form-drh-karyawan');
         const btnSimpan = document.getElementById('btn-simpan-drh');
 
@@ -359,6 +408,10 @@
             const targetPanel = document.getElementById(viewId);
             if(targetPanel) {
                 targetPanel.classList.add('active');
+                
+                // 🔄 HOOK LIVE REFRESH: Jika pindah ke menu STR/SIK, jalankan penarikan histori tabel otomatis
+                if (viewId === 'view-input-str' && userNIKGlobal) muatTabelHistoriSTR(userNIKGlobal);
+                if (viewId === 'view-input-sik' && userNIKGlobal) muatTabelHistoriSIK(userNIKGlobal);
             } else {
                 const generalView = document.getElementById('view-general-layanan');
                 document.getElementById('layanan-title').textContent = menuText;
@@ -374,6 +427,8 @@
                     if (error) throw error;
 
                     if (data) {
+                        userNIKGlobal = data.nik || "";
+
                         // Set Header Atas & Box Profil
                         document.getElementById('top-nama-pegawai').textContent = data.nama || 'User';
                         document.getElementById('avatar-singkat').textContent = data.nama ? data.nama.substring(0,2) : 'US';
@@ -395,7 +450,13 @@
                         document.getElementById('sik-nik').value = data.nik || '';
                         document.getElementById('sik-nama').value = data.nama || '';
 
-                        // 🔒 LOGIKA AMAN SYARAT JABATAN: Munculkan menu Izin Kerja Mandiri jika kelompok jabatan BUKAN Tenaga Administrasi
+                        // Muat data tabel di latar belakang sejak awal load halaman
+                        if (userNIKGlobal) {
+                            muatTabelHistoriSTR(userNIKGlobal);
+                            muatTabelHistoriSIK(userNIKGlobal);
+                        }
+
+                        // 🔒 LOGIKA AMAN SYARAT JABATAN
                         if (data.kelompok_jabatan && data.kelompok_jabatan.trim().toLowerCase() !== 'tenaga administrasi') {
                             document.getElementById('menu-izin-kerja').classList.remove('hide-element');
                         }
@@ -459,7 +520,103 @@
             }
         });
 
-        async function saveDataIzinKerja(event, namaTabel, idForm) {
+        // 🟢 1. FUNGSI UNTUK MENAMPILKAN DATA HISTORI STR MANDIRI PEGAWAI
+        async function muatTabelHistoriSTR(nikKaryawan) {
+            const tbody = document.getElementById('user-tabel-str');
+            if (!tbody) return;
+
+            try {
+                const { data, error } = await supabaseClient.from('berkas_str').select('*').eq('nik', nikKaryawan);
+                if (error) throw error;
+
+                tbody.innerHTML = "";
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:15px;">Anda belum memiliki riwayat unggahan berkas STR.</td></tr>`;
+                    return;
+                }
+
+                data.forEach(r => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${r.no_str || '-'}</strong></td>
+                        <td>${r.bidang || '-'}</td>
+                        <td>${r.tgl_terbit || '-'}</td>
+                        <td>${r.tgl_berakhir || '-'}</td>
+                        <td style="text-align:center;"><a href="${r.lampiran_url || '#'}" target="_blank" class="btn" style="padding:4px 10px; font-size:12px; background:#475569; color:white;"><i class="fa-solid fa-file-pdf"></i> Lihat File</a></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red; padding:15px;">Gagal memuat histori data STR Anda.</td></tr>`;
+            }
+        }
+
+        // 🟢 2. FUNGSI UNTUK MENAMPILKAN DATA HISTORI SIK MANDIRI PEGAWAI
+        async function muatTabelHistoriSIK(nikKaryawan) {
+            const tbody = document.getElementById('user-tabel-sik');
+            if (!tbody) return;
+
+            try {
+                const { data, error } = await supabaseClient.from('berkas_sik').select('*').eq('nik', nikKaryawan);
+                if (error) throw error;
+
+                tbody.innerHTML = "";
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:15px;">Anda belum memiliki riwayat unggahan berkas SIK.</td></tr>`;
+                    return;
+                }
+
+                data.forEach(r => {
+                    const tr = document.createElement('tr');
+                    const sisaWaktuTeks = hitungSisaWaktuSIKMandiri(r.tgl_berakhir, tr);
+                    
+                    tr.innerHTML = `
+                        <td><strong>${r.no_sip || '-'}</strong></td>
+                        <td>${r.bidang || '-'}</td>
+                        <td>${r.tgl_terbit || '-'}</td>
+                        <td>${r.tgl_berakhir || '-'}</td>
+                        <td style="font-weight:700;">${sisaWaktuTeks}</td>
+                        <td style="text-align:center;"><a href="${r.lampiran_url || '#'}" target="_blank" class="btn" style="padding:4px 10px; font-size:12px; background:#475569; color:white;"><i class="fa-solid fa-file-pdf"></i> Lihat File</a></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red; padding:15px;">Gagal memuat histori data SIK Anda.</td></tr>`;
+            }
+        }
+
+        // 🕒 UTILITY HITUNG SISA WAKTU SIK SISI PORTAL PEGAWAI
+        function hitungSisaWaktuSIKMandiri(tglBerakhirStr, elementTr) {
+            if (!tglBerakhirStr) return "-";
+            const akhir = new Date(tglBerakhirStr);
+            const sekarang = new Date();
+            const selisihWaktu = akhir - sekarang;
+            const totalHari = Math.ceil(selisihWaktu / (1000 * 60 * 60 * 24));
+            
+            if (totalHari <= 0) {
+                elementTr.style.backgroundColor = "#fee2e2"; 
+                elementTr.style.color = "#b91c1c";
+                return "EXPIRED";
+            }
+
+            const tahun = Math.floor(totalHari / 365);
+            const sisaHariDariTahun = totalHari % 365;
+            const bulan = Math.floor(sisaHariDariTahun / 30);
+            const hari = sisaHariDariTahun % 30;
+
+            if (totalHari <= 90) {
+                elementTr.style.backgroundColor = "#fee2e2"; 
+                elementTr.style.color = "#b91c1c";
+            } else if (totalHari <= 180) {
+                elementTr.style.backgroundColor = "#fef3c7"; 
+                elementTr.style.color = "#b45309";
+            }
+
+            return `${tahun} Thn ${bulan} Bln ${hari} Hari`;
+        }
+
+        // AKSI UNGGAH FORM STR / SIK MANDIRI
+        async function saveDataIzinKerja(event, namaTabel, idForm, viewId) {
             event.preventDefault();
             const form = document.getElementById(idForm);
             const btnSubmit = form.querySelector('button[type="submit"]');
@@ -493,12 +650,15 @@
 
                 alert(`Berhasil! Berkas dokumen mandiri Anda sukses diunggah ke server cloud.`);
                 form.reset();
-                window.location.reload();
+                
+                // Live refresh tabel histori saat itu juga setelah sukses input data baru
+                if (namaTabel === 'berkas_str') muatTabelHistoriSTR(userNIKGlobal);
+                if (namaTabel === 'berkas_sik') muatTabelHistoriSIK(userNIKGlobal);
             } catch (err) {
                 alert("Gagal mengupload file ke storage server.");
             } finally {
                 btnSubmit.disabled = false;
-                btnSubmit.textContent = "💾 Unggah Berkas";
+                btnSubmit.textContent = "💾 Jalankan Unggah Berkas";
             }
         }
 
