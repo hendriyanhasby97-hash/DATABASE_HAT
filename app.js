@@ -21,10 +21,6 @@ let dataFilterAktif = [];
 const mainForm = document.getElementById('main-crud-form');
 const tBody = document.getElementById('body-tabel-pegawai');
 const inputCari = document.getElementById('input-cari');
-const inputMasukRS = document.getElementById('masuk_rs');
-const inputTglLahir = document.getElementById('tanggal_lahir');
-const inputBUP = document.getElementById('rentang_bup');
-const inputNIP = document.getElementById('nip');
 const btnExcel = document.getElementById('btn-excel');
 const btnPdf = document.getElementById('btn-pdf');
 const btnPrev = document.getElementById('btn-page-prev');
@@ -42,12 +38,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnExcel) btnExcel.onclick = unduhExcel;
     if (btnPdf) btnPdf.onclick = unduhPDF;
     if (mainForm) mainForm.onsubmit = simpanFormPegawai;
-
-    // 🔄 RE-HOOK LIVE TRIGGER OTOMATISASI PENANGGALAN ADMIN
-    if (inputMasukRS) inputMasukRS.onchange = hitungMasaKerjaOtomatis;
-    if (inputTglLahir) inputTglLahir.onchange = hitungTMTPensiunOtomatis;
-    if (inputBUP) inputBUP.oninput = hitungTMTPensiunOtomatis;
-    if (inputNIP) inputNIP.oninput = hitungTMTCPNSOtomatis;
 
     if (btnPrev) btnPrev.onclick = () => { if(currentPage > 1) { currentPage--; renderTabelDenganHalaman(); } };
     if (btnNext) btnNext.onclick = () => { const maxPage = Math.ceil(dataFilterAktif.length / rowsPerPage); if(currentPage < maxPage) { currentPage++; renderTabelDenganHalaman(); } };
@@ -262,10 +252,12 @@ function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
     return `${tahun} Thn ${bulan} Bln ${hari} Hari`;
 }
 
-// 📅 1. REKAP MAJU: HITUNG MASA KERJA (TAHUN, BULAN, HARI)
-function hitungMasaKerjaOtomatis() {
-    if (!this.value) return;
-    const masuk = new Date(this.value); 
+// 📅 1. REKAP MAJU: HITUNG MASA KERJA LENGKAP (TAHUN, BULAN, HARI)
+window.hitungMasaKerjaOtomatis = function() {
+    const inputMasukRS = document.getElementById('masuk_rs');
+    if (!inputMasukRS || !inputMasukRS.value) return;
+    
+    const masuk = new Date(inputMasukRS.value); 
     const hariIni = new Date();
     
     let tahun = hariIni.getFullYear() - masuk.getFullYear(); 
@@ -273,7 +265,6 @@ function hitungMasaKerjaOtomatis() {
     let hari = hariIni.getDate() - masuk.getDate();
     
     if (hari < 0) {
-        // Ambil jumlah hari pada bulan sebelumnya
         const bulanLalu = new Date(hariIni.getFullYear(), hariIni.getMonth(), 0).getDate();
         hari += bulanLalu;
         bulan--;
@@ -289,21 +280,21 @@ function hitungMasaKerjaOtomatis() {
 }
 
 // 📅 2. REKAP MAJU: TMT PENSIUN (TGL 1 BULAN BERIKUTNYA DARI TGL LAHIR + BUP)
-function hitungTMTPensiunOtomatis() {
+window.hitungTMTPensiunOtomatis = function() {
     const tglLahirVal = document.getElementById('tanggal_lahir').value;
-    const bupVal = parseInt(document.getElementById('rentang_bup').value);
+    const bupInput = document.getElementById('rentang_bup');
+    if (!bupInput) return;
+    const bupVal = parseInt(bupInput.value);
     
     if (!tglLahirVal || !bupVal || isNaN(bupVal)) return;
     
     const tglLahir = new Date(tglLahirVal);
-    // Tambah tahun lahir dengan angka usia pensiun (BUP)
     const tahunPensiun = tglLahir.getFullYear() + bupVal;
-    const bulanPensiun = tglLahir.getMonth(); // Bulan lahir (0-11)
+    const bulanPensiun = tglLahir.getMonth(); 
     
-    // Setel ke tanggal 1 pada bulan berikutnya
+    // Setel otomatis ke tanggal 1 pada bulan berikutnya
     const tmtPensiunDate = new Date(tahunPensiun, bulanPensiun + 1, 1);
     
-    // Format ke YYYY-MM-DD agar masuk rapi ke komponen input type="date"
     const yyyy = tmtPensiunDate.getFullYear();
     const mm = String(tmtPensiunDate.getMonth() + 1).padStart(2, '0');
     const dd = String(tmtPensiunDate.getDate()).padStart(2, '0');
@@ -314,15 +305,17 @@ function hitungTMTPensiunOtomatis() {
 }
 
 // 📅 3. REKAP MAJU: TMT CPNS DARI 8 DIGIT AWAL STRUKTUR NIP
-function hitungTMTCPNSOtomatis() {
-    const nipVal = this.value.trim();
-    if (nipVal.length < 8) return; // Butuh minimal 8 angka awal (YYYYMMDD)
+window.hitungTMTCPNSOtomatis = function() {
+    const nipInput = document.getElementById('nip');
+    if (!nipInput) return;
+    
+    const nipVal = nipInput.value.trim();
+    if (nipVal.length < 8) return; 
     
     const tahunStr = nipVal.substring(0, 4);
     const bulanStr = nipVal.substring(4, 6);
     const hariStr = nipVal.substring(6, 8);
     
-    // Validasi angka agar terhindar dari isNaN crash
     const tahun = parseInt(tahunStr);
     const bulan = parseInt(bulanStr);
     const hari = parseInt(hariStr);
