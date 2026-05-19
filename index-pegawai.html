@@ -205,7 +205,7 @@
                             <div class="section-title">👤 I. Identitas Kepegawaian & Kata Sandi</div>
                             <div class="grid-inputs">
                                 <div class="form-group"><label>🔒 NIK (Nomor Induk Kependudukan)</label><input type="text" id="nik" readonly></div>
-                                <div class="form-group"><label>NIP / Nomor Pegawai</label><input type="text" id="nip" oninput="window.hitungTMTCPNSOtomatisPegawai()"></div>
+                                <div class="form-group"><label>NIP / Nomor Pegawai</label><input type="text" id="nip" oninput="window.jalankanSemuaOtomatisasiPegawai()"></div>
                                 <div class="form-group"><label>🔑 Kata Sandi Portal (Password)</label><input type="text" id="password" placeholder="Ketik kata sandi baru untuk login..."></div>
                                 <div class="form-group full-width"><label>Nama Lengkap (Sesuai SK)</label><input type="text" id="nama"></div>
                                 <div class="form-group"><label>Status Dinas</label><select id="status"><option>Aktif</option><option>Mutasi</option><option>Pensiun</option><option>Resign</option></select></div>
@@ -219,7 +219,7 @@
                                 <div class="form-group"><label>Jenis Kelamin</label><select id="jenis_kelamin"><option>Laki-laki</option><option>Perempuan</option></select></div>
                                 <div class="form-group"><label>Agama</label><select id="agama"><option>Islam</option><option>Kristen</option><option>Katolik</option><option>Hindu</option><option>Buddha</option></select></div>
                                 <div class="form-group"><label>Tempat Lahir</label><input type="text" id="tempat_lahir"></div>
-                                <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="tanggal_lahir" onchange="window.hitungTMTPensiunOtomatisPegawai()"></div>
+                                <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="tanggal_lahir" onchange="window.jalankanSemuaOtomatisasiPegawai()"></div>
                                 <div class="form-group"><label>Status Hubungan Keluarga</label><select id="status_keluarga"><option>TK</option><option>K/0</option><option>K/1</option><option>K/2</option><option>K/3</option></select></div>
                                 <div class="form-group"><label>NPWP</label><input type="text" id="npwp"></div>
                             </div>
@@ -244,10 +244,10 @@
                                 <div class="form-group"><label>Ruangan / Unit Kerja Tempat Dinas</label><input type="text" id="ruangan"></div>
                                 <div class="form-group"><label>TMT Pangkat</label><input type="date" id="tmt_pangkat"></div>
                                 <div class="form-group"><label>TMT Berkala Berikutnya</label><input type="date" id="tmt_berikutnya"></div>
-                                <div class="form-group"><label>Tanggal Mulai Masuk RS</label><input type="date" id="masuk_rs" onchange="window.hitungMasaKerjaOtomatisPegawai()"></div>
+                                <div class="form-group"><label>Tanggal Mulai Masuk RS</label><input type="date" id="masuk_rs" onchange="window.jalankanSemuaOtimatisasiPegawai()"></div>
                                 
                                 <div class="form-group"><label>🔒 Masa Kerja (Otomatis)</label><input type="text" id="masa_kerja_rs" readonly placeholder="Terhitung otomatis"></div>
-                                <div class="form-group"><label>BUP Usia Pensiun</label><input type="number" id="rentang_bup" placeholder="Contoh: 58 atau 60" oninput="window.hitungTMTPensiunOtomatisPegawai()"></div>
+                                <div class="form-group"><label>BUP Usia Pensiun</label><input type="number" id="rentang_bup" placeholder="Contoh: 58 atau 60" oninput="window.jalankanSemuaOtomatisasiPegawai()"></div>
                                 <div class="form-group"><label>🔒 TMT Pensiun (Otomatis)</label><input type="date" id="tmt_pensiun" readonly></div>
                                 <div class="form-group"><label>🔒 TMT CPNS (Otomatis dari NIP)</label><input type="date" id="tmt_cpns" readonly></div>
                             </div>
@@ -297,13 +297,7 @@
                     </form>
                 </div>
                 <div class="panel-form-box" style="margin-top:25px;">
-                    <h3 style="font-size:14px; font-weight:800; margin-bottom:10px;"><i class="fa-solid fa-clock-rotate-left"></i> Histori Dokumen STR Koleksi Anda</h3>
-                    <div class="table-responsive">
-                        <table>
-                            <thead><tr><th>Nomor STR</th><th>Bidang Profesi</th><th>Tanggal Terbit</th><th>Tanggal Berakhir</th><th style="text-align: center;">Berkas File</th></tr></thead>
-                            <tbody id="user-tabel-str"></tbody>
-                        </table>
-                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Nomor STR</th><th>Bidang Profesi</th><th>Tanggal Terbit</th><th>Tanggal Berakhir</th><th style="text-align: center;">Berkas File</th></tr></thead><tbody id="user-tabel-str"></tbody></table></div>
                 </div>
             </div>
 
@@ -314,7 +308,7 @@
                         <div class="grid-inputs">
                             <div class="form-group"><label>NIK Pegawai</label><input type="text" name="nik" id="sik-nik" readonly required></div>
                             <div class="form-group" style="grid-column: span 2;"><label>Nama Lengkap Anda</label><input type="text" name="nama" id="sik-nama" readonly required></div>
-                            <div class="form-group"><label>Bidang Profesi / Unit Kerja</label><input type="text" name="bidang" placeholder="Contoh: Bidan, Apoteker" required></div>
+                            <div class="form-group"><label>Bidang Profesi</label><input type="text" name="bidang" placeholder="Contoh: Bidan" required></div>
                             <div class="form-group"><label>Nomor SIP / SIK</label><input type="text" name="no_sip" required></div>
                             <div class="form-group"><label>Tanggal Terbit SIK</label><input type="date" name="tgl_terbit" required></div>
                             <div class="form-group"><label>Tanggal Berakhir SIK</label><input type="date" name="tgl_berakhir" required></div>
@@ -324,13 +318,7 @@
                     </form>
                 </div>
                 <div class="panel-form-box" style="margin-top:25px;">
-                    <h3 style="font-size:14px; font-weight:800; margin-bottom:10px;"><i class="fa-solid fa-clock-rotate-left"></i> Histori Dokumen SIK Koleksi Anda</h3>
-                    <div class="table-responsive">
-                        <table>
-                            <thead><tr><th>Nomor SIP/SIK</th><th>Bidang Profesi</th><th>Tanggal Terbit</th><th>Tanggal Berakhir</th><th style="text-align: center;">Berkas File</th></tr></thead>
-                            <tbody id="user-tabel-sik"></tbody>
-                        </table>
-                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Nomor SIP/SIK</th><th>Bidang Profesi</th><th>Tanggal Terbit</th><th>Tanggal Berakhir</th><th style="text-align: center;">Berkas File</th></tr></thead><tbody id="user-tabel-sik"></tbody></table></div>
                 </div>
             </div>
 
@@ -416,6 +404,9 @@
                             const inputElement = document.getElementById(f);
                             if (inputElement) inputElement.value = data[f] || '';
                         });
+
+                        // 🔥 ENGINE AUTOMATION PEMICU AWAL SISI PEGAWAI SETELAH DATA LOAD
+                        window.jalankanSemuaOtomatisasiPegawai();
                     }
                 } catch (err) { console.error(err); }
             }
@@ -441,39 +432,51 @@
             }
         });
 
-        // 📅 1. FORMULA: HITUNG MASA KERJA PEGAWAI (Y, M, D)
-        window.hitungMasaKerjaOtomatisPegawai = function() {
+        // 🔥 MASTER ENGINE PENANGGALAN OTOMATIS PORTAL PEGAWAI
+        window.jalankanSemuaOtomatisasiPegawai = function() {
             const inputMasukRS = document.getElementById('masuk_rs');
-            if (!inputMasukRS || !inputMasukRS.value) return;
-            const masuk = new Date(inputMasukRS.value); const hariIni = new Date();
-            let tahun = hariIni.getFullYear() - masuk.getFullYear(); let bulan = hariIni.getMonth() - masuk.getMonth(); let hari = hariIni.getDate() - masuk.getDate();
-            if (hari < 0) { hari += new Date(hariIni.getFullYear(), hariIni.getMonth(), 0).getDate(); bulan--; }
-            if (bulan < 0) { tahun--; bulan += 12; }
-            if (document.getElementById('masa_kerja_rs')) document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan ${hari} Hari`;
+            const inputTglLahir = document.getElementById('tanggal_lahir');
+            const inputBUP = document.getElementById('rentang_bup');
+            const inputNIP = document.getElementById('nip');
+
+            // 1. Hitung Masa Kerja (Hari)
+            if (inputMasukRS && inputMasukRS.value) {
+                const masuk = new Date(inputMasukRS.value); const hariIni = new Date();
+                let tahun = hariIni.getFullYear() - masuk.getFullYear(); let bulan = hariIni.getMonth() - masuk.getMonth(); let hari = hariIni.getDate() - masuk.getDate();
+                if (hari < 0) { hari += new Date(hariIni.getFullYear(), hariIni.getMonth(), 0).getDate(); bulan--; }
+                if (bulan < 0) { tahun--; bulan += 12; }
+                if (document.getElementById('masa_kerja_rs')) document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan ${hari} Hari`;
+            }
+
+            // 2. Hitung TMT Pensiun (Bulatan Tanggal 1 Bulan Berikutnya)
+            if (inputTglLahir && inputTglLahir.value && inputBUP && inputBUP.value) {
+                const bupVal = parseInt(inputBUP.value);
+                if (!isNaN(bupVal)) {
+                    const tglLahir = new Date(inputTglLahir.value);
+                    const tmtPensiunDate = new Date(tglLahir.getFullYear() + bupVal, tglLahir.getMonth() + 1, 1);
+                    const yyyy = tmtPensiunDate.getFullYear();
+                    const mm = String(tmtPensiunDate.getMonth() + 1).padStart(2, '0');
+                    const dd = String(tmtPensiunDate.getDate()).padStart(2, '0');
+                    if (document.getElementById('tmt_pensiun')) document.getElementById('tmt_pensiun').value = `${yyyy}-${mm}-${dd}`;
+                }
+            }
+
+            // 3. Hitung TMT CPNS (8 Digit Awal NIP)
+            if (inputNIP && inputNIP.value.trim().length >= 8) {
+                const nipVal = inputNIP.value.trim();
+                const tahunStr = nipVal.substring(0, 4); const bulanStr = nipVal.substring(4, 6); const hariStr = nipVal.substring(6, 8);
+                if (!isNaN(parseInt(tahunStr)) && !isNaN(parseInt(bulanStr)) && !isNaN(parseInt(hariStr))) {
+                    if (parseInt(bulanStr) >= 1 && parseInt(bulanStr) <= 12 && parseInt(hariStr) >= 1 && parseInt(hariStr) <= 31) {
+                        if (document.getElementById('tmt_cpns')) document.getElementById('tmt_cpns').value = `${tahunStr}-${bulanStr}-${hariStr}`;
+                    }
+                }
+            }
         }
 
-        // 📅 2. FORMULA: TMT PENSIUN PEGAWAI (BULATAN TANGGAL 1 BULAN DEPAN)
-        window.hitungTMTPensiunOtomatisPegawai = function() {
-            const tglLahirVal = document.getElementById('tanggal_lahir').value;
-            const bupVal = parseInt(document.getElementById('rentang_bup').value);
-            if (!tglLahirVal || !bupVal || isNaN(bupVal)) return;
-            const tglLahir = new Date(tglLahirVal);
-            const tmtPensiunDate = new Date(tglLahir.getFullYear() + bupVal, tglLahir.getMonth() + 1, 1);
-            const yyyy = tmtPensiunDate.getFullYear();
-            const mm = String(tmtPensiunDate.getMonth() + 1).padStart(2, '0');
-            const dd = String(tmtPensiunDate.getDate()).padStart(2, '0');
-            if (document.getElementById('tmt_pensiun')) document.getElementById('tmt_pensiun').value = `${yyyy}-${mm}-${dd}`;
-        }
-
-        // 📅 3. FORMULA: TMT CPNS DARI NIP PEGAWAI (8 DIGIT AWAL)
-        window.hitungTMTCPNSOtomatisPegawai = function() {
-            const nipInput = document.getElementById('nip'); if (!nipInput) return;
-            const nipVal = nipInput.value.trim(); if (nipVal.length < 8) return;
-            const tahunStr = nipVal.substring(0, 4); const bulanStr = nipVal.substring(4, 6); const hariStr = nipVal.substring(6, 8);
-            if (isNaN(parseInt(tahunStr)) || isNaN(parseInt(bulanStr)) || isNaN(parseInt(hariStr))) return;
-            if (parseInt(bulanStr) < 1 || parseInt(bulanStr) > 12 || parseInt(hariStr) < 1 || parseInt(hariStr) > 31) return;
-            if (document.getElementById('tmt_cpns')) document.getElementById('tmt_cpns').value = `${tahunStr}-${bulanStr}-${hariStr}`;
-        }
+        // Mapping trigger cadangan input
+        window.hitungMasaKerjaOtomatisPegawai = () => window.jalankanSemuaOtomatisasiPegawai();
+        window.hitungTMTPensiunOtomatisPegawai = () => window.jalankanSemuaOtomatisasiPegawai();
+        window.hitungTMTCPNSOtomatisPegawai = () => window.jalankanSemuaOtomatisasiPegawai();
 
         async function muatTabelHistoriSTR(nik) {
             const tbody = document.getElementById('user-tabel-str'); if (!tbody) return;
