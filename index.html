@@ -358,7 +358,10 @@
                             <div class="form-group"><label>Nomor STR</label><input type="text" name="no_str" required></div>
                             <div class="form-group"><label>Tanggal Terbit STR</label><input type="date" name="tgl_terbit" required></div>
                             <div class="form-group"><label>Tanggal Berakhir STR</label><input type="date" name="tgl_berakhir" required></div>
-                            <div class="form-group" style="grid-column: span 3;"><label>Link URL Lampiran Dokumen STR File</label><input type="url" name="lampiran_url" placeholder="https://drive.google.com/..." required></div>
+                            <div class="form-group" style="grid-column: span 3;">
+                                <label>Unggah Berkas Lampiran STR (PDF/Gambar)</label>
+                                <input type="file" name="lampiran_file" accept=".pdf, .png, .jpg, .jpeg" required>
+                            </div>
                         </div>
                         <div style="margin-top:15px; text-align:right;">
                             <button type="button" class="btn" style="background:#cbd5e1;" onclick="toggleFormInput('form-str-wrapper')">Batal</button>
@@ -396,7 +399,10 @@
                             <div class="form-group"><label>Nomor SIP / SIK</label><input type="text" name="no_sip" required></div>
                             <div class="form-group"><label>Tanggal Terbit SIK</label><input type="date" name="tgl_terbit" required></div>
                             <div class="form-group"><label>Tanggal Berakhir SIK</label><input type="date" name="tgl_berakhir" required></div>
-                            <div class="form-group" style="grid-column: span 3;"><label>Link URL Lampiran Dokumen SIK File</label><input type="url" name="lampiran_url" placeholder="https://drive.google.com/..." required></div>
+                            <div class="form-group" style="grid-column: span 3;">
+                                <label>Unggah Berkas Lampiran SIK (PDF/Gambar)</label>
+                                <input type="file" name="lampiran_file" accept=".pdf, .png, .jpg, .jpeg" required>
+                            </div>
                         </div>
                         <div style="margin-top:15px; text-align:right;">
                             <button type="button" class="btn" style="background:#cbd5e1;" onclick="toggleFormInput('form-sik-wrapper')">Batal</button>
@@ -434,7 +440,10 @@
                             <div class="form-group"><label>Status Tindak Lanjut</label><select name="status_tindak_lanjut"><option>Belum Dibaca</option><option>Proses Telaah</option><option>Proses TTE</option><option>Selesai</option></select></div>
                             <div class="form-group" style="grid-column: span 2;"><label>Uraian Informasi / Ringkasan Isi Surat</label><input type="text" name="uraian" required></div>
                             <div class="form-group" style="grid-column: span 3;"><label>Instruksi Tambahan Pimpinan</label><input type="text" name="instruksi_tambahan"></div>
-                            <div class="form-group" style="grid-column: span 3;"><label>Link URL Berkas Digital Surat Masuk (PDF/Scan)</label><input type="url" name="lampiran_url" placeholder="https://drive.google.com/..." required></div>
+                            <div class="form-group" style="grid-column: span 3;">
+                                <label>Unggah Berkas Surat Masuk (PDF/Scan)</label>
+                                <input type="file" name="lampiran_file" accept=".pdf, .png, .jpg, .jpeg" required>
+                            </div>
                         </div>
                         <div style="margin-top:15px; text-align:right;">
                             <button type="button" class="btn" style="background:#cbd5e1;" onclick="toggleFormInput('form-surat-masuk-wrapper')">Batal</button>
@@ -482,7 +491,10 @@
                             <div class="form-group"><label>Status Tindak Lanjut</label><select name="status_tindak_lanjut"><option>Belum Dibaca</option><option>Proses Telaah</option><option>Proses TTE</option><option>Selesai</option></select></div>
                             <div class="form-group" style="grid-column: span 2;"><label>Uraian Informasi / Ringkasan Surat</label><input type="text" name="uraian" required></div>
                             <div class="form-group" style="grid-column: span 3;"><label>Instruksi Tambahan</label><input type="text" name="instruksi_tambahan"></div>
-                            <div class="form-group" style="grid-column: span 3;"><label>Link URL Berkas Digital Surat Keluar (PDF/Scan)</label><input type="url" name="lampiran_url" placeholder="https://drive.google.com/..." required></div>
+                            <div class="form-group" style="grid-column: span 3;">
+                                <label>Unggah Berkas Surat Keluar (PDF/Scan)</label>
+                                <input type="file" name="lampiran_file" accept=".pdf, .png, .jpg, .jpeg" required>
+                            </div>
                         </div>
                         <div style="margin-top:15px; text-align:right;">
                             <button type="button" class="btn" style="background:#cbd5e1;" onclick="toggleFormInput('form-surat-keluar-wrapper')">Batal</button>
@@ -583,34 +595,66 @@
         // Fungsi Penjembatan Duplikasi agar app.js tidak crash mencari nama fungsi lama
         function toggleFormAksi() { toggleFormInput('form-master-wrapper'); }
 
-        // FUNCTION CONTROLLER UNTUK MENYIMPAN DATA SEKUNDER ARSIP BARU KE CLOUD
+        // 🚀 FUNGSI UTAMA: OTOMATIS UPLOAD FILE SEBELUM SIMPAN LINK KE TABLE DATABASE SUPABASE STORAGE
         async function saveDataSekunder(event, namaTabel, idForm, idWrapper, viewId) {
             event.preventDefault();
             const form = document.getElementById(idForm);
             const btnSubmit = form.querySelector('button[type="submit"]');
             
             btnSubmit.disabled = true;
-            btnSubmit.textContent = "⏳ Menyimpan...";
+            btnSubmit.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Mengunggah File...";
 
-            const formData = new FormData(form);
-            const dataObj = {};
-            formData.forEach((value, key) => { dataObj[key] = value.trim(); });
+            const fileInput = form.querySelector('input[type="file"]');
+            let finalUrl = "";
 
             try {
-                const { error } = await supabaseClient.from(namaTabel).insert([dataObj]);
-                if (error) throw error;
+                // 1. Jalankan Upload File Otomatis ke Storage Supabase
+                if (fileInput && fileInput.files.length > 0) {
+                    const fileObj = fileInput.files[0];
+                    const fileExt = fileObj.name.split('.').pop();
+                    const fileName = `${namaTabel}_${Date.now()}.${fileExt}`;
+                    
+                    const { data: uploadData, error: uploadError } = await supabaseClient
+                        .storage
+                        .from('lampiran')
+                        .upload(fileName, fileObj);
 
-                alert(`Sukses! Data baru berhasil ditambahkan ke tabel ${namaTabel.replace('_', ' ').toUpperCase()}.`);
+                    if (uploadError) throw uploadError;
+
+                    // Ambil URL Publik berkas
+                    const { data: publicUrlData } = supabaseClient
+                        .storage
+                        .from('lampiran')
+                        .getPublicUrl(fileName);
+                        
+                    finalUrl = publicUrlData.publicUrl;
+                }
+
+                // 2. Paketkan data input teks formulir
+                const formData = new FormData(form);
+                const dataObj = {};
+                formData.forEach((value, key) => { 
+                    if (key !== 'lampiran_file') { dataObj[key] = value.trim(); } 
+                });
+
+                // Masukkan link URL otomatis hasil upload ke dalam objek tabel database
+                dataObj['lampiran_url'] = finalUrl;
+
+                // 3. Simpan data ke dalam database Supabase
+                const { error: insertError } = await supabaseClient.from(namaTabel).insert([dataObj]);
+                if (insertError) throw insertError;
+
+                alert(`Sukses! File berhasil terunggah dan data tercatat di sistem.`);
                 form.reset();
                 toggleFormInput(idWrapper);
                 
-                // Segarkan view tampilan tabel di layar saat itu juga
+                // Segarkan tampilan tabel live di layar browser
                 if (typeof window.switchViewHook === 'function') {
                     window.switchViewHook(viewId);
                 }
             } catch (err) {
-                console.error(err);
-                alert("Gagal merekam berkas data ke pangkalan cloud Supabase.");
+                console.error("Eror sistem unggah:", err);
+                alert("Gagal memproses berkas file. Pastikan kapasitas file tidak terlalu besar dan status Bucket Storage bernilai Public.");
             } finally {
                 btnSubmit.disabled = false;
                 btnSubmit.textContent = "💾 Simpan Data";
