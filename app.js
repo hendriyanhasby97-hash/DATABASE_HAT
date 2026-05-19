@@ -68,7 +68,6 @@ async function hitungStatistikDashboard() {
         document.getElementById('stat-total-pegawai').textContent = dbPegawai.length;
         document.getElementById('stat-pegawai-aktif').textContent = dbPegawai.filter(p => p.status?.toLowerCase() === 'aktif').length;
         
-        // Ambil data sekunder untuk counter dashboard
         const { count: totalCuti } = await supabaseClient.from('pegawai').select('*', { count: 'exact', head: true }).eq('status', 'Cuti');
         const { count: totalMasuk } = await supabaseClient.from('pegawai_masuk').select('*', { count: 'exact', head: true });
         
@@ -100,7 +99,6 @@ async function simpanFormPegawai(e) {
             const { error } = await supabaseClient.from('pegawai').insert([dataObj]);
             if (error) throw error;
             
-            // Otomatis masukkan ke tabel histori pegawai_masuk jika data baru ditambah
             await supabaseClient.from('pegawai_masuk').insert([{
                 nik: dataObj.nik, nama: dataObj.nama, jenis_kelamin: dataObj.jenis_kelamin,
                 agama: dataObj.agama, bagian: dataObj.ruangan, tmt_masuk: dataObj.masuk_rs, pendidikan: dataObj.jenjang
@@ -111,7 +109,7 @@ async function simpanFormPegawai(e) {
         await muatDataDariCloud();
         hitungStatistikDashboard();
         refreshDataState();
-        toggleFormInput();
+        if (typeof window.toggleFormInput === 'function') window.toggleFormInput('form-master-wrapper');
     } catch (err) {
         console.error(err);
         alert("Gagal memproses data ke server cloud.");
@@ -161,19 +159,19 @@ async function mutasiKeluarAksi(id) {
     const p = dbPegawai.find(x => x.id_pegawai === id);
     if (!p) return;
 
-    const jenis = prompt(`Masukkan Jenis Keluar untuk ${p.nama}:\n(MUTASI / PENSIUN / RESIGN / LAINNYA)`).toUpperCase();
-    if (!['MUTASI', 'PENSIUN', 'RESIGN', 'LAINNYA'].includes(jenis)) return alert('Jenis keluar tidak valid! Pembatalan sistem.');
+    const jenis = prompt(`Masukkan Jenis Keluar untuk ${p.nama}:\n(MUTASI / PENSIUN / RESIGN / LAINNYA)`);
+    if (!jenis) return;
+    const jenisUpper = jenis.toUpperCase();
+    if (!['MUTASI', 'PENSIUN', 'RESIGN', 'LAINNYA'].includes(jenisUpper)) return alert('Jenis keluar tidak valid! Pembatalan sistem.');
 
     const ket = prompt("Masukkan Keterangan Tambahan Alasan Keluar:");
     const tglKeluar = new Date().toISOString().split('T')[0];
 
     try {
-        // 1. Rekam ke database pegawai_keluar
         await supabaseClient.from('pegawai_keluar').insert([{
-            nik: p.nik, nama: p.nama, bagian: p.kelompok_jabatan, unit_tugas: p.ruangan, tmt_keluar: tglKeluar, jenis_keluar: jenis, keterangan: ket
+            nik: p.nik, nama: p.nama, bagian: p.kelompok_jabatan, unit_tugas: p.ruangan, tmt_keluar: tglKeluar, jenis_keluar: jenisUpper, keterangan: ket
         }]);
 
-        // 2. Hapus data dari database pegawai utama
         await supabaseClient.from('pegawai').delete().eq('id_pegawai', id);
 
         alert(`Sukses! ${p.nama} telah dipindahkan ke daftar Pegawai Keluar.`);
@@ -185,7 +183,7 @@ async function mutasiKeluarAksi(id) {
     }
 }
 
-// 🟢 LOGIKA PENANGGUNG JAWAB MENU ROUTER ARSIP LAIN (STR, SIK, PEGAWAI MASUK/KELUAR)
+// 🟢 LOGIKA PENANGGUNG JAWAB MENU ROUTER ARSIP SEKUNDER
 async function muatTabelSpesifik(namaTabel, idTbodyTarget, headersArray, rowBuilderFunc) {
     const tbody = document.getElementById(idTbodyTarget);
     if (!tbody) return;
@@ -221,36 +219,29 @@ function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
     const totalHari = Math.floor(selisihWaktu / (1000 * 60 * 60 * 24));
     
     if (totalHari <= 0) {
-        elementTr.style.backgroundColor = "#fee2e2"; // Merah pekat - Mati/Expired
+        elementTr.style.backgroundColor = "#fee2e2"; 
+        elementTr.style.color = "#b91c1c";
         return "EXPIRED";
     }
 
-    // Hitung konversi Tahun, Bulan, Hari
     const tahun = Math.floor(totalHari / 365);
     const sisaHariDariTahun = totalHari % 365;
     const bulan = Math.floor(sisaHariDariTahun / 30);
     const hari = sisaHariDariTahun % 30;
 
-    // Logika Alarm Warna Warning sesuai request prompt user
     if (totalHari <= 90) {
-        elementTr.style.backgroundColor = "#fee2e2"; // Merah (Kurang dari 3 bulan)
+        elementTr.style.backgroundColor = "#fee2e2"; 
         elementTr.style.color = "#b91c1c";
     } else if (totalHari <= 180) {
-        elementTr.style.backgroundColor = "#fef3c7"; // Kuning (Kurang dari 6 bulan)
+        elementTr.style.backgroundColor = "#fef3c7"; 
         elementTr.style.color = "#b45309";
     }
 
     return `${tahun} Thn ${bulan} Bln ${hari} Hari`;
 }
 
-// 📝 HOOKS ROUTER GLOBAL UNTUK MENANGKAP KLIK SIDEBAR DI INDEX.HTML MENGISI CONTAINER ARSIP
-window.switchViewOriginal = window.switchView; 
-window.switchView = function(viewId, element) {
-    if (typeof window.switchViewOriginal === 'function') {
-        window.switchViewOriginal(viewId, element);
-    }
-    
-    // Intersepsi Pengisian Data otomatis saat menu diklik admin
+// 📝 RE-HOOK ROUTER UNTUK OPERASIONAL UPDATE TABEL LIVE AUTOMATIC
+window.switchViewHook = function(viewId) {
     if (viewId === 'view-pegawai-masuk') {
         muatTabelSpesifik('pegawai_masuk', 'body-tabel-masuk', [1,2,3,4,5,6,7], (tr, r) => {
             tr.innerHTML = `<td>${r.nik}</td><td><strong>${r.nama}</strong></td><td>${r.jenis_kelamin}</td><td>${r.agama}</td><td>${r.bagian}</td><td>${r.tmt_masuk}</td><td>${r.pendidikan}</td>`;
@@ -272,17 +263,37 @@ window.switchView = function(viewId, element) {
             tr.innerHTML = `<td>${r.nik}</td><td><strong>${r.nama}</strong></td><td>${r.bidang}</td><td>${r.no_sip}</td><td>${r.tgl_terbit}</td><td>${r.tgl_berakhir}</td><td style="font-weight:700;">${masaAktifTeks}</td><td><a href="${r.lampiran_url || '#'}" target="_blank" class="btn" style="padding:4px 8px; font-size:12px; background:#475569; color:white;"><i class="fa-solid fa-file-pdf"></i> Lihat</a></td>`;
         });
     }
+    else if (viewId === 'view-surat-masuk') {
+        muatTabelSpesifik('surat_masuk', 'body-tabel-surat-masuk', [1,2,3,4,5,6,7,8], (tr, r) => {
+            let colorBadge = "background:#cbd5e1; color:#1e293b;"; 
+            if (r.status_tindak_lanjut === 'Selesai') colorBadge = "background:#dcfce7; color:#15803d; font-weight:700;";
+            if (r.status_tindak_lanjut === 'Proses Telaah') colorBadge = "background:#fef3c7; color:#b45309;";
+            if (r.status_tindak_lanjut === 'Proses TTE') colorBadge = "background:#e0f2fe; color:#0369a1;";
+
+            tr.innerHTML = `<td><strong>${r.no_surat}</strong></td><td>${r.tgl_surat}</td><td>${r.uraian}</td><td><span style="background:#f1f5f9; padding:3px 6px; border-radius:4px; font-size:12px; font-weight:600;">${r.instruksi}</span></td><td>${r.instruksi_tambahan || '-'}</td><td><span style="padding:4px 8px; border-radius:6px; font-size:12px; ${colorBadge}">${r.status_tindak_lanjut}</span></td><td><a href="${r.lampiran_url || '#'}" target="_blank" class="btn" style="padding:4px 8px; font-size:12px; background:#475569; color:white;"><i class="fa-solid fa-file-pdf"></i> Lihat</a></td>`;
+        });
+    }
+    else if (viewId === 'view-surat-keluar') {
+        muatTabelSpesifik('surat_keluar', 'body-tabel-surat-keluar', [1,2,3,4,5,6,7,8], (tr, r) => {
+            let colorBadge = "background:#cbd5e1; color:#1e293b;";
+            if (r.status_tindak_lanjut === 'Selesai') colorBadge = "background:#dcfce7; color:#15803d; font-weight:700;";
+            if (r.status_tindak_lanjut === 'Proses Telaah') colorBadge = "background:#fef3c7; color:#b45309;";
+            if (r.status_tindak_lanjut === 'Proses TTE') colorBadge = "background:#e0f2fe; color:#0369a1;";
+
+            tr.innerHTML = `<td><strong>${r.no_surat}</strong></td><td>${r.tgl_surat}</td><td>${r.uraian}</td><td>${r.instruksi_tambahan || '-'}</td><td><span style="padding:4px 8px; border-radius:6px; font-size:12px; ${colorBadge}">${r.status_tindak_lanjut}</span></td><td><i class="fa-solid fa-location-dot" style="color:#94a3b8"></i> ${r.keberadaan_berkas}</td><td><a href="${r.lampiran_url || '#'}" target="_blank" class="btn" style="padding:4px 8px; font-size:12px; background:#475569; color:white;"><i class="fa-solid fa-file-pdf"></i> Lihat</a></td>`;
+        });
+    }
 };
 
-// Fungsi General Komponen Sampingan 
+// Pasang hook pemicu ke fungsi router bawaan HTML
+window.switchViewHook('view-data-pegawai');
+
 function pemicuEditPegawai(id) {
     const dataPeg = dbPegawai.find(x => x.id_pegawai === id);
     if (!dataPeg) return;
     fields.forEach(f => { const el = document.getElementById(f); if (el) el.value = dataPeg[f] || ''; });
     statusEdit = true;
-    const wrapper = document.getElementById('form-master-wrapper');
-    if (wrapper) wrapper.classList.remove('hide-element');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof window.toggleFormInput === 'function') window.toggleFormInput('form-master-wrapper');
 }
 function jalankanPencarian() {
     const kataKunci = inputCari.value.toLowerCase().trim();
