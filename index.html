@@ -6,7 +6,8 @@
     <title>Sistem Dashboard Eksekutif Kepegawaian</title>
     
     <script>
-        if (!sessionStorage.getItem('role') || sessionStorage.getItem('role') !== 'admin') {
+        const currentRole = sessionStorage.getItem('role');
+        if (!currentRole || (currentRole !== 'superadmin' && currentRole !== 'admin')) {
             window.location.href = 'login.html';
         }
     </script>
@@ -20,7 +21,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
 
     <style>
-        /* CSS MURNI MODERN - DASHBOARD EKSEKUTIF LUXURY */
         :root {
             --sidebar-width: 260px;
             --primary: #2563eb;
@@ -60,7 +60,7 @@
         /* TOP NAV BAR */
         .top-nav { height: 70px; background-color: white; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 90; }
         .user-profile-box { display: flex; align-items: center; gap: 12px; }
-        .user-avatar { width: 38px; height: 38px; background-color: var(--primary-light); color: var(--primary); font-weight: 700; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .user-avatar { width: 38px; height: 38px; background-color: var(--primary-light); color: var(--primary); font-weight: 700; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
         .user-info h4 { font-size: 14px; font-weight: 700; color: var(--dark-slate); }
         .user-info p { font-size: 12px; color: #64748b; }
 
@@ -116,7 +116,7 @@
         .form-group input:focus, .form-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         .form-group input[readonly] { background-color: #e2e8f0; color: #475569; cursor: not-allowed; font-weight: 600; }
         
-        /* ➕ MODAL VIEW DETAIL STYLE (POPOUP BARU) */
+        /* MODAL VIEW DETAIL STYLE */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: all 0.3s ease; }
         .modal-overlay.open { opacity: 1; pointer-events: auto; }
         .modal-container { background: white; width: 90%; max-width: 950px; max-height: 85vh; border-radius: 14px; overflow-y: auto; padding: 30px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); transform: translateY(-20px); transition: all 0.3s ease; }
@@ -182,9 +182,9 @@
                 <h3 style="font-weight: 700; color: var(--dark-slate)" id="nav-header-title">Dashboard Overview</h3>
             </div>
             <div class="user-profile-box">
-                <div class="user-avatar">AD</div>
+                <div class="user-avatar" id="top-role-avatar">AD</div>
                 <div class="user-info">
-                    <h4>Super Admin</h4>
+                    <h4 id="top-role-title">Super Admin</h4>
                     <p>Sesi Cloud Terhubung</p>
                 </div>
                 <button onclick="logoutAksi()" class="btn btn-danger" style="padding: 8px 12px; margin-left: 15px;"><i class="fa-solid fa-power-off"></i> Keluar</button>
@@ -251,7 +251,7 @@
                                         <option>Tenaga Administrasi</option>
                                         <option>Tenaga Non Administrasi</option>
                                     </select>
-                                </div>
+                                node</div>
                                 <div class="form-group"><label>Nama Jabatan Spesifik</label><input type="text" id="jabatan"></div>
                                 <div class="form-group"><label>Ruangan / Unit Kerja Tempat Tugas</label><input type="text" id="ruangan"></div>
                             </div>
@@ -317,7 +317,7 @@
                             <input type="text" id="input-cari" class="search-input" placeholder="Cari Nama atau NIK...">
                         </div>
                         <div style="display: flex; gap:8px;">
-                            <button class="btn btn-primary" onclick="bukaFormTambahBaru()"><i class="fa-solid fa-user-plus"></i> Tambah Baru</button>
+                            <button class="btn btn-primary" id="btn-tambah-master-trigger" onclick="bukaFormTambahBaru()"><i class="fa-solid fa-user-plus"></i> Tambah Baru</button>
                             <button class="btn btn-success" id="btn-excel"><i class="fa-solid fa-file-excel"></i> Excel</button>
                             <button class="btn btn-danger" id="btn-pdf"><i class="fa-solid fa-file-pdf"></i> PDF</button>
                         </div>
@@ -341,32 +341,148 @@
 
             <div id="view-pegawai-masuk" class="view-panel">
                 <div class="page-title-box"><h2>Arsip Log Karyawan Baru Masuk</h2></div>
-                <div class="data-card"><div class="table-responsive"><table><thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Jenis Kelamin</th><th>Agama</th><th>Bagian/Ruang</th><th>TMT Masuk</th><th>Pendidikan</th></tr></thead><tbody id="body-tabel-masuk"></tbody></table></div></div>
+                <div class="data-card">
+                    <div class="action-bar" style="justify-content: flex-end;">
+                        <button class="btn btn-primary" id="btn-tambah-masuk-trigger" onclick="toggleFormInput('form-masuk-wrapper')"><i class="fa-solid fa-plus"></i> Tambah Pegawai Masuk</button>
+                    </div>
+                    <div id="form-masuk-wrapper" class="panel-form-box hide-element">
+                        <h3 style="font-size:14px; margin-bottom:10px;">Input Manual Pegawai Masuk</h3>
+                        <form id="form-add-masuk" onsubmit="saveDataSekunder(event, 'pegawai_masuk', 'form-add-masuk', 'form-masuk-wrapper', 'view-pegawai-masuk')">
+                            <div class="grid-inputs">
+                                <div class="form-group"><label>NIK</label><input type="number" name="nik" required></div>
+                                <div class="form-group"><label>Nama Lengkap</label><input type="text" name="nama" required></div>
+                                <div class="form-group"><label>Jenis Kelamin</label><select name="jenis_kelamin"><option>Laki-laki</option><option>Perempuan</option></select></div>
+                                <div class="form-group"><label>Agama</label><select name="agama"><option>Islam</option><option>Kristen</option><option>Katolik</option><option>Hindu</option><option>Buddha</option></select></div>
+                                <div class="form-group"><label>Bagian</label><input type="text" name="bagian" required></div>
+                                <div class="form-group"><label>TMT Masuk</label><input type="date" name="tmt_masuk" required></div>
+                                <div class="form-group"><label>Pendidikan</label><input type="text" name="pendidikan" required></div>
+                            </div>
+                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Simpan</button></div>
+                        </form>
+                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Jenis Kelamin</th><th>Agama</th><th>Bagian/Ruang</th><th>TMT Masuk</th><th>Pendidikan</th></tr></thead><tbody id="body-tabel-masuk"></tbody></table></div>
+                </div>
             </div>
 
             <div id="view-pegawai-keluar" class="view-panel">
                 <div class="page-title-box"><h2>Arsip Log Karyawan Keluar</h2></div>
-                <div class="data-card"><div class="table-responsive"><table><thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Bagian</th><th>Unit Tugas</th><th>TMT Keluar</th><th>Jenis Keluar</th><th>Keterangan</th></tr></thead><tbody id="body-tabel-keluar"></tbody></table></div></div>
+                <div class="data-card">
+                    <div class="action-bar" style="justify-content: flex-end;">
+                        <button class="btn btn-primary" id="btn-tambah-keluar-trigger" onclick="toggleFormInput('form-keluar-wrapper')"><i class="fa-solid fa-plus"></i> Tambah Pegawai Keluar</button>
+                    </div>
+                    <div id="form-keluar-wrapper" class="panel-form-box hide-element">
+                        <h3 style="font-size:14px; margin-bottom:10px;">Input Manual Pegawai Keluar</h3>
+                        <form id="form-add-keluar" onsubmit="saveDataSekunder(event, 'pegawai_keluar', 'form-add-keluar', 'form-keluar-wrapper', 'view-pegawai-keluar')">
+                            <div class="grid-inputs">
+                                <div class="form-group"><label>NIK</label><input type="number" name="nik" required></div>
+                                <div class="form-group"><label>Nama Lengkap</label><input type="text" name="nama" required></div>
+                                <div class="form-group"><label>Bagian</label><input type="text" name="bagian" required></div>
+                                <div class="form-group"><label>Unit Tugas</label><input type="text" name="unit_tugas" required></div>
+                                <div class="form-group"><label>TMT Keluar</label><input type="date" name="tmt_keluar" required></div>
+                                <div class="form-group"><label>Jenis Keluar</label><select name="jenis_keluar"><option>MUTASI</option><option>PENSIUN</option><option>RESIGN</option></select></div>
+                                <div class="form-group" style="grid-column: span 3;"><label>Keterangan</label><input type="text" name="keterangan"></div>
+                            </div>
+                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Simpan</button></div>
+                        </form>
+                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Bagian</th><th>Unit Tugas</th><th>TMT Keluar</th><th>Jenis Keluar</th><th>Keterangan</th></tr></thead><tbody id="body-tabel-keluar"></tbody></table></div>
+                </div>
             </div>
 
             <div id="view-str" class="view-panel">
                 <div class="page-title-box"><h2>Registrasi Surat Tanda Registrasi (STR)</h2></div>
-                <div class="data-card"><div class="table-responsive"><table><thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Bidang Profesi</th><th>No. STR</th><th>Tgl Terbit</th><th>Tgl Berakhir</th><th>Lampiran</th></tr></thead><tbody id="body-tabel-str"></tbody></table></div></div>
+                <div class="data-card">
+                    <div class="action-bar" style="justify-content: flex-end;">
+                        <button class="btn btn-primary" id="btn-tambah-str-trigger" onclick="toggleFormInput('form-str-wrapper')"><i class="fa-solid fa-plus"></i> Tambah STR</button>
+                    </div>
+                    <div id="form-str-wrapper" class="panel-form-box hide-element">
+                        <form id="form-add-str" onsubmit="saveDataSekunder(event, 'berkas_str', 'form-add-str', 'form-str-wrapper', 'view-str')">
+                            <div class="grid-inputs">
+                                <div class="form-group"><label>NIK</label><input type="number" name="nik" required></div>
+                                <div class="form-group"><label>Nama</label><input type="text" name="nama" required></div>
+                                <div class="form-group"><label>Bidang</label><input type="text" name="bidang" required></div>
+                                <div class="form-group"><label>No STR</label><input type="text" name="no_str" required></div>
+                                <div class="form-group"><label>Tgl Terbit</label><input type="date" name="tgl_terbit" required></div>
+                                <div class="form-group"><label>Tgl Berakhir</label><input type="date" name="tgl_berakhir" required></div>
+                                <div class="form-group full-width"><label>File</label><input type="file" name="lampiran_file" required></div>
+                            </div>
+                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Unggah</button></div>
+                        </form>
+                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Bidang Profesi</th><th>No. STR</th><th>Tgl Terbit</th><th>Tgl Berakhir</th><th>Lampiran</th></tr></thead><tbody id="body-tabel-str"></tbody></table></div>
+                </div>
             </div>
 
             <div id="view-sik" class="view-panel">
                 <div class="page-title-box"><h2>Surat Izin Praktik / Kerja (SIP/SIK)</h2></div>
-                <div class="data-card"><div class="table-responsive"><table><thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Bidang Profesi</th><th>No. SIP/SIK</th><th>Tgl Terbit</th><th>Tgl Berakhir</th><th>Masa Aktif</th><th>Lampiran</th></tr></thead><tbody id="body-tabel-sik"></tbody></table></div></div>
+                <div class="data-card">
+                    <div class="action-bar" style="justify-content: flex-end;">
+                        <button class="btn btn-primary" id="btn-tambah-sik-trigger" onclick="toggleFormInput('form-sik-wrapper')"><i class="fa-solid fa-plus"></i> Tambah SIK</button>
+                    </div>
+                    <div id="form-sik-wrapper" class="panel-form-box hide-element">
+                        <form id="form-add-sik" onsubmit="saveDataSekunder(event, 'berkas_sik', 'form-add-sik', 'form-sik-wrapper', 'view-sik')">
+                            <div class="grid-inputs">
+                                <div class="form-group"><label>NIK</label><input type="number" name="nik" required></div>
+                                <div class="form-group"><label>Nama</label><input type="text" name="nama" required></div>
+                                <div class="form-group"><label>Bidang</label><input type="text" name="bidang" required></div>
+                                <div class="form-group"><label>No SIP</label><input type="text" name="no_sip" required></div>
+                                <div class="form-group"><label>Tgl Terbit</label><input type="date" name="tgl_terbit" required></div>
+                                <div class="form-group"><label>Tgl Berakhir</label><input type="date" name="tgl_berakhir" required></div>
+                                <div class="form-group full-width"><label>File</label><input type="file" name="lampiran_file" required></div>
+                            </div>
+                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Unggah</button></div>
+                        </form>
+                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Bidang Profesi</th><th>No. SIP/SIK</th><th>Tgl Terbit</th><th>Tgl Berakhir</th><th>Masa Aktif</th><th>Lampiran</th></tr></thead><tbody id="body-tabel-sik"></tbody></table></div>
+                </div>
             </div>
 
             <div id="view-surat-masuk" class="view-panel">
                 <div class="page-title-box"><h2>Arsip Elektronik Surat Masuk</h2></div>
-                <div class="data-card"><div class="table-responsive"><table><thead><tr><th>Nomor Surat</th><th>Tgl Surat</th><th>Uraian Informasi</th><th>Instruksi</th><th>Tambahan</th><th>Status</th><th>Lampiran</th></tr></thead><tbody id="body-tabel-surat-masuk"></tbody></table></div></div>
+                <div class="data-card">
+                    <div class="action-bar" style="justify-content: flex-end;">
+                        <button class="btn btn-primary" id="btn-tambah-surat-masuk-trigger" onclick="toggleFormInput('form-surat-masuk-wrapper')"><i class="fa-solid fa-plus"></i> Tambah Surat Masuk</button>
+                    </div>
+                    <div id="form-surat-masuk-wrapper" class="panel-form-box hide-element">
+                        <form id="form-add-surat-masuk" onsubmit="saveDataSekunder(event, 'surat_masuk', 'form-add-surat-masuk', 'form-surat-masuk-wrapper', 'view-surat-masuk')">
+                            <div class="grid-inputs">
+                                <div class="form-group"><label>No Surat</label><input type="text" name="no_surat" required></div>
+                                <div class="form-group"><label>Tgl Surat</label><input type="date" name="tgl_surat" required></div>
+                                <div class="form-group"><label>Instruksi</label><select name="instruksi"><option>Tindak Lanjuti</option><option>Arsipkan</option></select></div>
+                                <div class="form-group"><label>Status</label><select name="status_tindak_lanjut"><option>Belum Dibaca</option><option>Proses Telaah</option><option>Proses TTE</option><option>Selesai</option></select></div>
+                                <div class="form-group full-width"><label>Uraian</label><input type="text" name="uraian" required></div>
+                                <div class="form-group full-width"><label>Tambahan</label><input type="text" name="instruksi_tambahan"></div>
+                                <div class="form-group full-width"><label>File</label><input type="file" name="lampiran_file" required></div>
+                            </div>
+                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Simpan</button></div>
+                        </form>
+                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Nomor Surat</th><th>Tgl Surat</th><th>Uraian Informasi</th><th>Instruksi</th><th>Tambahan</th><th>Status</th><th>Lampiran</th></tr></thead><tbody id="body-tabel-surat-masuk"></tbody></table></div>
+                </div>
             </div>
 
             <div id="view-surat-keluar" class="view-panel">
                 <div class="page-title-box"><h2>Arsip Elektronik Surat Keluar</h2></div>
-                <div class="data-card"><div class="table-responsive"><table><thead><tr><th>Nomor Surat</th><th>Tgl Surat</th><th>Uraian Informasi</th><th>Tambahan</th><th>Status</th><th>Keberadaan</th><th>Lampiran</th></tr></thead><tbody id="body-tabel-surat-keluar"></tbody></table></div></div>
+                <div class="data-card">
+                    <div class="action-bar" style="justify-content: flex-end;">
+                        <button class="btn btn-primary" id="btn-tambah-surat-keluar-trigger" onclick="toggleFormInput('form-surat-keluar-wrapper')"><i class="fa-solid fa-plus"></i> Tambah Surat Keluar</button>
+                    </div>
+                    <div id="form-surat-keluar-wrapper" class="panel-form-box hide-element">
+                        <form id="form-add-surat-keluar" onsubmit="saveDataSekunder(event, 'surat_keluar', 'form-add-surat-keluar', 'form-surat-keluar-wrapper', 'view-surat-keluar')">
+                            <div class="grid-inputs">
+                                <div class="form-group"><label>No Surat</label><input type="text" name="no_surat" required></div>
+                                <div class="form-group"><label>Tgl Surat</label><input type="date" name="tgl_surat" required></div>
+                                <div class="form-group"><label>Keberadaan</label><input type="text" name="keberadaan_berkas" required></div>
+                                <div class="form-group"><label>Status</label><select name="status_tindak_lanjut"><option>Belum Dibaca</option><option>Proses Telaah</option><option>Proses TTE</option><option>Selesai</option></select></div>
+                                <div class="form-group full-width"><label>Uraian</label><input type="text" name="uraian" required></div>
+                                <div class="form-group full-width"><label>Tambahan</label><input type="text" name="instruksi_tambahan"></div>
+                                <div class="form-group full-width"><label>File</label><input type="file" name="lampiran_file" required></div>
+                            </div>
+                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Simpan</button></div>
+                        </form>
+                    </div>
+                    <div class="table-responsive"><table><thead><tr><th>Nomor Surat</th><th>Tgl Surat</th><th>Uraian Informasi</th><th>Tambahan</th><th>Status</th><th>Keberadaan</th><th>Lampiran</th></tr></thead><tbody id="body-tabel-surat-keluar"></tbody></table></div>
+                </div>
             </div>
 
             <div id="view-general-layanan" class="view-panel">
@@ -383,12 +499,18 @@
                 <h3><i class="fa-solid fa-address-card" style="color:var(--primary)"></i> Ringkasan Lengkap Profil Pegawai</h3>
                 <button class="modal-close-btn" onclick="tutupModalDetailAksi()">&times;</button>
             </div>
-            <div class="view-grid" id="container-view-rows">
-                </div>
+            <div class="view-grid" id="container-view-rows"></div>
         </div>
     </div>
 
     <script>
+        // Set info profil header atas sesuai status role login
+        const roleLogin = sessionStorage.getItem('role');
+        if(roleLogin) {
+            document.getElementById('top-role-title').textContent = roleLogin === 'superadmin' ? 'Super Admin' : 'Admin Kepegawaian (Read-Only)';
+            document.getElementById('top-role-avatar').textContent = roleLogin === 'superadmin' ? 'SA' : 'AD';
+        }
+
         function toggleDropdown(element) {
             const submenu = element.nextElementSibling;
             const arrow = element.querySelector('.arrow');
@@ -438,17 +560,14 @@
             window.scrollTo({ top: wrapper.offsetTop - 20, behavior: 'smooth' });
         }
 
-        // 👁️ ➕ BARU: FUNGSI MEMBUKA MODAL VIEW DETAIL DATA SEUTUHNYA (31 KOLOM)
         window.bukaModalViewDetailSistem = function(idPegawai) {
-            // Temukan objek pegawai dari array global yang ada di app.js
-            if(typeof dbPegawai === 'undefined') return alert("Sistem sinkronisasi app.js belum siap.");
+            if(typeof dbPegawai === 'undefined') return alert("Sistem sinkronisasi belum siap.");
             const p = dbPegawai.find(x => x.id_pegawai === idPegawai);
             if(!p) return alert("Data tidak ditemukan.");
 
             const container = document.getElementById('container-view-rows');
-            container.innerHTML = ""; // Bersihkan isi lama
+            container.innerHTML = "";
 
-            // Format Mapping Label untuk 31 Field agar rapi dan informatif
             const mapLabels = {
                 nik: 'NIK KTP', nama: 'Nama Lengkap', nip: 'NIP / No Pegawai', status: 'Status Dinas', 
                 kelompok_pegawai: 'Kelompok Pegawai', kelompok_jabatan: 'Kelompok Jabatan', jabatan: 'Nama Jabatan', 
@@ -461,16 +580,13 @@
                 no_bpjsn: 'BPJS Kesehatan', no_bpjsket_taspen: 'BPJS Ketenagakerjaan/Taspen', id_pegawai: 'ID Sistem Cloud'
             };
 
-            // Susun baris ringkasan data
             Object.keys(mapLabels).forEach(key => {
-                const rowValue = p[key] ? p[key] : "-";
                 const div = document.createElement('div');
                 div.className = "view-row";
-                div.innerHTML = `<strong>${mapLabels[key]}</strong><span>${rowValue}</span>`;
+                div.innerHTML = `<strong>${mapLabels[key]}</strong><span>${p[key] || "-"}</span>`;
                 container.appendChild(div);
             });
 
-            // Munculkan overlay dengan efek transisi CSS
             document.getElementById('modal-view-detail').classList.add('open');
         }
 
@@ -481,7 +597,7 @@
             event.preventDefault();
             const form = document.getElementById(idForm);
             const btnSubmit = form.querySelector('button[type="submit"]');
-            btnSubmit.disabled = true; btnSubmit.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Mengunggah File...";
+            btnSubmit.disabled = true; btnSubmit.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Memproses...";
             const fileInput = form.querySelector('input[type="file"]');
             let finalUrl = "";
             try {
