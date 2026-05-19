@@ -22,6 +22,9 @@ const mainForm = document.getElementById('main-crud-form');
 const tBody = document.getElementById('body-tabel-pegawai');
 const inputCari = document.getElementById('input-cari');
 const inputMasukRS = document.getElementById('masuk_rs');
+const inputTglLahir = document.getElementById('tanggal_lahir');
+const inputBUP = document.getElementById('rentang_bup');
+const inputNIP = document.getElementById('nip');
 const btnExcel = document.getElementById('btn-excel');
 const btnPdf = document.getElementById('btn-pdf');
 const btnPrev = document.getElementById('btn-page-prev');
@@ -38,8 +41,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (inputCari) inputCari.oninput = jalankanPencarian;
     if (btnExcel) btnExcel.onclick = unduhExcel;
     if (btnPdf) btnPdf.onclick = unduhPDF;
-    if (inputMasukRS) inputMasukRS.onchange = hitungMasaKerjaOtomatis;
     if (mainForm) mainForm.onsubmit = simpanFormPegawai;
+
+    // 🔄 RE-HOOK LIVE TRIGGER OTOMATISASI PENANGGALAN ADMIN
+    if (inputMasukRS) inputMasukRS.onchange = hitungMasaKerjaOtomatis;
+    if (inputTglLahir) inputTglLahir.onchange = hitungTMTPensiunOtomatis;
+    if (inputBUP) inputBUP.oninput = hitungTMTPensiunOtomatis;
+    if (inputNIP) inputNIP.oninput = hitungTMTCPNSOtomatis;
 
     if (btnPrev) btnPrev.onclick = () => { if(currentPage > 1) { currentPage--; renderTabelDenganHalaman(); } };
     if (btnNext) btnNext.onclick = () => { const maxPage = Math.ceil(dataFilterAktif.length / rowsPerPage); if(currentPage < maxPage) { currentPage++; renderTabelDenganHalaman(); } };
@@ -82,6 +90,10 @@ async function simpanFormPegawai(e) {
     const saveBtn = mainForm.querySelector('button[type="submit"]');
     saveBtn.disabled = true;
     saveBtn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Memproses...";
+
+    // Sebelum menyimpan, pastikan input NIK di-enable agar datanya ikut terkirim ke Supabase
+    const nikInput = document.getElementById('nik');
+    if (nikInput) nikInput.disabled = false;
 
     const dataObj = {};
     fields.forEach(f => {
@@ -127,7 +139,6 @@ function renderTabelDenganHalaman() {
     const totalData = dataFilterAktif.length;
     const roleSekarang = sessionStorage.getItem('role');
     
-    // Kontrol Visibilitas Tombol Tambah Master
     const btnTambahMaster = document.getElementById('btn-tambah-master-trigger');
     if (btnTambahMaster) {
         btnTambahMaster.style.display = (roleSekarang === 'admin') ? 'none' : 'inline-flex';
@@ -251,11 +262,82 @@ function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
     return `${tahun} Thn ${bulan} Bln ${hari} Hari`;
 }
 
+// 📅 1. REKAP MAJU: HITUNG MASA KERJA (TAHUN, BULAN, HARI)
+function hitungMasaKerjaOtomatis() {
+    if (!this.value) return;
+    const masuk = new Date(this.value); 
+    const hariIni = new Date();
+    
+    let tahun = hariIni.getFullYear() - masuk.getFullYear(); 
+    let bulan = hariIni.getMonth() - masuk.getMonth();
+    let hari = hariIni.getDate() - masuk.getDate();
+    
+    if (hari < 0) {
+        // Ambil jumlah hari pada bulan sebelumnya
+        const bulanLalu = new Date(hariIni.getFullYear(), hariIni.getMonth(), 0).getDate();
+        hari += bulanLalu;
+        bulan--;
+    }
+    if (bulan < 0) { 
+        tahun--; 
+        bulan += 12; 
+    }
+    
+    if (document.getElementById('masa_kerja_rs')) {
+        document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan ${hari} Hari`;
+    }
+}
+
+// 📅 2. REKAP MAJU: TMT PENSIUN (TGL 1 BULAN BERIKUTNYA DARI TGL LAHIR + BUP)
+function hitungTMTPensiunOtomatis() {
+    const tglLahirVal = document.getElementById('tanggal_lahir').value;
+    const bupVal = parseInt(document.getElementById('rentang_bup').value);
+    
+    if (!tglLahirVal || !bupVal || isNaN(bupVal)) return;
+    
+    const tglLahir = new Date(tglLahirVal);
+    // Tambah tahun lahir dengan angka usia pensiun (BUP)
+    const tahunPensiun = tglLahir.getFullYear() + bupVal;
+    const bulanPensiun = tglLahir.getMonth(); // Bulan lahir (0-11)
+    
+    // Setel ke tanggal 1 pada bulan berikutnya
+    const tmtPensiunDate = new Date(tahunPensiun, bulanPensiun + 1, 1);
+    
+    // Format ke YYYY-MM-DD agar masuk rapi ke komponen input type="date"
+    const yyyy = tmtPensiunDate.getFullYear();
+    const mm = String(tmtPensiunDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(tmtPensiunDate.getDate()).padStart(2, '0');
+    
+    if (document.getElementById('tmt_pensiun')) {
+        document.getElementById('tmt_pensiun').value = `${yyyy}-${mm}-${dd}`;
+    }
+}
+
+// 📅 3. REKAP MAJU: TMT CPNS DARI 8 DIGIT AWAL STRUKTUR NIP
+function hitungTMTCPNSOtomatis() {
+    const nipVal = this.value.trim();
+    if (nipVal.length < 8) return; // Butuh minimal 8 angka awal (YYYYMMDD)
+    
+    const tahunStr = nipVal.substring(0, 4);
+    const bulanStr = nipVal.substring(4, 6);
+    const hariStr = nipVal.substring(6, 8);
+    
+    // Validasi angka agar terhindar dari isNaN crash
+    const tahun = parseInt(tahunStr);
+    const bulan = parseInt(bulanStr);
+    const hari = parseInt(hariStr);
+    
+    if (isNaN(tahun) || isNaN(bulan) || isNaN(hari)) return;
+    if (bulan < 1 || bulan > 12 || hari < 1 || hari > 31) return;
+    
+    if (document.getElementById('tmt_cpns')) {
+        document.getElementById('tmt_cpns').value = `${tahunStr}-${bulanStr}-${hariStr}`;
+    }
+}
+
 // 📝 RE-HOOK ROUTER UNTUK MONITOR LIVE OPERASIONAL TABEL ARSIP
 window.switchViewHook = function(viewId) {
     const roleSekarang = sessionStorage.getItem('role');
-    
-    // Kontrol tombol pemicu form input di sub-menu arsip sekunder
     const triggerIds = ['btn-tambah-masuk-trigger', 'btn-tambah-keluar-trigger', 'btn-tambah-str-trigger', 'btn-tambah-sik-trigger', 'btn-tambah-surat-masuk-trigger', 'btn-tambah-surat-keluar-trigger'];
     triggerIds.forEach(id => {
         const el = document.getElementById(id);
@@ -326,14 +408,6 @@ function jalankanPencarian() {
     const kataKunci = inputCari.value.toLowerCase().trim();
     dataFilterAktif = dbPegawai.filter(p => (p.nama?.toLowerCase().includes(kataKunci)) || (p.nik?.includes(kataKunci)));
     currentPage = 1; renderTabelDenganHalaman();
-}
-
-function hitungMasaKerjaOtomatis() {
-    if (!this.value) return;
-    const masuk = new Date(this.value); const hariIni = new Date();
-    let tahun = hariIni.getFullYear() - masuk.getFullYear(); let bulan = hariIni.getMonth() - masuk.getMonth();
-    if (bulan < 0) { tahun--; bulan += 12; }
-    if (document.getElementById('masa_kerja_rs')) document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan`;
 }
 
 function unduhExcel() {
