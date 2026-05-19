@@ -60,7 +60,6 @@ function refreshDataState() {
     renderTabelDenganHalaman();
 }
 
-// 📊 HITUNG METRIK DASHBOARD UTAMA SISI ADMIN
 async function hitungStatistikDashboard() {
     if (document.getElementById('stat-total-pegawai')) {
         document.getElementById('stat-total-pegawai').textContent = dbPegawai.length;
@@ -74,14 +73,12 @@ async function hitungStatistikDashboard() {
     }
 }
 
-// 📝 ACTION SAVE & UPDATE DATA INDUK PEGAWAI
 async function simpanFormPegawai(e) {
     e.preventDefault();
     const saveBtn = mainForm.querySelector('button[type="submit"]');
     saveBtn.disabled = true;
     saveBtn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Memproses...";
 
-    // Sebelum menyimpan, pastikan input NIK di-enable agar datanya ikut terkirim ke Supabase
     const nikInput = document.getElementById('nik');
     if (nikInput) nikInput.disabled = false;
 
@@ -122,7 +119,6 @@ async function simpanFormPegawai(e) {
     }
 }
 
-// 👥 RENDERING DAFTAR PEGAWAI INDUK DENGAN PROTEKSI ROLE
 function renderTabelDenganHalaman() {
     if (!tBody) return;
     tBody.innerHTML = '';
@@ -174,7 +170,6 @@ function renderTabelDenganHalaman() {
     if (pagInfoText) pagInfoText.textContent = `Menampilkan ${((currentPage-1)*rowsPerPage)+1}-${Math.min(currentPage*rowsPerPage, totalData)} dari ${totalData} pegawai`;
 }
 
-// 🚪 PROSES PEGAWAI KELUAR
 async function mutasiKeluarAksi(id) {
     const p = dbPegawai.find(x => x.id_pegawai === id);
     if (!p) return;
@@ -201,7 +196,6 @@ async function mutasiKeluarAksi(id) {
     }
 }
 
-// 🟢 LOGIKA PENANGGUNG JAWAB MENU ROUTER ARSIP SEKUNDER
 async function muatTabelSpesifik(namaTabel, idTbodyTarget, headersArray, rowBuilderFunc) {
     const tbody = document.getElementById(idTbodyTarget);
     if (!tbody) return;
@@ -227,7 +221,6 @@ async function muatTabelSpesifik(namaTabel, idTbodyTarget, headersArray, rowBuil
     }
 }
 
-// 🕒 UTILITY HITUNG SISA WAKTU SIK (ANTI-CRASH)
 function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
     if (!tglBerakhirStr) return "-";
     const akhir = new Date(tglBerakhirStr);
@@ -252,83 +245,63 @@ function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
     return `${tahun} Thn ${bulan} Bln ${hari} Hari`;
 }
 
-// 📅 1. REKAP MAJU: HITUNG MASA KERJA LENGKAP (TAHUN, BULAN, HARI)
-window.hitungMasaKerjaOtomatis = function() {
+// 📅 CORE ENGINE: JALANKAN SEMUA AUTOMATION PENANGGALAN SEKALIGUS
+window.jalankanSemuaOtomatisasiSistem = function() {
     const inputMasukRS = document.getElementById('masuk_rs');
-    if (!inputMasukRS || !inputMasukRS.value) return;
-    
-    const masuk = new Date(inputMasukRS.value); 
-    const hariIni = new Date();
-    
-    let tahun = hariIni.getFullYear() - masuk.getFullYear(); 
-    let bulan = hariIni.getMonth() - masuk.getMonth();
-    let hari = hariIni.getDate() - masuk.getDate();
-    
-    if (hari < 0) {
-        const bulanLalu = new Date(hariIni.getFullYear(), hariIni.getMonth(), 0).getDate();
-        hari += bulanLalu;
-        bulan--;
+    const inputTglLahir = document.getElementById('tanggal_lahir');
+    const inputBUP = document.getElementById('rentang_bup');
+    const inputNIP = document.getElementById('nip');
+
+    // 1. Hitung Masa Kerja
+    if (inputMasukRS && inputMasukRS.value) {
+        const masuk = new Date(inputMasukRS.value); 
+        const hariIni = new Date();
+        let tahun = hariIni.getFullYear() - masuk.getFullYear(); 
+        let bulan = hariIni.getMonth() - masuk.getMonth();
+        let hari = hariIni.getDate() - masuk.getDate();
+        if (hari < 0) { hari += new Date(hariIni.getFullYear(), hariIni.getMonth(), 0).getDate(); bulan--; }
+        if (bulan < 0) { tahun--; bulan += 12; }
+        if (document.getElementById('masa_kerja_rs')) {
+            document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan ${hari} Hari`;
+        }
     }
-    if (bulan < 0) { 
-        tahun--; 
-        bulan += 12; 
+
+    // 2. Hitung TMT Pensiun
+    if (inputTglLahir && inputTglLahir.value && inputBUP && inputBUP.value) {
+        const bupVal = parseInt(inputBUP.value);
+        if (!isNaN(bupVal)) {
+            const tglLahir = new Date(inputTglLahir.value);
+            const tmtPensiunDate = new Date(tglLahir.getFullYear() + bupVal, tglLahir.getMonth() + 1, 1);
+            const yyyy = tmtPensiunDate.getFullYear();
+            const mm = String(tmtPensiunDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(tmtPensiunDate.getDate()).padStart(2, '0');
+            if (document.getElementById('tmt_pensiun')) {
+                document.getElementById('tmt_pensiun').value = `${yyyy}-${mm}-${dd}`;
+            }
+        }
     }
-    
-    if (document.getElementById('masa_kerja_rs')) {
-        document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan ${hari} Hari`;
+
+    // 3. Hitung TMT CPNS dari NIP
+    if (inputNIP && inputNIP.value.trim().length >= 8) {
+        const nipVal = inputNIP.value.trim();
+        const tahunStr = nipVal.substring(0, 4);
+        const bulanStr = nipVal.substring(4, 6);
+        const hariStr = nipVal.substring(6, 8);
+        if (!isNaN(parseInt(tahunStr)) && !isNaN(parseInt(bulanStr)) && !isNaN(parseInt(hariStr))) {
+            if (parseInt(bulanStr) >= 1 && parseInt(bulanStr) <= 12 && parseInt(hariStr) >= 1 && parseInt(hariStr) <= 31) {
+                if (document.getElementById('tmt_cpns')) {
+                    document.getElementById('tmt_cpns').value = `${tahunStr}-${bulanStr}-${hariStr}`;
+                }
+            }
+        }
     }
 }
 
-// 📅 2. REKAP MAJU: TMT PENSIUN (TGL 1 BULAN BERIKUTNYA DARI TGL LAHIR + BUP)
-window.hitungTMTPensiunOtomatis = function() {
-    const tglLahirVal = document.getElementById('tanggal_lahir').value;
-    const bupInput = document.getElementById('rentang_bup');
-    if (!bupInput) return;
-    const bupVal = parseInt(bupInput.value);
-    
-    if (!tglLahirVal || !bupVal || isNaN(bupVal)) return;
-    
-    const tglLahir = new Date(tglLahirVal);
-    const tahunPensiun = tglLahir.getFullYear() + bupVal;
-    const bulanPensiun = tglLahir.getMonth(); 
-    
-    // Setel otomatis ke tanggal 1 pada bulan berikutnya
-    const tmtPensiunDate = new Date(tahunPensiun, bulanPensiun + 1, 1);
-    
-    const yyyy = tmtPensiunDate.getFullYear();
-    const mm = String(tmtPensiunDate.getMonth() + 1).padStart(2, '0');
-    const dd = String(tmtPensiunDate.getDate()).padStart(2, '0');
-    
-    if (document.getElementById('tmt_pensiun')) {
-        document.getElementById('tmt_pensiun').value = `${yyyy}-${mm}-${dd}`;
-    }
-}
+// Re-hook pemicu manual saat admin mengetik di form
+window.hitungMasaKerjaOtomatis = () => window.jalankanSemuaOtomatisasiSistem();
+window.hitungTMTPensiunOtomatis = () => window.jalankanSemuaOtomatisasiSistem();
+window.hitungTMTCPNSOtomatis = () => window.jalankanSemuaOtomatisasiSistem();
 
-// 📅 3. REKAP MAJU: TMT CPNS DARI 8 DIGIT AWAL STRUKTUR NIP
-window.hitungTMTCPNSOtomatis = function() {
-    const nipInput = document.getElementById('nip');
-    if (!nipInput) return;
-    
-    const nipVal = nipInput.value.trim();
-    if (nipVal.length < 8) return; 
-    
-    const tahunStr = nipVal.substring(0, 4);
-    const bulanStr = nipVal.substring(4, 6);
-    const hariStr = nipVal.substring(6, 8);
-    
-    const tahun = parseInt(tahunStr);
-    const bulan = parseInt(bulanStr);
-    const hari = parseInt(hariStr);
-    
-    if (isNaN(tahun) || isNaN(bulan) || isNaN(hari)) return;
-    if (bulan < 1 || bulan > 12 || hari < 1 || hari > 31) return;
-    
-    if (document.getElementById('tmt_cpns')) {
-        document.getElementById('tmt_cpns').value = `${tahunStr}-${bulanStr}-${hariStr}`;
-    }
-}
-
-// 📝 RE-HOOK ROUTER UNTUK MONITOR LIVE OPERASIONAL TABEL ARSIP
 window.switchViewHook = function(viewId) {
     const roleSekarang = sessionStorage.getItem('role');
     const triggerIds = ['btn-tambah-masuk-trigger', 'btn-tambah-keluar-trigger', 'btn-tambah-str-trigger', 'btn-tambah-sik-trigger', 'btn-tambah-surat-masuk-trigger', 'btn-tambah-surat-keluar-trigger'];
@@ -390,6 +363,9 @@ function pemicuEditPegawai(id) {
     if(document.getElementById('nik')) document.getElementById('nik').disabled = true;
     fields.forEach(f => { const el = document.getElementById(f); if (el) el.value = dataPeg[f] || ''; });
     statusEdit = true;
+    
+    // 🔥 BARU: Paksa hitung penanggalan otomatis begitu tombol edit diklik
+    window.jalankanSemuaOtomatisasiSistem();
     
     document.getElementById('main-form-title').innerHTML = `<i class="fa-solid fa-user-pen"></i> Modifikasi / Ubah Berkas Pegawai: ${dataPeg.nama}`;
     const wrapper = document.getElementById('form-master-wrapper');
