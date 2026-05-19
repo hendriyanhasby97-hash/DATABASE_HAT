@@ -59,6 +59,7 @@
         .text-warning-3 { color: #ea580c; font-weight: 700; }
         .text-danger { color: #dc2626; font-weight: 700; }
         
+        .badge-persen { background: #f1f5f9; color: #475569; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; margin-left: 8px; }
         .loading-text { text-align: center; padding: 20px; color: #94a3b8; font-weight: 500; }
     </style>
 </head>
@@ -134,7 +135,7 @@
                 <div class="rekap-title"><i class="fa-solid fa-layer-group"></i><span>3. Rekapitulasi Kelompok Pegawai</span></div>
                 <div class="table-responsive">
                     <table>
-                        <thead><tr><th>Kelompok</th><th style="text-align: center;">Jumlah Pegawai</th></tr></thead>
+                        <thead><tr><th>Kelompok</th><th style="text-align: center;">Jumlah Pegawai</th><th style="text-align: center;">Persentase</th></tr></thead>
                         <tbody id="tbody-rekap-kelompok"></tbody>
                     </table>
                 </div>
@@ -144,7 +145,7 @@
                 <div class="rekap-title"><i class="fa-solid fa-venus-mars"></i><span>4. Rekapitulasi Jenis Kelamin</span></div>
                 <div class="table-responsive">
                     <table>
-                        <thead><tr><th>Jenis Kelamin</th><th style="text-align: center;">Jumlah Pegawai</th></tr></thead>
+                        <thead><tr><th>Jenis Kelamin</th><th style="text-align: center;">Jumlah Pegawai</th><th style="text-align: center;">Persentase</th></tr></thead>
                         <tbody id="tbody-rekap-gender"></tbody>
                     </table>
                 </div>
@@ -158,7 +159,7 @@
                 <div class="rekap-title"><i class="fa-solid fa-hands-praying"></i><span>5. Rekapitulasi Berdasarkan Agama</span></div>
                 <div class="table-responsive">
                     <table>
-                        <thead><tr><th>Agama</th><th style="text-align: center;">Jumlah Pegawai</th></tr></thead>
+                        <thead><tr><th>Agama</th><th style="text-align: center;">Jumlah Pegawai</th><th style="text-align: center;">Persentase</th></tr></thead>
                         <tbody id="tbody-rekap-agama"></tbody>
                     </table>
                 </div>
@@ -168,7 +169,7 @@
                 <div class="rekap-title"><i class="fa-solid fa-toggle-on"></i><span>6. Rekapitulasi Status Kepegawaian Aktif</span></div>
                 <div class="table-responsive">
                     <table>
-                        <thead><tr><th>Status Operasional</th><th style="text-align: center;">Jumlah Status</th></tr></thead>
+                        <thead><tr><th>Status Operasional</th><th style="text-align: center;">Jumlah Record</th><th style="text-align: center;">Persentase</th></tr></thead>
                         <tbody id="tbody-rekap-status"></tbody>
                     </table>
                 </div>
@@ -183,11 +184,12 @@
                     <thead>
                         <tr>
                             <th>Nama Ruangan / Unit Kerja</th>
-                            <th style="text-align: center;">Jumlah Penempatan Karyawan</th>
+                            <th style="text-align: center;">Jumlah Karyawan</th>
+                            <th style="text-align: center;">Persentase Penempatan</th>
                         </tr>
                     </thead>
                     <tbody id="tbody-rekap-ruangan">
-                        <tr><td colspan="2" class="loading-text"><i class="fa-solid fa-spinner fa-spin"></i> Memetakan sebaran ruangan dari pangkalan data...</td></tr>
+                        <tr><td colspan="3" class="loading-text"><i class="fa-solid fa-spinner fa-spin"></i> Memetakan sebaran ruangan dari pangkalan data...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -210,7 +212,6 @@
 
         async function jalankanKalkulasiDashboardMurni() {
             try {
-                // Tarik seluruh arsip data mentah sekaligus
                 const { data: listPegawai } = await supabaseClient.from('pegawai').select('*');
                 const { data: listSTR } = await supabaseClient.from('berkas_str').select('nik, tgl_berakhir');
                 const { data: listSIK } = await supabaseClient.from('berkas_sik').select('nik, tgl_berakhir');
@@ -222,9 +223,9 @@
                 const hariIni = new Date();
 
                 // 📊 1. HITUNG STATISTIK UTAMA ATAS
-                const totalPegawai = pegawaiArr.length;
+                const totalPegawai = pegawaiArr.length || 1; // Mencegah pembagian dengan angka 0
                 const totalAktif = pegawaiArr.filter(p => p.status?.toLowerCase() === 'aktif').length;
-                document.getElementById('stat-total').textContent = totalPegawai;
+                document.getElementById('stat-total').textContent = pegawaiArr.length;
                 document.getElementById('stat-aktif').textContent = totalAktif;
                 document.getElementById('stat-str').textContent = strArr.length;
                 document.getElementById('stat-sik').textContent = sikArr.length;
@@ -264,53 +265,59 @@
                 document.getElementById('tbody-rekap-str').innerHTML = htmlSTR;
                 document.getElementById('tbody-rekap-sik').innerHTML = htmlSIK;
 
-                // 📁 3. KALKULASI REKAPITULASI KELOMPOK PEGAWAI
+                // 📁 3. KALKULASI REKAPITULASI KELOMPOK PEGAWAI (DENGAN % PERSEN)
                 let htmlKelompok = "";
                 listKelompokPegawai.forEach(k => {
                     const count = pegawaiArr.filter(p => p.kelompok_pegawai === k).length;
-                    htmlKelompok += `<tr><td><strong>${k}</strong></td><td style="text-align:center; font-weight:700; color:var(--primary);">${count} Pegawai</td></tr>`;
+                    const persen = ((count / totalPegawai) * 100).toFixed(1);
+                    htmlKelompok += `<tr><td><strong>${k}</strong></td><td style="text-align:center; font-weight:700; color:var(--primary);">${count} Pegawai</td><td style="text-align:center;"><span class="badge-persen">${persen}%</span></td></tr>`;
                 });
                 document.getElementById('tbody-rekap-kelompok').innerHTML = htmlKelompok;
 
-                // 🚹🚺 4. KALKULASI REKAPITULASI JENIS KELAMIN
+                // 🚹🚺 4. KALKULASI REKAPITULASI JENIS KELAMIN (DENGAN % PERSEN)
                 const pria = pegawaiArr.filter(p => p.jenis_kelamin?.toLowerCase() === 'laki-laki' || p.jenis_kelamin?.toLowerCase() === 'pria').length;
                 const wanita = pegawaiArr.filter(p => p.jenis_kelamin?.toLowerCase() === 'perempuan' || p.jenis_kelamin?.toLowerCase() === 'wanita').length;
+                const persenPria = ((pria / totalPegawai) * 100).toFixed(1);
+                const persenWanita = ((wanita / totalPegawai) * 100).toFixed(1);
                 document.getElementById('tbody-rekap-gender').innerHTML = `
-                    <tr><td><strong>Laki-laki</strong></td><td style="text-align:center; font-weight:700;">${pria} Pegawai</td></tr>
-                    <tr><td><strong>Perempuan</strong></td><td style="text-align:center; font-weight:700;">${wanita} Pegawai</td></tr>
+                    <tr><td><strong>Laki-laki</strong></td><td style="text-align:center; font-weight:700;">${pria} Pegawai</td><td style="text-align:center;"><span class="badge-persen">${persenPria}%</span></td></tr>
+                    <tr><td><strong>Perempuan</strong></td><td style="text-align:center; font-weight:700;">${wanita} Pegawai</td><td style="text-align:center;"><span class="badge-persen">${persenWanita}%</span></td></tr>
                 `;
 
-                // 🕋 5. KALKULASI REKAPITULASI AGAMA
+                // 🕋 5. KALKULASI REKAPITULASI AGAMA (DENGAN % PERSEN)
                 let htmlAgama = "";
                 listAgama.forEach(a => {
                     const count = pegawaiArr.filter(p => p.agama?.trim().toLowerCase() === a.toLowerCase()).length;
-                    htmlAgama += `<tr><td><strong>${a}</strong></td><td style="text-align:center; font-weight:700;">${count} Karyawan</td></tr>`;
+                    const persen = ((count / totalPegawai) * 100).toFixed(1);
+                    htmlAgama += `<tr><td><strong>${a}</strong></td><td style="text-align:center; font-weight:700;">${count} Karyawan</td><td style="text-align:center;"><span class="badge-persen">${persen}%</span></td></tr>`;
                 });
                 document.getElementById('tbody-rekap-agama').innerHTML = htmlAgama;
 
-                // 🟢🔴 6. KALKULASI REKAPITULASI TOTAL PEGAWAI AKTIF / MUTASI / RESIGN / PENSIUN
+                // 🟢🔴 6. KALKULASI REKAPITULASI TOTAL STATUS (DENGAN % PERSEN)
                 const statusUnik = ["Aktif", "Mutasi", "Pensiun", "Resign"];
                 let htmlStatus = "";
                 statusUnik.forEach(st => {
                     const count = pegawaiArr.filter(p => p.status?.trim().toLowerCase() === st.toLowerCase()).length;
+                    const persen = ((count / totalPegawai) * 100).toFixed(1);
                     let color = "color:#334155;";
                     if(st === 'Aktif') color = "color:#16a34a; font-weight:700;";
                     if(st === 'Resign' || st === 'Pensiun') color = "color:#dc2626;";
-                    htmlStatus += `<tr><td><strong>${st}</strong></td><td style="text-align:center; ${color}">${count} Record</td></tr>`;
+                    htmlStatus += `<tr><td><strong>${st}</strong></td><td style="text-align:center; ${color}">${count} Record</td><td style="text-align:center;"><span class="badge-persen">${persen}%</span></td></tr>`;
                 });
                 document.getElementById('tbody-rekap-status').innerHTML = htmlStatus;
 
-                // 🚪 7. KALKULASI REKAPITULASI PEGAWAI PER RUANGAN / UNIT KERJA
+                // 🚪 7. KALKULASI REKAPITULASI PEGAWAI PER RUANGAN / UNIT KERJA (DENGAN % PERSEN)
                 let mapRuangan = {};
                 pegawaiArr.forEach(p => {
                     let namaRuang = p.ruangan ? p.ruangan.trim() : "Belum Ditentukan Bagian";
                     mapRuangan[namaRuang] = (mapRuangan[namaRuang] || 0) + 1;
                 });
 
-                // Urutkan nama ruangan dari jumlah pegawai terbanyak ke terkecil
                 let htmlRuangan = "";
                 Object.keys(mapRuangan).sort((a,b) => mapRuangan[b] - mapRuangan[a]).forEach(ruang => {
-                    htmlRuangan += `<tr><td><strong><i class="fa-solid fa-hospital-user" style="color:#94a3b8; margin-right:8px;"></i> ${ruang}</strong></td><td style="text-align:center; font-weight:700; color:#475569;">${mapRuangan[ruang]} Personel</td></tr>`;
+                    const count = mapRuangan[ruang];
+                    const persen = ((count / totalPegawai) * 100).toFixed(1);
+                    htmlRuangan += `<tr><td><strong><i class="fa-solid fa-hospital-user" style="color:#94a3b8; margin-right:8px;"></i> ${ruang}</strong></td><td style="text-align:center; font-weight:700; color:#475569;">${count} Personel</td><td style="text-align:center;"><span class="badge-persen">${persen}%</span></td></tr>`;
                 });
                 document.getElementById('tbody-rekap-ruangan').innerHTML = htmlRuangan;
 
