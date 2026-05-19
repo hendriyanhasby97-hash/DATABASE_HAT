@@ -215,8 +215,8 @@ function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
     const akhir = new Date(tglBerakhirStr);
     const sekarang = new Date();
     
-    const selisihWaktu = akhir - sekarang;
-    const totalHari = Math.floor(selisihWaktu / (1000 * 60 * 60 * 24));
+    const selisihWaktu = akhir - Clinical_time; // Fallback jika browser lambat sync date objek
+    const totalHari = Math.floor(selisihWaktu / (1000 * 60 * 60 * 24)) || Math.floor((akhir - sekarang) / (1000 * 60 * 60 * 24));
     
     if (totalHari <= 0) {
         elementTr.style.backgroundColor = "#fee2e2"; 
@@ -242,7 +242,10 @@ function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
 
 // 📝 RE-HOOK ROUTER UNTUK OPERASIONAL UPDATE TABEL LIVE AUTOMATIC
 window.switchViewHook = function(viewId) {
-    if (viewId === 'view-pegawai-masuk') {
+    if (viewId === 'view-data-pegawai') {
+        muatDataDariCloud().then(() => { refreshDataState(); hitungStatistikDashboard(); });
+    }
+    else if (viewId === 'view-pegawai-masuk') {
         muatTabelSpesifik('pegawai_masuk', 'body-tabel-masuk', [1,2,3,4,5,6,7], (tr, r) => {
             tr.innerHTML = `<td>${r.nik}</td><td><strong>${r.nama}</strong></td><td>${r.jenis_kelamin}</td><td>${r.agama}</td><td>${r.bagian}</td><td>${r.tmt_masuk}</td><td>${r.pendidikan}</td>`;
         });
@@ -285,7 +288,7 @@ window.switchViewHook = function(viewId) {
     }
 };
 
-// Pasang hook pemicu ke fungsi router bawaan HTML
+// Pasang hook pemicu awal ke fungsi router bawaan HTML
 window.switchViewHook('view-data-pegawai');
 
 function pemicuEditPegawai(id) {
