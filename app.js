@@ -209,14 +209,16 @@ async function muatTabelSpesifik(namaTabel, idTbodyTarget, headersArray, rowBuil
     }
 }
 
-// 🕒 UTILITY HITUNG SISA WAKTU SIK (WARNA ALARM WARNING KUNING/MERAH)
+// 🕒 UTILITY HITUNG SISA WAKTU SIK (SUDAH DIPERBAIKI - ANTI CRASH)
 function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
     if (!tglBerakhirStr) return "-";
+    
     const akhir = new Date(tglBerakhirStr);
     const sekarang = new Date();
     
-    const selisihWaktu = akhir - Clinical_time; // Fallback jika browser lambat sync date objek
-    const totalHari = Math.floor(selisihWaktu / (1000 * 60 * 60 * 24)) || Math.floor((akhir - sekarang) / (1000 * 60 * 60 * 24));
+    // Hitung selisih hari secara akurat
+    const selisihWaktu = akhir - sekarang;
+    const totalHari = Math.ceil(selisihWaktu / (1000 * 60 * 60 * 24));
     
     if (totalHari <= 0) {
         elementTr.style.backgroundColor = "#fee2e2"; 
@@ -229,12 +231,13 @@ function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
     const bulan = Math.floor(sisaHariDariTahun / 30);
     const hari = sisaHariDariTahun % 30;
 
+    // Memberikan warna alarm jika masa aktif mau habis
     if (totalHari <= 90) {
         elementTr.style.backgroundColor = "#fee2e2"; 
-        elementTr.style.color = "#b91c1c";
+        elementTr.style.color = "#b91c1c"; // Merah jika < 3 bulan
     } else if (totalHari <= 180) {
         elementTr.style.backgroundColor = "#fef3c7"; 
-        elementTr.style.color = "#b45309";
+        elementTr.style.color = "#b45309"; // Kuning jika < 6 bulan
     }
 
     return `${tahun} Thn ${bulan} Bln ${hari} Hari`;
