@@ -3,98 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sistem Terpusat Supabase</title>
+    <title>Sistem Login Multi-Role Kepegawaian</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
+
     <style>
-        :root { --primary: #1e40af; --primary-hover: #1d4ed8; --bg: #f1f5f9; --text: #0f172a; --border: #cbd5e1; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .login-card { background: white; padding: 32px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        .login-title { font-size: 20px; font-weight: 800; text-align: center; color: var(--primary); margin-bottom: 6px; }
-        .login-sub { font-size: 13px; text-align: center; color: #64748b; margin-bottom: 24px; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-        .form-group label { font-size: 12px; font-weight: 700; color: #475569; }
-        .form-group input { padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; }
-        .btn-login { background: var(--primary); color: white; border: none; width: 100%; padding: 12px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 8px; }
-        .btn-login:disabled { background: #94a3b8; }
-        .info-box { background: #f8fafc; border: 1px dashed var(--border); padding: 12px; border-radius: 6px; margin-top: 16px; font-size: 12px; color: #475569; }
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --dark-slate: #0f172a;
+            --bg-light: #f1f5f9;
+            --border-color: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg-light); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+
+        .login-card { background: white; width: 100%; max-width: 420px; border-radius: 16px; padding: 40px 35px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); border: 1px solid var(--border-color); }
+        .login-header { text-align: center; margin-bottom: 30px; }
+        .login-header i { color: var(--primary); font-size: 40px; margin-bottom: 12px; }
+        .login-header h2 { font-size: 22px; font-weight: 800; color: var(--dark-slate); }
+        .login-header p { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+        .form-group label { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; }
+        .input-wrapper { position: relative; }
+        .input-wrapper i { position: absolute; left: 14px; top: 13px; color: #94a3b8; }
+        .form-control { width: 100%; padding: 11px 14px 11px 40px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; background: #f8fafc; }
+        .form-control:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+
+        .btn-login { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; margin-top: 10px; }
+        .btn-login:hover { background: var(--primary-dark); }
+        .btn-login:disabled { background: #cbd5e1; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
-<div class="login-card">
-    <div class="login-title">Sistem Informasi Pegawai</div>
-    <div class="login-sub" style="font-weight: bold; color:green">Koneksi Database Instan Supabase</div>
-    
-    <form id="login-form">
-        <div class="form-group">
-            <label>Username / NIK</label>
-            <input type="text" id="username" placeholder="Masukkan admin atau NIK Anda" required>
+    <div class="login-card">
+        <div class="login-header">
+            <i class="fa-solid fa-shield-halved"></i>
+            <h2>Portal Log Masuk</h2>
+            <p>Masukkan Kredensial Akun Pengguna Kepegawaian</p>
         </div>
-        <div class="form-group">
-            <label>Password</label>
-            <input type="password" id="password" placeholder="Masukkan password" required>
-        </div>
-        <button type="submit" id="submit-btn" class="btn-login">Masuk ke Sistem</button>
-    </form>
 
-    <div class="info-box">
-        <strong>Akses Sistem Live:</strong><br>
-        • Pegawai: Masukkan <code style="color:blue">NIK Anda</code> | Pass Default <code style="color:blue">Masuk123</code>
+        <form id="form-login-sistem" onsubmit="prosesAutentikasiSistem(event)">
+            <div class="form-group">
+                <label>Username / NIK Karyawan</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="text" id="login-username" class="form-control" placeholder="Ketik Username atau NIK Anda" required autocomplete="username">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Kata Sandi (Password)</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+            </div>
+
+            <button type="submit" id="btn-submit-login" class="btn-login">
+                <i class="fa-solid fa-right-to-bracket"></i> Masuk Ke Sistem
+            </button>
+        </form>
     </div>
-</div>
 
-<script>
-    const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC";
-    
-    // Inisialisasi client global menggunakan objek 'supabase' dari CDN
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    <script>
+        const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    document.getElementById('login-form').onsubmit = async function(e) {
-        e.preventDefault();
-        const userIn = document.getElementById('username').value.trim();
-        const passIn = document.getElementById('password').value;
-        const btn = document.getElementById('submit-btn');
+        async function prosesAutentikasiSistem(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit-login');
+            const userInput = document.getElementById('login-username').value.trim();
+            const passInput = document.getElementById('login-password').value.trim();
 
-        btn.disabled = true;
-        btn.textContent = "Memverifikasi...";
+            btn.disabled = true;
+            btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Memverifikasi...";
 
-        // 🛡️ Skenario 1: Login Akses Admin
-        if (userIn === 'admin' && passIn === 'admin') {
-            sessionStorage.setItem('role', 'admin');
-            sessionStorage.setItem('user_key', 'admin');
-            alert('Login berhasil sebagai Admin!');
-            window.location.href = 'index.html'; // Admin dilempar ke tabel control
-            return;
-        }
+            try {
+                // 🔒 CEK AKSI 1: Jika login sebagai Super Admin / Admin (Gunakan Hardcode atau Tabel Khusus)
+                if (userInput.toLowerCase() === "superadmin" && passInput === "super123") {
+                    sessionStorage.setItem('role', 'superadmin');
+                    sessionStorage.setItem('user_key', 'SUPER-ADMIN-KEY');
+                    alert("Selamat Datang Super Admin! Otoritas penuh diberikan.");
+                    window.location.href = "index.html";
+                    return;
+                } 
+                else if (userInput.toLowerCase() === "admin" && passInput === "admin123") {
+                    sessionStorage.setItem('role', 'admin');
+                    sessionStorage.setItem('user_key', 'ADMIN-READ-ONLY');
+                    alert("Selamat Datang Admin! Hak akses pembacaan berkas aktif.");
+                    window.location.href = "index.html";
+                    return;
+                }
 
-        // 🛡️ Skenario 2: Login Akses Pegawai Massal via Supabase
-        try {
-            const { data, error } = await supabaseClient.from('pegawai').select('*').eq('nik', userIn);
-            
-            if (error) throw error;
+                // 🔒 CEK AKSI 2: Jika bukan admin, cek ke tabel 'pegawai' menggunakan NIK (Password sementara disamakan dengan NIK atau kolom password jika ada)
+                // Di sini dicocokkan: NIK sebagai username, dan password default-nya adalah NIK-nya sendiri (atau silakan ganti logic-nya)
+                const { data: pegawai, error } = await supabaseClient
+                    .from('pegawai')
+                    .select('id_pegawai, nik, nama')
+                    .eq('nik', userInput)
+                    .maybeSingle();
 
-            if (data && data.length > 0 && passIn === 'Masuk123') {
-                const ketemuPegawai = data[0];
-                sessionStorage.setItem('role', 'pegawai');
-                sessionStorage.setItem('user_key', ketemuPegawai.id_pegawai);
-                alert(`Login Berhasil!\nSelamat datang, ${ketemuPegawai.nama}`);
-                window.location.href = 'index-pegawai.html'; // Pegawai otomatis dilempar ke halaman DRH khusus
-            } else {
-                alert('Username (NIK) tidak ditemukan dalam cloud atau password salah!');
+                if (error) throw error;
+
+                if (pegawai && passInput === pegawai.nik) {
+                    sessionStorage.setItem('role', 'pegawai');
+                    sessionStorage.setItem('user_key', pegawai.id_pegawai);
+                    alert(`Login Sukses! Selamat datang di Portal Mandiri, ${pegawai.nama}.`);
+                    window.location.href = "index-pegawai.html";
+                } else {
+                    alert("⚠️ Kredensial salah! NIK tidak terdaftar atau kata sandi tidak cocok.");
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert("Gagal menghubungi server keamanan database.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "<i class='fa-solid fa-right-to-bracket'></i> Masuk Ke Sistem";
             }
-        } catch (error) {
-            console.error(error);
-            alert('Gagal login: Periksa koneksi internet atau token API Supabase Anda.');
-        } finally {
-            btn.disabled = false;
-            btn.textContent = "Masuk ke Sistem";
         }
-    };
-</script>
-
+    </script>
 </body>
 </html>
