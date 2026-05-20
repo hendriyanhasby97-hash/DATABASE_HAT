@@ -2,224 +2,45 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pangkalan Data Seluruh Karyawan</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background: #f8fafc; padding: 25px; color: #334155; }
-        .data-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; }
-        .page-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 5px; }
-        .action-bar { display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
-        .search-filter-group { display: flex; gap: 10px; flex-wrap: wrap; }
-        .search-input, .filter-select { padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; }
-        .btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; color: white; }
-        .btn-primary { background-color: #2563eb; } .btn-success { background-color: #16a34a; } .btn-danger { background-color: #dc2626; }
-        
-        .table-responsive { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-        th { background: #1e293b; color: white; padding: 14px; font-size: 12px; text-transform: uppercase; }
-        td { padding: 14px; border-bottom: 1px solid #e2e8f0; }
-        .btn-action { padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; color: white; margin-right: 4px; }
-
-        .panel-form-box { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; margin-top: 20px; }
-        .form-sector { margin-bottom: 25px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; }
-        .sector-title { font-size: 13px; font-weight: 800; color: #1d4ed8; text-transform: uppercase; margin-bottom: 18px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; }
-        .grid-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-group input, .form-group select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; }
-        .hide-element { display: none !important; }
-
-        /* SUPER MODAL STYLE (TERPADU) */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .modal-content { background: white; width: 95%; max-width: 1000px; height: 90vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
-        .modal-header { padding: 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-        .modal-header h3 { color: #0f172a; font-size: 18px; font-weight: 800; }
-        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; }
-        
-        .modal-tabs { display: flex; background: #1e293b; padding: 0 20px; overflow-x: auto; }
-        .tab-btn { background: transparent; color: #94a3b8; border: none; padding: 15px 20px; font-weight: 600; cursor: pointer; font-size: 13px; border-bottom: 3px solid transparent; white-space: nowrap; }
-        .tab-btn.active { color: white; border-bottom: 3px solid #3b82f6; }
-        .tab-btn:hover { color: white; }
-        
-        .modal-body { flex: 1; overflow-y: auto; padding: 20px; background: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .riwayat-form-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .riwayat-table th { background: #334155; }
+        body { font-family: sans-serif; padding: 20px; }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
+        .modal-content { background:white; width:70%; margin:50px auto; padding:30px; border-radius:10px; }
     </style>
 </head>
 <body>
-    <div class="data-card">
-        <h2 class="page-title">Pangkalan Data Induk Pegawai</h2>
-        <p class="page-desc">Manajemen data 31 field dan riwayat terpadu (Pangkat, Jabatan, Pendidikan, Keluarga).</p>
 
-        <div id="form-master-wrapper" class="panel-form-box hide-element">
-            <h3 style="font-size:16px; font-weight:700; margin-bottom:15px;"><i class="fa-solid fa-pen-to-square"></i> Formulir Rekaman Berkas Pegawai</h3>
-            <form id="main-crud-form">
-                <input type="hidden" id="id_pegawai">
-                <div class="form-sector"><div class="sector-title">Sektor I: Identitas Utama</div><div class="grid-inputs">
-                    <div class="form-group"><label>NIK</label><input type="number" id="nik" required></div>
-                    <div class="form-group"><label>Nama Lengkap</label><input type="text" id="nama" required></div>
-                    <div class="form-group"><label>NIP</label><input type="text" id="nip" oninput="window.hitungTMTCPNSOtomatis()"></div>
-                    <div class="form-group"><label>Status</label><select id="status"><option>Aktif</option><option>Mutasi</option><option>Pensiun</option></select></div>
-                    <div class="form-group"><label>Kelompok Pegawai</label><select id="kelompok_pegawai"><option>ASN</option><option>APBD</option><option>BLUD</option></select></div>
-                    <div class="form-group"><label>Kelompok Jabatan</label><select id="kelompok_jabatan"><option>Management</option><option>Tenaga Medis</option><option>Tenaga Kesehatan</option><option>Tenaga Penunjang Medis</option><option>Tenaga Administrasi</option></select></div>
-                    <div class="form-group"><label>Nama Jabatan</label><input type="text" id="jabatan"></div>
-                    <div class="form-group"><label>Ruangan</label><input type="text" id="ruangan"></div>
-                </div></div>
-                <div class="form-sector"><div class="sector-title">Sektor II: Biodata</div><div class="grid-inputs">
-                    <div class="form-group"><label>Jenis Kelamin</label><select id="jenis_kelamin"><option>Laki-laki</option><option>Perempuan</option></select></div>
-                    <div class="form-group"><label>Agama</label><select id="agama"><option>Islam</option><option>Kristen</option><option>Katolik</option><option>Hindu</option><option>Buddha</option></select></div>
-                    <div class="form-group"><label>Tempat Lahir</label><input type="text" id="tempat_lahir"></div>
-                    <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="tanggal_lahir" onchange="window.hitungTMTPensiunOtomatis()"></div>
-                    <div class="form-group"><label>Status Keluarga</label><select id="status_keluarga"><option>TK</option><option>K/0</option><option>K/1</option><option>K/2</option><option>K/3</option></select></div>
-                    <div class="form-group"><label>NPWP</label><input type="text" id="npwp"></div>
-                </div></div>
-                <div class="form-sector"><div class="sector-title">Sektor III: Kepangkatan & Masa Kerja</div><div class="grid-inputs">
-                    <div class="form-group"><label>Golongan Ruang</label><input type="text" id="gol"></div>
-                    <div class="form-group"><label>TMT Pangkat</label><input type="date" id="tmt_pangkat"></div>
-                    <div class="form-group"><label>TMT Berkala Berikutnya</label><input type="date" id="tmt_berikutnya"></div>
-                    <div class="form-group"><label>Tgl Masuk RS</label><input type="date" id="masuk_rs" onchange="window.hitungMasaKerjaOtomatis()"></div>
-                    <div class="form-group"><label>Masa Kerja</label><input type="text" id="masa_kerja_rs" readonly></div>
-                    <div class="form-group"><label>BUP</label><input type="number" id="rentang_bup" oninput="window.hitungTMTPensiunOtomatis()"></div>
-                    <div class="form-group"><label>TMT Pensiun</label><input type="date" id="tmt_pensiun" readonly></div>
-                    <div class="form-group"><label>TMT CPNS</label><input type="date" id="tmt_cpns" readonly></div>
-                </div></div>
-                <div class="form-sector"><div class="sector-title">Sektor IV & V: Pendidikan & Domisili</div><div class="grid-inputs">
-                    <div class="form-group"><label>Jenjang</label><select id="jenjang"><option>D3</option><option>D4</option><option>S1</option><option>S2</option><option>Profesi</option></select></div>
-                    <div class="form-group"><label>Fakultas/Universitas</label><input type="text" id="fakultas"></div>
-                    <div class="form-group"><label>Jurusan</label><input type="text" id="jurusan"></div>
-                    <div class="form-group" style="grid-column: span 3;"><label>Alamat</label><input type="text" id="alamat"></div>
-                    <div class="form-group"><label>No HP/WA</label><input type="tel" id="no_telp"></div>
-                    <div class="form-group"><label>Email</label><input type="email" id="email"></div>
-                    <div class="form-group"><label>BPJS Kesehatan</label><input type="number" id="no_bpjsn"></div>
-                    <div class="form-group"><label>BPJS TK / Taspen</label><input type="text" id="no_bpjsket_taspen"></div>
-                </div></div>
-                <div style="text-align: right;">
-                    <button type="button" class="btn" style="background:#cbd5e1; color:#334155;" onclick="toggleFormInputMaster()">Batal</button>
-                    <button type="submit" class="btn btn-primary">💾 Simpan Data</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="action-bar">
-            <div class="search-filter-group">
-                <input type="text" id="input-cari" class="search-input" placeholder="Cari Nama / NIK...">
-                <select id="filter-status" class="filter-select"><option value="">Semua Status</option><option value="Aktif">Aktif</option><option value="Mutasi">Mutasi</option><option value="Pensiun">Pensiun</option></select>
-                <select id="filter-kelompok" class="filter-select"><option value="">Semua Kelompok</option><option value="ASN">ASN</option><option value="APBD">APBD</option><option value="BLUD">BLUD</option></select>
-            </div>
-            <div style="display: flex; gap:8px;">
-                <button class="btn btn-primary" id="btn-tambah-master-trigger" onclick="bukaFormTambahBaru()" style="display:none;">+ Tambah Baru</button>
-                <button class="btn btn-success" id="btn-excel"><i class="fa-solid fa-file-excel"></i> Excel</button>
-            </div>
-        </div>
-
-        <div class="table-responsive">
-            <table>
-                <thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Status</th><th>Kelompok</th><th>Jabatan</th><th>Ruangan</th><th style="text-align: center;">Kontrol</th></tr></thead>
-                <tbody id="body-tabel-pegawai"><tr><td colspan="7" style="text-align:center;">Memuat sinkronisasi cloud...</td></tr></tbody>
-            </table>
-        </div>
-        <div style="display:flex; justify-content:space-between; margin-top:20px;">
-            <p id="pagination-text-info" style="font-size:13px; color:#64748b;"></p>
-            <div style="display:flex; gap:6px;">
-                <button class="btn" id="btn-page-prev" style="background:white; border:1px solid #cbd5e1; color:#334155;">Sebelumnya</button>
-                <button class="btn" id="btn-page-next" style="background:white; border:1px solid #cbd5e1; color:#334155;">Selanjutnya</button>
-            </div>
-        </div>
+    <h2>Daftar Pegawai</h2>
+    <table border="1" width="100%">
+        <thead><tr><th>NIK</th><th>Nama</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody id="table-body"><tr><td colspan="4">Memuat data...</td></tr></tbody>
+    </table>
+    
+    <div style="margin-top:20px;">
+        <button onclick="currentPage > 1 ? (currentPage--, renderTable(currentData, 'table-body')) : null">Sebelumnya</button>
+        <span id="page-info"></span>
+        <button onclick="currentPage < Math.ceil(currentData.length/15) ? (currentPage++, renderTable(currentData, 'table-body')) : null">Selanjutnya</button>
     </div>
 
-    <div id="super-modal" class="modal-overlay hide-element">
+    <div id="modal-drh" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-nama-pegawai">Kelola Riwayat: -</h3>
-                <button class="modal-close" onclick="tutupSuperModal()">&times;</button>
-            </div>
-            <div class="modal-tabs">
-                <button class="tab-btn active" onclick="bukaTab(event, 'tab-pangkat')"><i class="fa-solid fa-star"></i> Pangkat</button>
-                <button class="tab-btn" onclick="bukaTab(event, 'tab-jabatan')"><i class="fa-solid fa-briefcase"></i> Jabatan</button>
-                <button class="tab-btn" onclick="bukaTab(event, 'tab-pendidikan')"><i class="fa-solid fa-graduation-cap"></i> Pendidikan</button>
-                <button class="tab-btn" onclick="bukaTab(event, 'tab-keluarga')"><i class="fa-solid fa-people-roof"></i> Keluarga</button>
-            </div>
-            
-            <div class="modal-body">
-                <div id="tab-pangkat" class="tab-content active">
-                    <div class="riwayat-form-box">
-                        <form onsubmit="savePangkat(event)">
-                            <div class="grid-inputs">
-                                <div class="form-group"><label>Golongan Ruang</label><input type="text" id="r-pkt-gol" required></div>
-                                <div class="form-group"><label>TMT Pangkat</label><input type="date" id="r-pkt-tmt" required></div>
-                                <div class="form-group"><label>No SK</label><input type="text" id="r-pkt-sk" required></div>
-                            </div>
-                            <button type="submit" class="btn btn-primary" style="margin-top:10px;">+ Tambah Pangkat</button>
-                        </form>
-                    </div>
-                    <table class="riwayat-table">
-                        <thead><tr><th>Golongan</th><th>TMT Pangkat</th><th>No SK</th></tr></thead>
-                        <tbody id="tbody-pangkat"></tbody>
-                    </table>
-                </div>
-
-                <div id="tab-jabatan" class="tab-content">
-                    <div class="riwayat-form-box">
-                        <form onsubmit="saveJabatan(event)">
-                            <div class="grid-inputs">
-                                <div class="form-group"><label>Nama Jabatan Baru</label><input type="text" id="r-jab-nama" required></div>
-                                <div class="form-group"><label>Unit Ruangan</label><input type="text" id="r-jab-ruang" required></div>
-                                <div class="form-group"><label>TMT Jabatan</label><input type="date" id="r-jab-tmt" required></div>
-                            </div>
-                            <button type="submit" class="btn btn-primary" style="margin-top:10px;">+ Tambah Jabatan</button>
-                        </form>
-                    </div>
-                    <table class="riwayat-table">
-                        <thead><tr><th>Nama Jabatan</th><th>Unit Ruangan</th><th>TMT Jabatan</th></tr></thead>
-                        <tbody id="tbody-jabatan"></tbody>
-                    </table>
-                </div>
-
-                <div id="tab-pendidikan" class="tab-content">
-                    <div class="riwayat-form-box">
-                        <form onsubmit="savePendidikan(event)">
-                            <div class="grid-inputs">
-                                <div class="form-group"><label>Jenjang</label><select id="r-edu-jenjang"><option>D3</option><option>S1</option><option>S2</option></select></div>
-                                <div class="form-group"><label>Nama Universitas</label><input type="text" id="r-edu-univ" required></div>
-                                <div class="form-group"><label>Tahun Lulus</label><input type="number" id="r-edu-tahun" required></div>
-                            </div>
-                            <button type="submit" class="btn btn-primary" style="margin-top:10px;">+ Tambah Pendidikan</button>
-                        </form>
-                    </div>
-                    <table class="riwayat-table">
-                        <thead><tr><th>Jenjang</th><th>Universitas/Sekolah</th><th>Tahun Lulus</th></tr></thead>
-                        <tbody id="tbody-pendidikan"></tbody>
-                    </table>
-                </div>
-
-                <div id="tab-keluarga" class="tab-content">
-                    <div class="riwayat-form-box">
-                        <form onsubmit="saveKeluarga(event)">
-                            <div class="grid-inputs">
-                                <div class="form-group"><label>Nama Anggota</label><input type="text" id="r-fam-nama" required></div>
-                                <div class="form-group"><label>Hubungan</label><select id="r-fam-hub"><option>Istri</option><option>Suami</option><option>Anak</option></select></div>
-                                <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="r-fam-tgl" required></div>
-                            </div>
-                            <button type="submit" class="btn btn-primary" style="margin-top:10px;">+ Tambah Keluarga</button>
-                        </form>
-                    </div>
-                    <table class="riwayat-table">
-                        <thead><tr><th>Nama Anggota</th><th>Hubungan</th><th>Tanggal Lahir</th></tr></thead>
-                        <tbody id="tbody-keluarga"></tbody>
-                    </table>
-                </div>
-            </div>
+            <button onclick="document.getElementById('modal-drh').style.display='none'">Tutup</button>
+            <h1 id="drh-nama"></h1>
+            <h3>Riwayat Pendidikan</h3>
+            <ul id="drh-pendidikan"></ul>
+            <h3>Riwayat Jabatan</h3>
+            <ul id="drh-jabatan"></ul>
         </div>
     </div>
 
     <script src="app.js"></script>
+    <script>
+        async function init() {
+            currentData = await fetchData('pegawai', (data) => renderTable(data, 'table-body'));
+            renderTable(currentData, 'table-body');
+        }
+        init();
+    </script>
 </body>
 </html>
