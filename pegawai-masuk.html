@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Karyawan Baru Masuk</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; padding: 25px; }
+        .data-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        .form-sector { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .grid-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; background: white; }
+        .btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; background: #2563eb; color: white; display: inline-flex; align-items: center; gap: 8px; }
+        .table-responsive { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th { background: #1e293b; color: white; padding: 14px; font-size: 12px; text-transform: uppercase; }
+        td { padding: 14px; border-bottom: 1px solid #e2e8f0; }
+    </style>
+</head>
+<body>
+    <div class="data-card">
+        <h2 style="font-size:20px; font-weight:800; margin-bottom:15px;">Arsip Log Karyawan Baru Masuk</h2>
+        
+        <div class="form-sector">
+            <form id="form-add-masuk" onsubmit="savePegawaiMasuk(event)">
+                <div class="grid-inputs">
+                    <div class="form-group"><label>NIK</label><input type="number" id="ins-masuk-nik" required></div>
+                    <div class="form-group"><label>Nama Lengkap</label><input type="text" id="ins-masuk-nama" required></div>
+                    <div class="form-group"><label>Jenis Kelamin</label><select id="ins-masuk-jk"><option>Laki-laki</option><option>Perempuan</option></select></div>
+                    <div class="form-group"><label>Agama</label><select id="ins-masuk-agama"><option>Islam</option><option>Kristen</option></select></div>
+                    <div class="form-group"><label>Bagian</label><input type="text" id="ins-masuk-bagian" required></div>
+                    <div class="form-group"><label>TMT Masuk</label><input type="date" id="ins-masuk-tmt" required></div>
+                    <div class="form-group"><label>Pendidikan</label><input type="text" id="ins-masuk-pendidikan" required></div>
+                </div>
+                <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn">💾 Simpan Pegawai Masuk</button></div>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Jenis Kelamin</th><th>Agama</th><th>Bagian/Ruang</th><th>TMT Masuk</th><th>Pendidikan</th></tr></thead>
+                <tbody id="body-tabel-masuk"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const supabaseClient = supabase.createClient("https://trxakqvaxleslwmngsvr.supabase.co", "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC");
+        
+        async function muatMasuk() {
+            const tbody = document.getElementById('body-tabel-masuk');
+            const { data } = await supabaseClient.from('pegawai_masuk').select('*');
+            tbody.innerHTML = "";
+            if(!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px;">Belum ada log data.</td></tr>`; return; }
+            data.forEach(r => {
+                tbody.innerHTML += `<tr><td>${r.nik}</td><td><strong>${r.nama}</strong></td><td>${r.jenis_kelamin}</td><td>${r.agama}</td><td>${r.bagian}</td><td>${r.tmt_masuk}</td><td>${r.pendidikan}</td></tr>`;
+            });
+        }
+
+        async function savePegawaiMasuk(event) {
+            event.preventDefault();
+            const payload = {
+                nik: document.getElementById('ins-masuk-nik').value.trim(),
+                nama: document.getElementById('ins-masuk-nama').value.trim(),
+                jenis_kelamin: document.getElementById('ins-masuk-jk').value,
+                agama: document.getElementById('ins-masuk-agama').value,
+                bagian: document.getElementById('ins-masuk-bagian').value.trim(),
+                tmt_masuk: document.getElementById('ins-masuk-tmt').value,
+                pendidikan: document.getElementById('ins-masuk-pendidikan').value.trim()
+            };
+            const { error } = await supabaseClient.from('pegawai_masuk').insert([payload]);
+            if (!error) { alert("Data Tersimpan!"); document.getElementById('form-add-masuk').reset(); muatMasuk(); }
+        }
+        document.addEventListener('DOMContentLoaded', muatMasuk);
+    </script>
+</body>
+</html>
