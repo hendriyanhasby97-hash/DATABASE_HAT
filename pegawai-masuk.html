@@ -27,7 +27,7 @@
     <div class="data-card">
         <h2 style="font-size:20px; font-weight:800; margin-bottom:15px;">Arsip Log Karyawan Baru Masuk</h2>
         
-        <div class="form-sector">
+        <div class="form-sector" id="wrapper-form-input">
             <form id="form-add-masuk" onsubmit="savePegawaiMasuk(event)">
                 <div class="grid-inputs">
                     <div class="form-group"><label>NIK</label><input type="number" id="ins-masuk-nik" required></div>
@@ -53,6 +53,13 @@
     <script>
         const supabaseClient = supabase.createClient("https://trxakqvaxleslwmngsvr.supabase.co", "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC");
         
+        // 🔥 SECURITY GUARD: CEK ROLE USER SECARA KETAT
+        const roleSekarang = sessionStorage.getItem('role');
+        if (roleSekarang !== 'superadmin') {
+            const formWrapper = document.getElementById('wrapper-form-input');
+            if (formWrapper) formWrapper.style.display = 'none'; // Sembunyikan form input jika cuma admin biasa
+        }
+
         async function muatMasuk() {
             const tbody = document.getElementById('body-tabel-masuk');
             const { data } = await supabaseClient.from('pegawai_masuk').select('*');
@@ -65,6 +72,8 @@
 
         async function savePegawaiMasuk(event) {
             event.preventDefault();
+            if (roleSekarang !== 'superadmin') return alert('Akses Ditolak! Hanya Superadmin yang bisa menambah data.');
+            
             const payload = {
                 nik: document.getElementById('ins-masuk-nik').value.trim(),
                 nama: document.getElementById('ins-masuk-nama').value.trim(),
