@@ -75,7 +75,7 @@
         .page-title-box p { font-size: 14px; color: #64748b; margin-top: 2px; }
 
         /* STATS GRID GRAPH */
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
         .stat-card { background: white; border: 1px solid var(--border-color); padding: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         .stat-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
         .stat-details h3 { font-size: 28px; font-weight: 800; color: var(--dark-slate); margin-top: 4px; }
@@ -164,14 +164,9 @@
                 </ul>
             </li>
 
-            <li class="menu-item">
-                <a class="menu-link" onclick="toggleDropdown(this)"><span class="menu-link-inner"><i class="fa-solid fa-folder-open"></i>Administrasi</span><i class="fa-solid fa-chevron-down arrow"></i></a>
-                <ul class="submenu">
-                    <li><a class="submenu-link" onclick="switchView('view-surat-masuk', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Arsip Surat Masuk</a></li>
-                    <li><a class="submenu-link" onclick="switchView('view-surat-keluar', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Arsip Surat Keluar</a></li>
-                    <li><a class="submenu-link" onclick="switchView('view-nota-tugas', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Nota Tugas / Mandat</a></li>
-                    <li><a class="submenu-link" onclick="switchView('view-cuti', this)"><i class="fa-solid fa-circle-dot fa-xs"></i>Pengajuan Cuti</a></li>
-                </ul>
+            <li class="menu-title">Administrasi</li>
+            <li class="menu-item" onclick="switchView('view-verifikasi-cuti-admin', this)">
+                <a class="menu-link"><span class="menu-link-inner"><i class="fa-solid fa-folder-check"></i>Verifikasi Cuti Karyawan</span></a>
             </li>
         </ul>
     </nav>
@@ -210,10 +205,6 @@
                     <div class="stat-card">
                         <div class="stat-details"><p>Pengajuan Cuti</p><h3 id="stat-total-cuti">0</h3></div>
                         <div class="stat-icon" style="background:#fff7ed; color:#ea580c;"><i class="fa-solid fa-calendar-day"></i></div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-details"><p>Pegawai Baru</p><h3 id="stat-surat-masuk">0</h3></div>
-                        <div class="stat-icon" style="background:#f5f5f4; color:#44403c;"><i class="fa-solid fa-user-plus"></i></div>
                     </div>
                 </div>
                 <div class="data-card" style="text-align: center; padding: 40px; color:#64748b;">
@@ -346,17 +337,17 @@
                         <button class="btn btn-primary" id="btn-tambah-masuk-trigger" onclick="toggleFormInput('form-masuk-wrapper')"><i class="fa-solid fa-plus"></i> Tambah Pegawai Masuk</button>
                     </div>
                     <div id="form-masuk-wrapper" class="panel-form-box hide-element">
-                        <form id="form-add-masuk" onsubmit="saveDataSekunder(event, 'pegawai_masuk', 'form-add-masuk', 'form-masuk-wrapper', 'view-pegawai-masuk')">
+                        <form id="form-add-masuk" onsubmit="saveDataPegawaiMasukManual(event)">
                             <div class="grid-inputs">
-                                <div class="form-group"><label>NIK</label><input type="number" name="nik" required></div>
-                                <div class="form-group"><label>Nama Lengkap</label><input type="text" name="nama" required></div>
-                                <div class="form-group"><label>Jenis Kelamin</label><select name="jenis_kelamin"><option>Laki-laki</option><option>Perempuan</option></select></div>
-                                <div class="form-group"><label>Agama</label><select name="agama"><option>Islam</option><option>Kristen</option><option>Katolik</option><option>Hindu</option><option>Buddha</option></select></div>
-                                <div class="form-group"><label>Bagian</label><input type="text" name="bagian" required></div>
-                                <div class="form-group"><label>TMT Masuk</label><input type="date" name="tmt_masuk" required></div>
-                                <div class="form-group"><label>Pendidikan</label><input type="text" name="pendidikan" required></div>
+                                <div class="form-group"><label>NIK</label><input type="number" id="ins-masuk-nik" required></div>
+                                <div class="form-group"><label>Nama Lengkap</label><input type="text" id="ins-masuk-nama" required></div>
+                                <div class="form-group"><label>Jenis Kelamin</label><select id="ins-masuk-jk"><option>Laki-laki</option><option>Perempuan</option></select></div>
+                                <div class="form-group"><label>Agama</label><select id="ins-masuk-agama"><option>Islam</option><option>Kristen</option><option>Katolik</option><option>Hindu</option><option>Buddha</option></select></div>
+                                <div class="form-group"><label>Bagian</label><input type="text" id="ins-masuk-bagian" required></div>
+                                <div class="form-group"><label>TMT Masuk</label><input type="date" id="ins-masuk-tmt" required></div>
+                                <div class="form-group"><label>Pendidikan</label><input type="text" id="ins-masuk-pendidikan" required></div>
                             </div>
-                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Simpan</button></div>
+                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Simpan Pegawai Masuk</button></div>
                         </form>
                     </div>
                     <div class="table-responsive"><table><thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Jenis Kelamin</th><th>Agama</th><th>Bagian/Ruang</th><th>TMT Masuk</th><th>Pendidikan</th></tr></thead><tbody id="body-tabel-masuk"></tbody></table></div>
@@ -370,24 +361,24 @@
                         <button class="btn btn-primary" id="btn-tambah-keluar-trigger" onclick="toggleFormInput('form-keluar-wrapper')"><i class="fa-solid fa-plus"></i> Tambah Pegawai Keluar</button>
                     </div>
                     <div id="form-keluar-wrapper" class="panel-form-box hide-element">
-                        <form id="form-add-keluar" onsubmit="saveDataSekunder(event, 'pegawai_keluar', 'form-add-keluar', 'form-keluar-wrapper', 'view-pegawai-keluar')">
+                        <form id="form-add-keluar" onsubmit="saveDataPegawaiKeluarManual(event)">
                             <div class="grid-inputs">
-                                <div class="form-group"><label>NIK</label><input type="number" name="nik" required></div>
-                                <div class="form-group"><label>Nama Lengkap</label><input type="text" name="nama" required></div>
-                                <div class="form-group"><label>Bagian</label><input type="text" name="bagian" required></div>
-                                <div class="form-group"><label>Unit Tugas</label><input type="text" name="unit_tugas" required></div>
-                                <div class="form-group"><label>TMT Keluar</label><input type="date" name="tmt_keluar" required></div>
-                                <div class="form-group"><label>Jenis Keluar</label><select name="jenis_keluar"><option>MUTASI</option><option>PENSIUN</option><option>RESIGN</option></select></div>
-                                <div class="form-group" style="grid-column: span 3;"><label>Keterangan</label><input type="text" name="keterangan"></div>
+                                <div class="form-group"><label>NIK</label><input type="number" id="ins-keluar-nik" required></div>
+                                <div class="form-group"><label>Nama Lengkap</label><input type="text" id="ins-keluar-nama" required></div>
+                                <div class="form-group"><label>Bagian</label><input type="text" id="ins-keluar-bagian" required></div>
+                                <div class="form-group"><label>Unit Tugas</label><input type="text" id="ins-keluar-unit" required></div>
+                                <div class="form-group"><label>TMT Keluar</label><input type="date" id="ins-keluar-tmt" required></div>
+                                <div class="form-group"><label>Jenis Keluar</label><select id="ins-keluar-jenis"><option>MUTASI</option><option>PENSIUN</option><option>RESIGN</option><option>LAINNYA</option></select></div>
+                                <div class="form-group" style="grid-column: span 3;"><label>Keterangan Alasan Keluar</label><input type="text" id="ins-keluar-ket"></div>
                             </div>
-                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Simpan</button></div>
+                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Simpan Pegawai Keluar</button></div>
                         </form>
                     </div>
                     <div class="table-responsive"><table><thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Bagian</th><th>Unit Tugas</th><th>TMT Keluar</th><th>Jenis Keluar</th><th>Keterangan</th></tr></thead><tbody id="body-tabel-keluar"></tbody></table></div>
                 </div>
             </div>
 
-            <div id="view-str" class="view-panel">
+            <div id="view-doc-str" id="view-str" class="view-panel">
                 <div class="page-title-box"><h2>Registrasi Surat Tanda Registrasi (STR)</h2></div>
                 <div class="data-card">
                     <div class="action-bar" style="justify-content: flex-end;">
@@ -401,7 +392,6 @@
                                 <div class="form-group"><label>Bidang</label><input type="text" name="bidang" required></div>
                                 <div class="form-group"><label>No STR</label><input type="text" name="no_str" required></div>
                                 <div class="form-group"><label>Tgl Terbit</label><input type="date" name="tgl_terbit" required></div>
-                                
                                 <div class="form-group">
                                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2px;">
                                         <label>Tgl Berakhir STR</label>
@@ -411,7 +401,6 @@
                                     </div>
                                     <input type="date" name="tgl_berakhir" id="admin-tgl-berakhir-str" required>
                                 </div>
-                                
                                 <div class="form-group full-width"><label>File</label><input type="file" name="lampiran_file" required></div>
                             </div>
                             <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Unggah Berkas STR</button></div>
@@ -445,51 +434,18 @@
                 </div>
             </div>
 
-            <div id="view-surat-masuk" class="view-panel">
-                <div class="page-title-box"><h2>Arsip Elektronik Surat Masuk</h2></div>
-                <div class="data-card">
-                    <div class="action-bar" style="justify-content: flex-end;">
-                        <button class="btn btn-primary" id="btn-tambah-surat-masuk-trigger" onclick="toggleFormInput('form-surat-masuk-wrapper')"><i class="fa-solid fa-plus"></i> Tambah Surat Masuk</button>
-                    </div>
-                    <div id="form-surat-masuk-wrapper" class="panel-form-box hide-element">
-                        <form id="form-add-surat-masuk" onsubmit="saveDataSekunder(event, 'surat_masuk', 'form-add-surat-masuk', 'form-surat-masuk-wrapper', 'view-surat-masuk')">
-                            <div class="grid-inputs">
-                                <div class="form-group"><label>No Surat</label><input type="text" name="no_surat" required></div>
-                                <div class="form-group"><label>Tgl Surat</label><input type="date" name="tgl_surat" required></div>
-                                <div class="form-group"><label>Instruksi</label><select name="instruksi"><option>Tindak Lanjuti</option><option>Arsipkan</option></select></div>
-                                <div class="form-group"><label>Status</label><select name="status_tindak_lanjut"><option>Belum Dibaca</option><option>Proses Telaah</option><option>Proses TTE</option><option>Selesai</option></select></div>
-                                <div class="form-group full-width"><label>Uraian</label><input type="text" name="uraian" required></div>
-                                <div class="form-group full-width"><label>Tambahan</label><input type="text" name="instruksi_tambahan"></div>
-                                <div class="form-group full-width"><label>File</label><input type="file" name="lampiran_file" required></div>
-                            </div>
-                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Simpan</button></div>
-                        </form>
-                    </div>
-                    <div class="table-responsive"><table><thead><tr><th>Nomor Surat</th><th>Tgl Surat</th><th>Uraian Informasi</th><th>Instruksi</th><th>Tambahan</th><th>Status</th><th>Lampiran</th></tr></thead><tbody id="body-tabel-surat-masuk"></tbody></table></div>
+            <div id="view-verifikasi-cuti-admin" class="view-panel">
+                <div class="page-title-box">
+                    <h2>Panel Otorisasi & Verifikasi Cuti Karyawan</h2>
+                    <p>Memproses dan mengecek validitas permohonan cuti tahunan pegawai dinas.</p>
                 </div>
-            </div>
-
-            <div id="view-surat-keluar" class="view-panel">
-                <div class="page-title-box"><h2>Arsip Elektronik Surat Keluar</h2></div>
                 <div class="data-card">
-                    <div class="action-bar" style="justify-content: flex-end;">
-                        <button class="btn btn-primary" id="btn-tambah-surat-keluar-trigger" onclick="toggleFormInput('form-surat-keluar-wrapper')"><i class="fa-solid fa-plus"></i> Tambah Surat Keluar</button>
+                    <div class="table-responsive">
+                        <table>
+                            <thead><tr><th>Nama Pegawai</th><th>Jenis Cuti</th><th>Alasan</th><th>Lamanya</th><th>Status</th><th>Aksi Keputusan</th></tr></thead>
+                            <tbody id="admin-tabel-cuti-verifikasi"></tbody>
+                        </table>
                     </div>
-                    <div id="form-surat-keluar-wrapper" class="panel-form-box hide-element">
-                        <form id="form-add-surat-keluar" onsubmit="saveDataSekunder(event, 'surat_keluar', 'form-add-surat-keluar', 'form-surat-keluar-wrapper', 'view-surat-keluar')">
-                            <div class="grid-inputs">
-                                <div class="form-group"><label>No Surat</label><input type="text" name="no_surat" required></div>
-                                <div class="form-group"><label>Tgl Surat</label><input type="date" name="tgl_surat" required></div>
-                                <div class="form-group"><label>Keberadaan</label><input type="text" name="keberadaan_berkas" required></div>
-                                <div class="form-group"><label>Status</label><select name="status_tindak_lanjut"><option>Belum Dibaca</option><option>Proses Telaah</option><option>Proses TTE</option><option>Selesai</option></select></div>
-                                <div class="form-group full-width"><label>Uraian</label><input type="text" name="uraian" required></div>
-                                <div class="form-group full-width"><label>Tambahan</label><input type="text" name="instruksi_tambahan"></div>
-                                <div class="form-group full-width"><label>File</label><input type="file" name="lampiran_file" required></div>
-                            </div>
-                            <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn btn-primary">💾 Simpan</button></div>
-                        </form>
-                    </div>
-                    <div class="table-responsive"><table><thead><tr><th>Nomor Surat</th><th>Tgl Surat</th><th>Uraian Informasi</th><th>Tambahan</th><th>Status</th><th>Keberadaan</th><th>Lampiran</th></tr></thead><tbody id="body-tabel-surat-keluar"></tbody></table></div>
                 </div>
             </div>
 
@@ -512,32 +468,30 @@
     </div>
 
     <script>
+        const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         const roleLogin = sessionStorage.getItem('role');
         if(roleLogin) {
             document.getElementById('top-role-title').textContent = roleLogin === 'superadmin' ? 'Super Admin' : 'Admin Kepegawaian (Read-Only)';
             document.getElementById('top-role-avatar').textContent = roleLogin === 'superadmin' ? 'SA' : 'AD';
         }
 
-        // 👁️ LIVE LOGIC: SWITCH LOCK INPUT JIKA CEKLISAN SEUMUR HIDUP AKTIF
+        // 👁️ LIVE LOGIC: SWITCH LOCK INPUT JIKA CEKLISAN SEUMUR HIDUP STR AKTIF
         function toggleSTRSeumurHidup(checkboxId, inputTglId) {
             const cb = document.getElementById(checkboxId);
             const inputTgl = document.getElementById(inputTglId);
             if(!cb || !inputTgl) return;
 
             if(cb.checked) {
-                inputTgl.type = "text"; 
-                inputTgl.value = "Seumur Hidup";
-                inputTgl.readOnly = true;
-                inputTgl.style.backgroundColor = "#e2e8f0";
+                inputTgl.type = "text"; inputTgl.value = "Seumur Hidup"; inputTgl.readOnly = true; inputTgl.style.backgroundColor = "#e2e8f0";
             } else {
-                inputTgl.type = "date";
-                inputTgl.value = "";
-                inputTgl.readOnly = false;
-                inputTgl.style.backgroundColor = "#ffffff";
+                inputTgl.type = "date"; inputTgl.value = ""; inputTgl.readOnly = false; inputTgl.style.backgroundColor = "#ffffff";
             }
         }
 
-        // CUSTOM ASYNC SAVE KHUSUS STR ADMIN AGAR FORMAT KATA SEUMUR HIDUP AMAN KE DATABASE
+        // CUSTOM ASYNC SAVE KHUSUS STR ADMIN AGAR KATA SEUMUR HIDUP MASUK KEDATABASE
         async function saveDataSekunderSTRAdmin(event) {
             event.preventDefault();
             const form = document.getElementById('form-add-str');
@@ -554,21 +508,16 @@
                     finalUrl = supabaseClient.storage.from('lampiran').getPublicUrl(fileName).data.publicUrl;
                 }
 
-                const formData = new FormData(form);
-                const dataObj = {};
+                const formData = new FormData(form); const dataObj = {};
                 formData.forEach((value, key) => { if (key !== 'lampiran_file') dataObj[key] = value.trim(); });
                 
-                // Jika diceklis seumur hidup, paksa simpan teks penanda ke DB
-                if(document.getElementById('admin-str-seumur-hidup').checked) {
-                    dataObj['tgl_berakhir'] = "Seumur Hidup";
-                }
-
+                if(document.getElementById('admin-str-seumur-hidup').checked) { dataObj['tgl_berakhir'] = "Seumur Hidup"; }
                 dataObj['lampiran_url'] = finalUrl;
+
                 const { error } = await supabaseClient.from('berkas_str').insert([dataObj]);
                 if (error) throw error;
                 
-                alert(`Sukses! Data STR berhasil direkam.`); 
-                form.reset();
+                alert(`Sukses! Data STR berhasil direkam.`); form.reset();
                 document.getElementById('admin-str-seumur-hidup').checked = false;
                 toggleSTRSeumurHidup('admin-str-seumur-hidup', 'admin-tgl-berakhir-str');
                 toggleFormInput('form-str-wrapper');
@@ -577,17 +526,117 @@
             finally { btnSubmit.disabled = false; btnSubmit.textContent = "💾 Unggah Berkas STR"; }
         }
 
+        // 🔥 FUNGSI BARU: SIMPAN MANUAL DATA PEGAWAI MASUK KE DATABASE SINKRON
+        async function saveDataPegawaiMasukManual(event) {
+            event.preventDefault();
+            const form = document.getElementById('form-add-masuk');
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.innerHTML = "Menyimpan...";
+
+            const payload = {
+                nik: document.getElementById('ins-masuk-nik').value.trim(),
+                nama: document.getElementById('ins-masuk-nama').value.trim(),
+                jenis_kelamin: document.getElementById('ins-masuk-jk').value,
+                agama: document.getElementById('ins-masuk-agama').value,
+                bagian: document.getElementById('ins-masuk-bagian').value.trim(),
+                tmt_masuk: document.getElementById('ins-masuk-tmt').value,
+                pendidikan: document.getElementById('ins-masuk-pendidikan').value.trim()
+            };
+
+            try {
+                const { error } = await supabaseClient.from('pegawai_masuk').insert([payload]);
+                if (error) throw error;
+                alert("Sukses! Data Pegawai Masuk berhasil direkam ke database cloud.");
+                form.reset(); toggleFormInput('form-masuk-wrapper');
+                if (typeof window.switchViewHook === 'function') window.switchViewHook('view-pegawai-masuk');
+            } catch (err) { alert("Gagal menyimpan data."); } 
+            finally { btn.disabled = false; btn.textContent = "💾 Simpan Pegawai Masuk"; }
+        }
+
+        // 🔥 FUNGSI BARU: SIMPAN MANUAL DATA PEGAWAI KELUAR KE DATABASE SINKRON
+        async function saveDataPegawaiKeluarManual(event) {
+            event.preventDefault();
+            const form = document.getElementById('form-add-keluar');
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.innerHTML = "Menyimpan...";
+
+            const payload = {
+                nik: document.getElementById('ins-keluar-nik').value.trim(),
+                nama: document.getElementById('ins-keluar-nama').value.trim(),
+                bagian: document.getElementById('ins-keluar-bagian').value.trim(),
+                unit_tugas: document.getElementById('ins-keluar-unit').value.trim(),
+                tmt_keluar: document.getElementById('ins-keluar-tmt').value,
+                jenis_keluar: document.getElementById('ins-keluar-jenis').value,
+                keterangan: document.getElementById('ins-keluar-ket').value.trim() || '-'
+            };
+
+            try {
+                const { error } = await supabaseClient.from('pegawai_keluar').insert([payload]);
+                if (error) throw error;
+                alert("Sukses! Data Pegawai Keluar berhasil direkam ke database cloud.");
+                form.reset(); toggleFormInput('form-keluar-wrapper');
+                if (typeof window.switchViewHook === 'function') window.switchViewHook('view-pegawai-keluar');
+            } catch (err) { alert("Gagal menyimpan data."); } 
+            finally { btn.disabled = false; btn.textContent = "💾 Simpan Pegawai Keluar"; }
+        }
+
+        // 👁️ ENGINE SISI SUPERADMIN: LOAD TRANSAKSI PENDING DAN BUAT ACTION KEPUTUSAN CUTI
+        async function muatTabelCutiUntukAdmin() {
+            const tbody = document.getElementById('admin-tabel-cuti-verifikasi'); if(!tbody) return;
+            const roleSekarang = sessionStorage.getItem('role');
+
+            try {
+                const { data } = await supabaseClient.from('pengajuan_cuti').select('*');
+                tbody.innerHTML = "";
+                if(!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px;">Tidak ada permohonan cuti masuk.</td></tr>`; return; }
+                
+                data.forEach(r => {
+                    let aksiTombol = "";
+                    if(roleSekarang === 'admin') {
+                        aksiTombol = `<small style="color:#64748b">Read-Only (Superadmin Only)</small>`;
+                    } else if(r.status_verifikasi === 'Pending') {
+                        aksiTombol = `
+                            <button class="btn-action" style="background:#16a34a" onclick="verifikasiCutiAksi('${r.id_cuti}', 'Disetujui')"><i class="fa-solid fa-check"></i> Setujui</button>
+                            <button class="btn-action" style="background:#dc2626" onclick="verifikasiCutiAksi('${r.id_cuti}', 'Ditolak')"><i class="fa-solid fa-xmark"></i> Tolak</button>
+                        `;
+                    } else {
+                        aksiTombol = `<span style="font-weight:700; color:#475569"><i class="fa-solid fa-circle-info"></i> Selesai Diproses</span>`;
+                    }
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><strong>${r.nama}</strong><br><small style="color:#64748b">NIK: ${r.nik}</small></td>
+                            <td>${r.jenis_cuti}</td>
+                            <td>"${r.alasan || '-'}"</td>
+                            <td>${r.lama_cuti} (${r.tgl_mulai})</td>
+                            <td><span style="font-weight:700;">${r.status_verifikasi}</span></td>
+                            <td>${aksiTombol}</td>
+                        </tr>
+                    `;
+                });
+            } catch(e){}
+        }
+
+        // 🚀 AKSI VERIFIKASI UPDATE DATA CUTI CLOUD SISI SUPERADMIN
+        async function verifikasiCutiAksi(idCuti, keputusan) {
+            const catatan = prompt(`Masukkan catatan/alasan untuk keputusan ${keputusan}:`);
+            if(catatan === null) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('pengajuan_cuti')
+                    .update({ status_verifikasi: keputusan, catatan_admin: catatan || '-' })
+                    .eq('id_cuti', idCuti);
+                
+                if(error) throw error;
+                alert(`Sukses! Pengajuan ${idCuti} telah di-verifikasi menjadi: ${keputusan}.`);
+                muatTabelCutiUntukAdmin();
+            } catch(err) { alert("Gagal merubah status."); }
+        }
+
         function toggleDropdown(element) {
             const submenu = element.nextElementSibling;
-            const arrow = element.querySelector('.arrow');
-            document.querySelectorAll('.submenu').forEach(sub => {
-                if(sub !== submenu && sub.classList.contains('open')) {
-                    sub.classList.remove('open');
-                    sub.previousElementSibling.querySelector('.arrow').classList.replace('fa-chevron-up', 'fa-chevron-down');
-                }
-            });
             submenu.classList.toggle('open');
-            arrow.classList.replace(submenu.classList.contains('open') ? 'fa-chevron-down' : 'fa-chevron-up', submenu.classList.contains('open') ? 'fa-chevron-up' : 'fa-chevron-down');
         }
 
         function switchView(viewId, element) {
@@ -599,13 +648,9 @@
             let menuText = element ? element.textContent.trim() : "Daftar Seluruh Pegawai";
             document.getElementById('nav-header-title').textContent = menuText;
             document.querySelectorAll('.view-panel').forEach(panel => panel.classList.remove('active'));
-            const targetPanel = document.getElementById(viewId);
-            if(targetPanel) {
-                targetPanel.classList.add('active');
-                if (typeof window.switchViewHook === 'function') window.switchViewHook(viewId);
-            } else {
-                document.getElementById('view-general-layanan').classList.add('active');
-            }
+            document.getElementById(viewId).classList.add('active');
+            if (typeof window.switchViewHook === 'function') window.switchViewHook(viewId);
+            if(viewId === 'view-verifikasi-cuti-admin') muatTabelCutiUntukAdmin();
         }
 
         function toggleFormInput(wrapperId) {
@@ -647,17 +692,35 @@
             };
 
             Object.keys(mapLabels).forEach(key => {
-                const div = document.createElement('div');
-                div.className = "view-row";
+                const div = document.createElement('div'); div.className = "view-row";
                 div.innerHTML = `<strong>${mapLabels[key]}</strong><span>${p[key] || "-"}</span>`;
                 container.appendChild(div);
             });
-
             document.getElementById('modal-view-detail').classList.add('open');
         }
 
         function tutupModalDetail(e) { if(e.target.classList.contains('modal-overlay')) tutupModalDetailAksi(); }
         function tutupModalDetailAksi() { document.getElementById('modal-view-detail').classList.remove('open'); }
+
+        async function saveDataSekunder(event, namaTabel, idForm, idWrapper, viewId) {
+            event.preventDefault(); const form = document.getElementById(idForm); const btnSubmit = form.querySelector('button[type="submit"]');
+            btnSubmit.disabled = true; btnSubmit.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Memproses...";
+            const fileInput = form.querySelector('input[type="file"]'); let finalUrl = "";
+            try {
+                if (fileInput && fileInput.files.length > 0) {
+                    const fileObj = fileInput.files[0]; const fileName = `${namaTabel}_${Date.now()}.${fileObj.name.split('.').pop()}`;
+                    await supabaseClient.storage.from('lampiran').upload(fileName, fileObj);
+                    finalUrl = supabaseClient.storage.from('lampiran').getPublicUrl(fileName).data.publicUrl;
+                }
+                const formData = new FormData(form); const dataObj = {};
+                formData.forEach((value, key) => { if (key !== 'lampiran_file') dataObj[key] = value.trim(); });
+                dataObj['lampiran_url'] = finalUrl;
+                const { error } = await supabaseClient.from(namaTabel).insert([dataObj]);
+                if (error) throw error;
+                alert(`Sukses! Data tersimpan.`); form.reset(); toggleFormInput(idWrapper);
+                if (typeof window.switchViewHook === 'function') window.switchViewHook(viewId);
+            } catch (err) { alert("Gagal mengunggah."); } finally { btnSubmit.disabled = false; btnSubmit.textContent = "💾 Simpan Data"; }
+        }
 
         function logoutAksi() { if(confirm("Keluar?")) { sessionStorage.clear(); window.location.href = 'login.html'; } }
     </script>
