@@ -2,30 +2,43 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Sistem Dashboard Kepegawaian</title>
+    <title>Sinergi Admin - Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { display: flex; height: 100vh; background: #f1f5f9; }
-        .sidebar { width: 260px; background: #1e293b; color: white; padding: 20px; display: flex; flex-direction: column; }
-        .menu { padding: 12px; cursor: pointer; color: #94a3b8; display: flex; align-items: center; gap: 10px; border-radius: 6px; transition: 0.2s; }
-        .menu:hover { background: #334155; color: white; }
-        .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-        iframe { flex: 1; border: none; }
-        .logout { margin-top: auto; color: #ef4444; }
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Inter', sans-serif; background: #f1f5f9; }
+        .sidebar { width: 260px; background: #1e293b; color: white; padding: 20px; overflow-y: auto; }
+        .main { flex: 1; display: flex; flex-direction: column; }
+        iframe { flex: 1; border: none; width: 100%; }
+        .menu-title { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 20px 0 10px 0; letter-spacing: 1px; }
+        .menu-item { padding: 10px; cursor: pointer; color: #cbd5e1; display: flex; align-items: center; gap: 10px; font-size: 13px; border-radius: 6px; }
+        .menu-item:hover { color: white; background: #334155; }
+        .logout { margin-top: 20px; color: #ef4444; border-top: 1px solid #334155; padding-top: 20px; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <h2 style="margin-bottom:20px; font-size:18px;">Sinergi Admin</h2>
-        <div class="menu" onclick="document.getElementById('frame').src='daftar-pegawai.html'"><i class="fa-solid fa-users"></i> Daftar Pegawai</div>
-        <div class="menu" onclick="document.getElementById('frame').src='riwayat-pangkat.html'"><i class="fa-solid fa-star"></i> Riwayat Pangkat</div>
-        <div class="menu" onclick="document.getElementById('frame').src='riwayat-jabatan.html'"><i class="fa-solid fa-briefcase"></i> Riwayat Jabatan</div>
-        <div class="menu" onclick="document.getElementById('frame').src='riwayat-pendidikan.html'"><i class="fa-solid fa-graduation-cap"></i> Riwayat Pendidikan</div>
-        <div class="menu" onclick="document.getElementById('frame').src='data-keluarga.html'"><i class="fa-solid fa-people-roof"></i> Data Keluarga</div>
-        <div class="menu logout" onclick="sessionStorage.clear(); location.href='login.html'"><i class="fa-solid fa-power-off"></i> Logout</div>
+        <h2 style="font-size:18px; margin-bottom:20px;">Sinergi Admin</h2>
+        
+        <div class="menu-title">Data Utama</div>
+        <div class="menu-item" onclick="document.getElementById('frame').src='daftar-pegawai.html'"><i class="fa-solid fa-users"></i> Daftar Pegawai</div>
+
+        <div class="menu-title">Operasional</div>
+        <div class="menu-item" onclick="document.getElementById('frame').src='pegawai-masuk.html'"><i class="fa-solid fa-user-plus"></i> Pegawai Masuk</div>
+        <div class="menu-item" onclick="document.getElementById('frame').src='pegawai-keluar.html'"><i class="fa-solid fa-user-minus"></i> Pegawai Keluar</div>
+        <div class="menu-item" onclick="document.getElementById('frame').src='mutasi.html'"><i class="fa-solid fa-arrows-rotate"></i> Mutasi</div>
+
+        <div class="menu-title">Berkas Kepegawaian</div>
+        <div class="menu-item" onclick="document.getElementById('frame').src='berkas-str.html'"><i class="fa-solid fa-id-card"></i> Berkas STR</div>
+        <div class="menu-item" onclick="document.getElementById('frame').src='berkas-sik.html'"><i class="fa-solid fa-file-contract"></i> Berkas SIK</div>
+
+        <div class="menu-title">Riwayat</div>
+        <div class="menu-item" onclick="document.getElementById('frame').src='riwayat-pangkat.html'"><i class="fa-solid fa-star"></i> Riwayat Pangkat</div>
+        <div class="menu-item" onclick="document.getElementById('frame').src='riwayat-jabatan.html'"><i class="fa-solid fa-briefcase"></i> Riwayat Jabatan</div>
+        <div class="menu-item" onclick="document.getElementById('frame').src='riwayat-pendidikan.html'"><i class="fa-solid fa-graduation-cap"></i> Riwayat Pendidikan</div>
+        <div class="menu-item" onclick="document.getElementById('frame').src='data-keluarga.html'"><i class="fa-solid fa-people-roof"></i> Data Keluarga</div>
+
+        <div class="menu-item logout" onclick="sessionStorage.clear(); location.href='login.html'"><i class="fa-solid fa-power-off"></i> Logout</div>
     </div>
     <div class="main">
         <iframe id="frame" src="daftar-pegawai.html"></iframe>
