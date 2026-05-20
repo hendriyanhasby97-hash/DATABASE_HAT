@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Mutasi Pegawai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; padding: 20px; background: #f8fafc; }
+        .card { background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .grid-form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        button { background: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { padding: 12px; border: 1px solid #e2e8f0; text-align: left; }
+        th { background: #1e293b; color: white; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h3>Input Mutasi Pegawai</h3>
+        <form id="form-mutasi" class="grid-form">
+            <input type="number" id="nik" placeholder="NIK (Ketik lalu klik luar)" onblur="cariPegawai(this.value)" required>
+            <input type="text" id="nama" placeholder="Nama Pegawai (Otomatis)" readonly required>
+            <input type="text" id="unit_asal" placeholder="Unit Asal" required>
+            <input type="text" id="unit_tujuan" placeholder="Unit Tujuan" required>
+            <input type="date" id="tgl_mutasi" required>
+            <input type="text" id="sk_mutasi" placeholder="Nomor SK Mutasi" required>
+            <input type="text" id="keterangan" placeholder="Keterangan Tambahan">
+            <input type="hidden" id="id_pegawai">
+            <button type="submit">Simpan Mutasi</button>
+        </form>
+    </div>
+
+    <table>
+        <thead><tr><th>NIK</th><th>Nama</th><th>Asal</th><th>Tujuan</th><th>Tanggal</th><th>SK</th></tr></thead>
+        <tbody id="body-mutasi"></tbody>
+    </table>
+
+    <script>
+        const supabase = supabase.createClient("URL_SUPABASE_ANDA", "KEY_SUPABASE_ANDA");
+
+        // Cari data pegawai saat NIK diisi
+        async function cariPegawai(nik) {
+            const { data } = await supabase.from('pegawai').select('id_pegawai, nama').eq('nik', nik).single();
+            if(data) {
+                document.getElementById('nama').value = data.nama;
+                document.getElementById('id_pegawai').value = data.id_pegawai;
+            } else { alert("Pegawai tidak ditemukan!"); }
+        }
+
+        // Simpan Data
+        document.getElementById('form-mutasi').onsubmit = async (e) => {
+            e.preventDefault();
+            const payload = {
+                id_pegawai: document.getElementById('id_pegawai').value,
+                nik: document.getElementById('nik').value,
+                nama: document.getElementById('nama').value,
+                unit_asal: document.getElementById('unit_asal').value,
+                unit_tujuan: document.getElementById('unit_tujuan').value,
+                tgl_mutasi: document.getElementById('tgl_mutasi').value,
+                sk_mutasi: document.getElementById('sk_mutasi').value,
+                keterangan: document.getElementById('keterangan').value
+            };
+            await supabase.from('mutasi').insert([payload]);
+            alert("Data tersimpan!"); location.reload();
+        };
+
+        // Load Data
+        async function loadMutasi() {
+            const { data } = await supabase.from('mutasi').select('*');
+            document.getElementById('body-mutasi').innerHTML = data.map(r => `
+                <tr><td>${r.nik}</td><td>${r.nama}</td><td>${r.unit_asal}</td><td>${r.unit_tujuan}</td><td>${r.tgl_mutasi}</td><td>${r.sk_mutasi}</td></tr>
+            `).join('');
+        }
+        loadMutasi();
+    </script>
+</body>
+</html>
