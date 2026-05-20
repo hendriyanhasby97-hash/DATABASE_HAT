@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwayat Jabatan Karyawan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; padding: 25px; color: #334155; }
+        .data-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; }
+        .form-sector { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .grid-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; }
+        .btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; background: #2563eb; color: white; }
+        .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; margin-top: 15px; }
+        .search-input { padding: 10px 14px 10px 40px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; width: 250px; outline: none; }
+        .table-responsive { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th { background: #1e293b; color: white; padding: 14px; font-size: 12px; text-transform: uppercase; }
+        td { padding: 14px; border-bottom: 1px solid #e2e8f0; }
+    </style>
+</head>
+<body>
+    <div class="data-card">
+        <h2 style="font-size:20px; font-weight:800; margin-bottom:15px;">Histori Rekaman Riwayat Jabatan</h2>
+        <div class="form-sector" id="wrapper-form-input">
+            <form id="form-jabatan" onsubmit="saveJabatan(event)">
+                <div class="grid-inputs">
+                    <div class="form-group"><label>NIK Pegawai</label><input type="number" id="jab-nik" required onblur="cariNamaPegawaiOtomatis(this.value)"></div>
+                    <div class="form-group"><label>Nama Pegawai</label><input type="text" id="jab-nama" readonly style="background:#e2e8f0;"></div>
+                    <div class="form-group"><label>Nama Jabatan Baru</label><input type="text" id="jab-nama-baru" required></div>
+                    <div class="form-group"><label>Kelompok Jabatan</label><select id="jab-kelompok"><option>Tenaga Medis</option><option>Tenaga Administrasi</option></select></div>
+                    <div class="form-group"><label>Unit Ruangan Tugas</label><input type="text" id="jab-ruangan" required></div>
+                    <div class="form-group"><label>TMT Jabatan</label><input type="date" id="jab-tmt" required></div>
+                </div>
+                <input type="hidden" id="jab-id-pegawai">
+                <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn">💾 Rekam Jabatan Baru</button></div>
+            </form>
+        </div>
+        <div class="action-bar"><input type="text" id="input-cari" class="search-input" placeholder="Cari Nama/NIK..."></div>
+        <div class="table-responsive">
+            <table>
+                <thead><tr><th>NIK</th><th>Nama Karyawan</th><th>Nama Jabatan</th><th>Kelompok</th><th>Unit Ruangan</th><th>TMT Jabatan</th></tr></thead>
+                <tbody id="body-tabel-jabatan"></tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        const supabaseClient = supabase.createClient("https://trxakqvaxleslwmngsvr.supabase.co", "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC");
+        if (sessionStorage.getItem('role') !== 'superadmin') document.getElementById('wrapper-form-input').style.display = 'none';
+        let rawData = [];
+        async function cariNamaPegawaiOtomatis(nik) {
+            const { data } = await supabaseClient.from('pegawai').select('id_pegawai, nama').eq('nik', nik.trim()).single();
+            if(data) { document.getElementById('jab-nama').value = data.nama; document.getElementById('jab-id-pegawai').value = data.id_pegawai; }
+        }
+        async function muatJabatan() {
+            const { data } = await supabaseClient.from('riwayat_jabatan').select('*'); rawData = data || []; renderTabel();
+        }
+        function renderTabel() {
+            const tbody = document.getElementById('body-tabel-jabatan'); tbody.innerHTML = "";
+            rawData.forEach(r => { tbody.innerHTML += `<tr><td>${r.nik}</td><td><strong>${r.nama_pegawai}</strong></td><td>${r.nama_jabatan}</td><td>${r.kelompok_jabatan}</td><td>${r.ruangan_unit}</td><td>${r.tmt_jabatan}</td></tr>`; });
+        }
+        async function saveJabatan(event) {
+            event.preventDefault();
+            const payload = {
+                id_jabatan: 'JAB-' + Date.now(), id_pegawai: document.getElementById('jab-id-pegawai').value,
+                nik: document.getElementById('jab-nik').value.trim(), nama_pegawai: document.getElementById('jab-nama').value,
+                nama_jabatan: document.getElementById('jab-nama-baru').value.trim(), kelompok_jabatan: document.getElementById('jab-kelompok').value,
+                ruangan_unit: document.getElementById('jab-ruangan').value.trim(), tmt_jabatan: document.getElementById('jab-tmt').value
+            };
+            await supabaseClient.from('riwayat_jabatan').insert([payload]); alert("Sukses!"); document.getElementById('form-jabatan').reset(); muatJabatan();
+        }
+        document.addEventListener('DOMContentLoaded', muatJabatan);
+    </script>
+</body>
+</html>
