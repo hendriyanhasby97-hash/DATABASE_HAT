@@ -3,45 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <title>Sinergi Admin - Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { margin: 0; display: flex; height: 100vh; font-family: 'Inter', sans-serif; background: #f1f5f9; }
-        .sidebar { width: 260px; background: #1e293b; color: white; padding: 20px; overflow-y: auto; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; display: flex; height: 100vh; background: #f1f5f9; }
+        
+        /* Sidebar Styling */
+        .sidebar { width: 280px; background: #0f172a; color: white; display: flex; flex-direction: column; overflow-y: auto; }
+        .sidebar-header { padding: 25px; font-weight: 800; font-size: 20px; color: #38bdf8; }
+        
+        /* Dropdown Styling */
+        .dropdown-btn { padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: #94a3b8; font-weight: 600; font-size: 14px; transition: 0.3s; }
+        .dropdown-btn:hover { background: #1e293b; color: white; }
+        .dropdown-container { display: none; background: #020617; padding-left: 10px; }
+        .dropdown-container a { display: block; color: #94a3b8; padding: 12px 25px; text-decoration: none; font-size: 13px; transition: 0.2s; }
+        .dropdown-container a:hover { color: #38bdf8; padding-left: 30px; }
+        
+        /* Main Content */
         .main { flex: 1; display: flex; flex-direction: column; }
-        iframe { flex: 1; border: none; width: 100%; }
-        .menu-title { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 20px 0 10px 0; letter-spacing: 1px; }
-        .menu-item { padding: 10px; cursor: pointer; color: #cbd5e1; display: flex; align-items: center; gap: 10px; font-size: 13px; border-radius: 6px; }
-        .menu-item:hover { color: white; background: #334155; }
-        .logout { margin-top: 20px; color: #ef4444; border-top: 1px solid #334155; padding-top: 20px; }
+        iframe { flex: 1; border: none; }
+        
+        .active { background: #1e293b; color: #38bdf8; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <h2 style="font-size:18px; margin-bottom:20px;">Sinergi Admin</h2>
+        <div class="sidebar-header">Sinergi Admin</div>
         
-        <div class="menu-title">Data Utama</div>
-        <div class="menu-item" onclick="document.getElementById('frame').src='daftar-pegawai.html'"><i class="fa-solid fa-users"></i> Daftar Pegawai</div>
+        <div class="dropdown-btn" onclick="toggleMenu(this)">Data Utama <i class="fa-solid fa-chevron-down"></i></div>
+        <div class="dropdown-container" style="display:block;">
+            <a href="#" onclick="loadPage('dashboard.html')"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+            <a href="#" onclick="loadPage('daftar-pegawai.html')"><i class="fa-solid fa-users"></i> Daftar Pegawai</a>
+        </div>
 
-        <div class="menu-title">Operasional</div>
-        <div class="menu-item" onclick="document.getElementById('frame').src='pegawai-masuk.html'"><i class="fa-solid fa-user-plus"></i> Pegawai Masuk</div>
-        <div class="menu-item" onclick="document.getElementById('frame').src='pegawai-keluar.html'"><i class="fa-solid fa-user-minus"></i> Pegawai Keluar</div>
-        <div class="menu-item" onclick="document.getElementById('frame').src='mutasi.html'"><i class="fa-solid fa-arrows-rotate"></i> Mutasi</div>
+        <div class="dropdown-btn" onclick="toggleMenu(this)">Operasional <i class="fa-solid fa-chevron-down"></i></div>
+        <div class="dropdown-container">
+            <a href="#" onclick="loadPage('pegawai-masuk.html')"><i class="fa-solid fa-user-plus"></i> Pegawai Masuk</a>
+            <a href="#" onclick="loadPage('pegawai-keluar.html')"><i class="fa-solid fa-user-minus"></i> Pegawai Keluar</a>
+            <a href="#" onclick="loadPage('mutasi.html')"><i class="fa-solid fa-arrows-rotate"></i> Mutasi</a>
+        </div>
 
-        <div class="menu-title">Berkas Kepegawaian</div>
-        <div class="menu-item" onclick="document.getElementById('frame').src='berkas-str.html'"><i class="fa-solid fa-id-card"></i> Berkas STR</div>
-        <div class="menu-item" onclick="document.getElementById('frame').src='berkas-sik.html'"><i class="fa-solid fa-file-contract"></i> Berkas SIK</div>
+        <div class="dropdown-btn" onclick="toggleMenu(this)">Berkas Kepegawaian <i class="fa-solid fa-chevron-down"></i></div>
+        <div class="dropdown-container">
+            <a href="#" onclick="loadPage('berkas-str.html')"><i class="fa-solid fa-id-card"></i> Berkas STR</a>
+            <a href="#" onclick="loadPage('berkas-sik.html')"><i class="fa-solid fa-file-contract"></i> Berkas SIK</a>
+        </div>
 
-        <div class="menu-title">Riwayat</div>
-        <div class="menu-item" onclick="document.getElementById('frame').src='riwayat-pangkat.html'"><i class="fa-solid fa-star"></i> Riwayat Pangkat</div>
-        <div class="menu-item" onclick="document.getElementById('frame').src='riwayat-jabatan.html'"><i class="fa-solid fa-briefcase"></i> Riwayat Jabatan</div>
-        <div class="menu-item" onclick="document.getElementById('frame').src='riwayat-pendidikan.html'"><i class="fa-solid fa-graduation-cap"></i> Riwayat Pendidikan</div>
-        <div class="menu-item" onclick="document.getElementById('frame').src='data-keluarga.html'"><i class="fa-solid fa-people-roof"></i> Data Keluarga</div>
+        <div class="dropdown-btn" onclick="toggleMenu(this)">Riwayat Kepegawaian <i class="fa-solid fa-chevron-down"></i></div>
+        <div class="dropdown-container">
+            <a href="#" onclick="loadPage('riwayat-pangkat.html')"><i class="fa-solid fa-star"></i> Riwayat Pangkat</a>
+            <a href="#" onclick="loadPage('riwayat-jabatan.html')"><i class="fa-solid fa-briefcase"></i> Riwayat Jabatan</a>
+            <a href="#" onclick="loadPage('riwayat-pendidikan.html')"><i class="fa-solid fa-graduation-cap"></i> Riwayat Pendidikan</a>
+            <a href="#" onclick="loadPage('data-keluarga.html')"><i class="fa-solid fa-people-roof"></i> Data Keluarga</a>
+        </div>
 
-        <div class="menu-item logout" onclick="sessionStorage.clear(); location.href='login.html'"><i class="fa-solid fa-power-off"></i> Logout</div>
+        <div style="margin-top: auto;">
+            <div class="dropdown-btn" onclick="sessionStorage.clear(); location.href='login.html'">Logout <i class="fa-solid fa-power-off"></i></div>
+        </div>
     </div>
+
     <div class="main">
-        <iframe id="frame" src="daftar-pegawai.html"></iframe>
+        <iframe id="frame" src="dashboard.html"></iframe>
     </div>
+
+    <script>
+        function toggleMenu(el) {
+            let container = el.nextElementSibling;
+            container.style.display = container.style.display === "block" ? "none" : "block";
+            el.querySelector('i').classList.toggle('fa-chevron-up');
+        }
+        function loadPage(url) {
+            document.getElementById('frame').src = url;
+        }
+    </script>
 </body>
 </html>
