@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log Karyawan Keluar</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background: #f8fafc; padding: 25px; }
+        body { background: #f8fafc; padding: 25px; color: #334155; }
         .data-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; }
         .form-sector { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
         .grid-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
@@ -16,10 +17,19 @@
         .form-group label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
         .form-group input, .form-group select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; }
         .btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; background: #dc2626; color: white; }
-        .table-responsive { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 20px; }
+        
+        .action-bar { display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; margin-top: 15px; }
+        .search-filter-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .search-wrapper { position: relative; }
+        .search-wrapper i { position: absolute; left: 14px; top: 13px; color: #94a3b8; }
+        .search-input { padding: 10px 14px 10px 40px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; width: 220px; outline: none; }
+        .filter-select { padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; background: white; color: #475569; }
+
+        .table-responsive { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
         th { background: #1e293b; color: white; padding: 14px; font-size: 12px; text-transform: uppercase; }
         td { padding: 14px; border-bottom: 1px solid #e2e8f0; }
+        tr:hover { background-color: #f8fafc; }
     </style>
 </head>
 <body>
@@ -41,38 +51,100 @@
             </form>
         </div>
 
+        <div class="action-bar">
+            <div class="search-filter-group">
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="input-cari" class="search-input" placeholder="Cari Nama atau NIK...">
+                </div>
+                <select id="filter-jenis" class="filter-select">
+                    <option value="">-- Semua Alasan Keluar --</option>
+                    <option value="MUTASI">MUTASI</option>
+                    <option value="PENSIUN">PENSIUN</option>
+                    <option value="RESIGN">RESIGN</option>
+                </select>
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table>
                 <thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Bagian</th><th>Unit Tugas</th><th>TMT Keluar</th><th>Jenis Keluar</th><th>Keterangan</th></tr></thead>
                 <tbody id="body-tabel-keluar"></tbody>
             </table>
         </div>
+        <div style="display:flex; justify-content:space-between; margin-top:20px; align-items:center;">
+            <p id="pagination-info" style="font-size:13px; color:#64748b;"></p>
+            <div style="display:flex; gap:6px;">
+                <button class="btn" id="btn-prev" style="background:white; border:1px solid #cbd5e1; color:#334155; padding:6px 12px;">Sebelumnya</button>
+                <button class="btn" id="btn-next" style="background:white; border:1px solid #cbd5e1; color:#334155; padding:6px 12px;">Selanjutnya</button>
+            </div>
+        </div>
     </div>
 
     <script>
         const supabaseClient = supabase.createClient("https://trxakqvaxleslwmngsvr.supabase.co", "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC");
         
-        // 🔥 SECURITY GUARD: CEK HAK AKSES ROLE
         const roleSekarang = sessionStorage.getItem('role');
         if (roleSekarang !== 'superadmin') {
             const formWrapper = document.getElementById('wrapper-form-input');
-            if (formWrapper) formWrapper.style.display = 'none'; // Sembunyikan form jika cuma admin
+            if (formWrapper) formWrapper.style.display = 'none';
         }
 
+        let rawData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        const rowsPerPage = 20;
+
         async function muatKeluar() {
-            const tbody = document.getElementById('body-tabel-keluar');
             const { data } = await supabaseClient.from('pegawai_keluar').select('*');
+            rawData = data || [];
+            jalankanFilter();
+        }
+
+        function jalankanFilter() {
+            const kataKunci = document.getElementById('input-cari').value.toLowerCase().trim();
+            const jenisVal = document.getElementById('filter-jenis').value;
+
+            filteredData = rawData.filter(r => {
+                const matchKeyword = (r.nama?.toLowerCase().includes(kataKunci)) || (r.nik?.includes(kataKunci));
+                const matchJenis = jenisVal === "" ? true : (r.jenis_keluar === jenisVal);
+                return matchKeyword && matchJenis;
+            });
+
+            currentPage = 1;
+            renderTabel();
+        }
+
+        function renderTabel() {
+            const tbody = document.getElementById('body-tabel-keluar');
             tbody.innerHTML = "";
-            if(!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px;">Belum ada arsip keluar.</td></tr>`; return; }
-            data.forEach(r => {
+            const totalData = filteredData.length;
+
+            if(totalData === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px;">Data tidak ditemukan.</td></tr>`;
+                document.getElementById('pagination-info').textContent = "Menampilkan 0 dari 0 pegawai";
+                return;
+            }
+
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const dataHalaman = filteredData.slice(start, end);
+
+            dataHalaman.forEach(r => {
                 tbody.innerHTML += `<tr><td>${r.nik}</td><td><strong>${r.nama}</strong></td><td>${r.bagian}</td><td>${r.unit_tugas}</td><td>${r.tmt_keluar}</td><td><span style="color:red; font-weight:700;">${r.jenis_keluar}</span></td><td>${r.keterangan || '-'}</td></tr>`;
             });
+
+            document.getElementById('pagination-info').textContent = `Menampilkan ${start + 1}-${Math.min(end, totalData)} dari ${totalData} pegawai`;
         }
+
+        document.getElementById('input-cari').oninput = jalankanFilter;
+        document.getElementById('filter-jenis').onchange = jalankanFilter;
+
+        document.getElementById('btn-prev').onclick = () => { if(currentPage > 1) { currentPage--; renderTabel(); } };
+        document.getElementById('btn-next').onclick = () => { if(currentPage < Math.ceil(filteredData.length / rowsPerPage)) { currentPage++; renderTabel(); } };
 
         async function savePegawaiKeluar(event) {
             event.preventDefault();
-            if (roleSekarang !== 'superadmin') return alert('Akses Ditolak!');
-
             const payload = {
                 nik: document.getElementById('ins-keluar-nik').value.trim(),
                 nama: document.getElementById('ins-keluar-nama').value.trim(),
