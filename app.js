@@ -28,11 +28,10 @@ const btnNext = document.getElementById('btn-page-next');
 const pagInfoText = document.getElementById('pagination-text-info');
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 🛡️ AMBIL ROLE USER DARI WINDOW PARENT (SINKRON MULTI-PAGE)
+    // AMBIL ROLE USER DARI PORTAL INDUK SINKRON MULTI-PAGE
     const roleSekarang = sessionStorage.getItem('role');
     const btnTambahMaster = document.getElementById('btn-tambah-master-trigger');
     
-    // Tampilkan tombol tambah hanya jika masuk sebagai superadmin
     if (btnTambahMaster) {
         btnTambahMaster.style.display = (roleSekarang === 'superadmin') ? 'inline-flex' : 'none';
     }
@@ -68,7 +67,7 @@ function refreshDataState() {
     renderTabelDenganHalaman();
 }
 
-// 💾 PROSES INSERTS & UPDATES CLOUD 31 FIELD DATA PEGAWAI
+// PROSES INSERTS & UPDATES DATA INDUK PEGAWAI
 async function simpanFormPegawai(e) {
     e.preventDefault();
     const saveBtn = mainForm.querySelector('button[type="submit"]');
@@ -94,7 +93,7 @@ async function simpanFormPegawai(e) {
             const { error } = await supabaseClient.from('pegawai').insert([dataObj]);
             if (error) throw error;
             
-            // Log otomatis arsip sekunder pegawai masuk
+            // Masukkan log otomatis ke tabel pegawai_masuk
             await supabaseClient.from('pegawai_masuk').insert([{
                 nik: dataObj.nik, nama: dataObj.nama, jenis_kelamin: dataObj.jenis_kelamin,
                 agama: dataObj.agama, bagian: dataObj.ruangan, tmt_masuk: dataObj.masuk_rs, pendidikan: dataObj.jenjang
@@ -105,7 +104,7 @@ async function simpanFormPegawai(e) {
         statusEdit = false;
         await muatDataDariCloud();
         refreshDataState();
-        mainForm.reset();
+        if (mainForm) mainForm.reset();
         toggleFormInputMaster();
     } catch (err) {
         console.error(err);
@@ -162,7 +161,7 @@ function renderTabelDenganHalaman() {
     if (pagInfoText) pagInfoText.textContent = `Menampilkan ${((currentPage-1)*rowsPerPage)+1}-${Math.min(currentPage*rowsPerPage, totalData)} dari ${totalData} pegawai`;
 }
 
-// 🚀 PEMICU FORM TAMBAH BARU (MENGHAPUS HIDE-ELEMENT SECARA PRESISI)
+// FUNGSI PEMICU TAMPILAN FORMULIR TAMBAH BARU (31 FIELD)
 function bukaFormTambahBaru() {
     statusEdit = false;
     if (mainForm) mainForm.reset();
@@ -223,7 +222,7 @@ async function mutasiKeluarAksi(id) {
         await muatDataDariCloud();
         refreshDataState();
     } catch (err) {
-        alert("Gagal.");
+        alert("Gagal memproses.");
     }
 }
 
