@@ -26,7 +26,7 @@
     <div class="data-card">
         <h2 style="font-size:20px; font-weight:800; margin-bottom:15px;">Surat Izin Praktik / Kerja (SIP/SIK)</h2>
         
-        <div class="form-sector">
+        <div class="form-sector" id="wrapper-form-input">
             <form id="form-add-sik" onsubmit="saveDataSIKAdmin(event)">
                 <div class="grid-inputs">
                     <div class="form-group"><label>NIK</label><input type="number" id="sik-nik" required></div>
@@ -52,6 +52,13 @@
     <script>
         const supabaseClient = supabase.createClient("https://trxakqvaxleslwmngsvr.supabase.co", "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC");
         
+        // 🔥 SECURITY GUARD: CEK HAK AKSES ROLE
+        const roleSekarang = sessionStorage.getItem('role');
+        if (roleSekarang !== 'superadmin') {
+            const formWrapper = document.getElementById('wrapper-form-input');
+            if (formWrapper) formWrapper.style.display = 'none'; // Sembunyikan form jika cuma admin
+        }
+
         async function muatSIK() {
             const tbody = document.getElementById('body-tabel-sik');
             const { data } = await supabaseClient.from('berkas_sik').select('*');
@@ -64,6 +71,8 @@
 
         async function saveDataSIKAdmin(event) {
             event.preventDefault();
+            if (roleSekarang !== 'superadmin') return alert('Akses Ditolak!');
+
             const fileInput = document.getElementById('sik-file');
             let finalUrl = "";
             if (fileInput.files.length > 0) {
