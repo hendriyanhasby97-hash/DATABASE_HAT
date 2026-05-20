@@ -2,45 +2,42 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <title>Daftar Pegawai</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
-        .modal-content { background:white; width:70%; margin:50px auto; padding:30px; border-radius:10px; }
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; padding: 30px; }
+        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        h2 { color: #0f172a; margin-bottom: 20px; border-left: 4px solid #2563eb; padding-left: 15px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #f8fafc; color: #475569; font-size: 13px; text-transform: uppercase; padding: 15px; border-bottom: 2px solid #e2e8f0; text-align: left; }
+        td { padding: 15px; border-bottom: 1px solid #e2e8f0; color: #1e293b; }
+        tr:hover { background: #f8fafc; }
+        
+        .btn-view { background: #2563eb; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
+        .btn-view:hover { background: #1d4ed8; }
     </style>
 </head>
 <body>
 
-    <h2>Daftar Pegawai</h2>
-    <table border="1" width="100%">
-        <thead><tr><th>NIK</th><th>Nama</th><th>Status</th><th>Aksi</th></tr></thead>
-        <tbody id="table-body"><tr><td colspan="4">Memuat data...</td></tr></tbody>
+<div class="container">
+    <h2>Data Induk Pegawai</h2>
+    <table>
+        <thead>
+            <tr><th>NIK</th><th>Nama</th><th>Status</th><th>Aksi</th></tr>
+        </thead>
+        <tbody id="table-body">
+            <tr><td colspan="4" style="text-align:center; padding:20px;">Memuat sinkronisasi cloud...</td></tr>
+        </tbody>
     </table>
-    
-    <div style="margin-top:20px;">
-        <button onclick="currentPage > 1 ? (currentPage--, renderTable(currentData, 'table-body')) : null">Sebelumnya</button>
-        <span id="page-info"></span>
-        <button onclick="currentPage < Math.ceil(currentData.length/15) ? (currentPage++, renderTable(currentData, 'table-body')) : null">Selanjutnya</button>
-    </div>
+</div>
 
-    <div id="modal-drh" class="modal">
-        <div class="modal-content">
-            <button onclick="document.getElementById('modal-drh').style.display='none'">Tutup</button>
-            <h1 id="drh-nama"></h1>
-            <h3>Riwayat Pendidikan</h3>
-            <ul id="drh-pendidikan"></ul>
-            <h3>Riwayat Jabatan</h3>
-            <ul id="drh-jabatan"></ul>
-        </div>
-    </div>
-
-    <script src="app.js"></script>
-    <script>
-        async function init() {
-            currentData = await fetchData('pegawai', (data) => renderTable(data, 'table-body'));
-            renderTable(currentData, 'table-body');
-        }
-        init();
-    </script>
+<script src="app.js"></script>
+<script>
+    // Jalankan saat halaman dibuka
+    document.addEventListener('DOMContentLoaded', () => {
+        loadPegawai('table-body');
+    });
+</script>
 </body>
 </html>
