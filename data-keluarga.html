@@ -2,74 +2,206 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Data Anggota Keluarga Karyawan</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Anggota Keluarga</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background: #f8fafc; padding: 25px; color: #334155; }
-        .data-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; }
+        .data-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        .page-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 15px; }
+        
         .form-sector { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
         .grid-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-group label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
-        .form-group input, .form-group select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; }
-        .btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; background: #2563eb; color: white; border:none; cursor:pointer;}
-        .table-responsive { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px;}
+        .form-group input, .form-group select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; background: white; }
+        .form-group input[readonly] { background-color: #e2e8f0; cursor: not-allowed; font-weight: 600; color: #1e3a8a; }
+        
+        .action-bar { display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+        .search-wrapper { position: relative; }
+        .search-wrapper i { position: absolute; left: 14px; top: 13px; color: #94a3b8; }
+        .search-input { padding: 10px 14px 10px 40px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; width: 280px; outline: none; }
+        .search-input:focus { border-color: #2563eb; }
+
+        .btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; background-color: #2563eb; color: white; transition: all 0.2s; }
+        .btn:hover { background-color: #1d4ed8; }
+
+        .table-responsive { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-        th { background: #1e293b; color: white; padding: 14px; font-size: 12px; }
+        th { background: #1e293b; color: white; padding: 14px; font-weight: 700; font-size: 12px; text-transform: uppercase; }
         td { padding: 14px; border-bottom: 1px solid #e2e8f0; }
+        tr:hover { background-color: #f8fafc; }
+        .badge { background:#eff6ff; color:#2563eb; font-weight:700; padding:4px 8px; border-radius:4px; font-size: 12px;}
     </style>
 </head>
 <body>
     <div class="data-card">
-        <h2 style="font-size:20px; font-weight:800; margin-bottom:15px;">Susunan Silsilah Anggota Keluarga Karyawan</h2>
+        <h2 class="page-title"><i class="fa-solid fa-people-roof" style="color:#2563eb;"></i> Susunan Anggota Keluarga Pegawai</h2>
+        
         <div class="form-sector" id="wrapper-form-input">
             <form id="form-keluarga" onsubmit="saveKeluarga(event)">
                 <div class="grid-inputs">
-                    <div class="form-group"><label>NIK Utama Pegawai</label><input type="number" id="fam-nik-utama" required onblur="cariNamaPegawaiOtomatis(this.value)"></div>
-                    <div class="form-group"><label>Nama Pegawai Induk</label><input type="text" id="fam-nama-utama" readonly style="background:#e2e8f0;"></div>
-                    <div class="form-group"><label>Nama Lengkap Anggota Keluarga</label><input type="text" id="fam-nama" required></div>
-                    <div class="form-group"><label>NIK Anggota Keluarga</label><input type="number" id="fam-nik-anggota" required></div>
-                    <div class="form-group"><label>Hubungan Kekeluargaan</label><select id="fam-hubungan"><option>Istri</option><option>Suami</option><option>Anak</option></select></div>
-                    <div class="form-group"><label>Tanggal Lahir Anggota</label><input type="date" id="fam-tgl" required></div>
+                    <div class="form-group">
+                        <label>NIK Induk Pegawai (Ketik & Klik Luar) *</label>
+                        <input type="number" id="fam-nik-utama" required onblur="cariNamaPegawaiOtomatis(this.value)" placeholder="NIK Pegawai Utama">
+                    </div>
+                    <div class="form-group">
+                        <label>Nama Pegawai Induk</label>
+                        <input type="text" id="fam-nama-utama" readonly placeholder="Otomatis terisi...">
+                    </div>
+                    <div class="form-group">
+                        <label>Nama Lengkap Anggota Keluarga *</label>
+                        <input type="text" id="fam-nama" required placeholder="Nama Istri/Suami/Anak">
+                    </div>
+                    <div class="form-group">
+                        <label>NIK Anggota Keluarga</label>
+                        <input type="number" id="fam-nik-anggota" placeholder="NIK Anggota Keluarga">
+                    </div>
+                    <div class="form-group">
+                        <label>Hubungan Kekeluargaan *</label>
+                        <select id="fam-hubungan" required>
+                            <option value="Istri">Istri</option>
+                            <option value="Suami">Suami</option>
+                            <option value="Anak ke-1">Anak ke-1</option>
+                            <option value="Anak ke-2">Anak ke-2</option>
+                            <option value="Anak ke-3">Anak ke-3</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tanggal Lahir Anggota *</label>
+                        <input type="date" id="fam-tgl" required>
+                    </div>
                 </div>
                 <input type="hidden" id="fam-id-pegawai">
-                <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn">💾 Rekam Anggota Keluarga</button></div>
+                <div style="margin-top:20px; text-align:right;">
+                    <button type="submit" class="btn" id="btn-simpan">💾 Simpan Data Keluarga</button>
+                </div>
             </form>
         </div>
+
+        <div class="action-bar">
+            <div class="search-wrapper">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="input-cari" class="search-input" placeholder="Cari Nama Pegawai Induk...">
+            </div>
+        </div>
+
         <div class="table-responsive">
             <table>
-                <thead><tr><th>Nama Pegawai Induk</th><th>Nama Anggota</th><th>NIK Anggota</th><th>Hubungan Status</th><th>Tanggal Lahir</th></tr></thead>
-                <tbody id="body-tabel-keluarga"></tbody>
+                <thead>
+                    <tr><th>Nama Pegawai Induk</th><th>Nama Anggota Keluarga</th><th>NIK Anggota</th><th>Hubungan Status</th><th>Tanggal Lahir</th></tr>
+                </thead>
+                <tbody id="body-tabel-keluarga">
+                    <tr><td colspan="5" style="text-align:center; padding:20px;">Memuat data sinkronisasi...</td></tr>
+                </tbody>
             </table>
         </div>
+        
+        <div style="display:flex; justify-content:space-between; margin-top:20px; align-items:center;">
+            <p id="pagination-info" style="font-size:13px; color:#64748b;"></p>
+            <div style="display:flex; gap:6px;">
+                <button class="btn" id="btn-prev" style="background:white; border:1px solid #cbd5e1; color:#334155; padding:6px 12px;">Sebelumnya</button>
+                <button class="btn" id="btn-next" style="background:white; border:1px solid #cbd5e1; color:#334155; padding:6px 12px;">Selanjutnya</button>
+            </div>
+        </div>
     </div>
+
     <script>
-        const supabaseClient = supabase.createClient("https://trxakqvaxleslwmngsvr.supabase.co", "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC");
-        if (sessionStorage.getItem('role') !== 'superadmin') document.getElementById('wrapper-form-input').style.display = 'none';
-        let rawData = [];
+        // Konfigurasi Supabase
+        const SUPABASE_URL = "URL_SUPABASE_ANDA";
+        const SUPABASE_KEY = "KEY_SUPABASE_ANDA";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const roleSekarang = sessionStorage.getItem('role');
+        if (roleSekarang !== 'superadmin') {
+            document.getElementById('wrapper-form-input').style.display = 'none';
+        }
+
+        let rawData = [], filteredData = [], currentPage = 1, rowsPerPage = 20;
+
         async function cariNamaPegawaiOtomatis(nik) {
-            const { data } = await supabaseClient.from('pegawai').select('id_pegawai, nama').eq('nik', nik.trim()).single();
-            if(data) { document.getElementById('fam-nama-utama').value = data.nama; document.getElementById('fam-id-pegawai').value = data.id_pegawai; }
+            if(!nik) return;
+            const { data, error } = await supabaseClient.from('pegawai').select('id_pegawai, nama').eq('nik', nik.trim()).single();
+            if(data) {
+                document.getElementById('fam-nama-utama').value = data.nama;
+                document.getElementById('fam-id-pegawai').value = data.id_pegawai;
+            } else {
+                alert("NIK Induk tidak ditemukan di sistem!");
+                document.getElementById('fam-nik-utama').value = "";
+                document.getElementById('fam-nama-utama').value = "";
+            }
         }
+
         async function muatKeluarga() {
-            const { data } = await supabaseClient.from('data_keluarga').select('*'); rawData = data || []; renderTabel();
+            const { data } = await supabaseClient.from('data_keluarga').select('*').order('nama_pegawai', { ascending: true });
+            rawData = data || [];
+            jalankanFilter();
         }
+
+        function jalankanFilter() {
+            const keyword = document.getElementById('input-cari').value.toLowerCase().trim();
+            filteredData = rawData.filter(r => (r.nama_pegawai?.toLowerCase().includes(keyword)));
+            currentPage = 1; renderTabel();
+        }
+
         function renderTabel() {
-            const tbody = document.getElementById('body-tabel-keluarga'); tbody.innerHTML = "";
-            rawData.forEach(r => { tbody.innerHTML += `<tr><td><strong>${r.nama_pegawai}</strong></td><td>${r.nama_anggota}</td><td>${r.nik_anggota}</td><td><span style="background:#eff6ff; color:#2563eb; padding:2px 6px; border-radius:4px; font-weight:700;">${r.hubungan}</span></td><td>${r.tanggal_lahir}</td></tr>`; });
+            const tbody = document.getElementById('body-tabel-keluarga');
+            tbody.innerHTML = "";
+            const total = filteredData.length;
+
+            if(total === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#64748b;">Belum ada anggota keluarga tercatat.</td></tr>`;
+                document.getElementById('pagination-info').textContent = "Menampilkan 0 dari 0 data"; return;
+            }
+
+            const start = (currentPage - 1) * rowsPerPage;
+            const dataHalaman = filteredData.slice(start, start + rowsPerPage);
+
+            dataHalaman.forEach(r => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight:700; color:#1e3a8a;">${r.nama_pegawai}</td>
+                        <td>${r.nama_anggota}</td>
+                        <td>${r.nik_anggota || '-'}</td>
+                        <td><span class="badge">${r.hubungan}</span></td>
+                        <td>${r.tanggal_lahir}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('pagination-info').textContent = `Menampilkan ${start + 1}-${Math.min(start + rowsPerPage, total)} dari ${total} catatan keluarga`;
         }
+
+        document.getElementById('input-cari').oninput = jalankanFilter;
+        document.getElementById('btn-prev').onclick = () => { if(currentPage > 1) { currentPage--; renderTabel(); } };
+        document.getElementById('btn-next').onclick = () => { if(currentPage < Math.ceil(filteredData.length / rowsPerPage)) { currentPage++; renderTabel(); } };
+
         async function saveKeluarga(event) {
             event.preventDefault();
+            const btn = document.getElementById('btn-simpan');
+            btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Menyimpan..."; btn.disabled = true;
+
             const payload = {
-                id_keluarga: 'FAM-' + Date.now(), id_pegawai: document.getElementById('fam-id-pegawai').value,
-                nik_pegawai: document.getElementById('fam-nik-utama').value.trim(), nama_pegawai: document.getElementById('fam-nama-utama').value,
-                nama_anggota: document.getElementById('fam-nama').value.trim(), nik_anggota: document.getElementById('fam-nik-anggota').value.trim(),
-                hubungan: document.getElementById('fam-hubungan').value, tanggal_lahir: document.getElementById('fam-tgl').value
+                id_keluarga: 'FAM-' + Date.now(),
+                id_pegawai: document.getElementById('fam-id-pegawai').value,
+                nik_pegawai: document.getElementById('fam-nik-utama').value.trim(),
+                nama_pegawai: document.getElementById('fam-nama-utama').value,
+                nama_anggota: document.getElementById('fam-nama').value.trim(),
+                nik_anggota: document.getElementById('fam-nik-anggota').value.trim(),
+                hubungan: document.getElementById('fam-hubungan').value,
+                tanggal_lahir: document.getElementById('fam-tgl').value
             };
-            await supabaseClient.from('data_keluarga').insert([payload]); alert("Keluarga Tercatat!"); document.getElementById('form-keluarga').reset(); muatKeluarga();
+
+            const { error } = await supabaseClient.from('data_keluarga').insert([payload]);
+            if (!error) { alert("Sukses! Data Keluarga Berhasil Disimpan."); document.getElementById('form-keluarga').reset(); muatKeluarga(); } 
+            else { alert("Gagal menyimpan ke server."); }
+            
+            btn.innerHTML = "💾 Simpan Data Keluarga"; btn.disabled = false;
         }
+
         document.addEventListener('DOMContentLoaded', muatKeluarga);
     </script>
 </body>
