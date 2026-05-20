@@ -13,11 +13,10 @@ const SUPABASE_URL = "https://trxakqvaxleslwmngsvr.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Variabel Kontrol Global (Wajib Menggunakan 'var' atau 'window.' Agar Terbaca oleh File Induk Parent)
 window.dbPegawai = [];
 let statusEdit = false;
 let currentPage = 1;
-const rowsPerPage = 20; // Tampilan data 20 baris per halaman
+const rowsPerPage = 20; 
 let dataFilterAktif = [];
 
 // DOM Selector Komponen Utama Form Induk
@@ -32,9 +31,6 @@ const btnPrev = document.getElementById('btn-page-prev');
 const btnNext = document.getElementById('btn-page-next');
 const pagInfoText = document.getElementById('pagination-text-info');
 
-// =========================================================================
-// INITIALIZATION LISTENER (SAAT HALAMAN DIMUAT)
-// =========================================================================
 document.addEventListener('DOMContentLoaded', async () => {
     const roleSekarang = sessionStorage.getItem('role');
     const btnTambahMaster = document.getElementById('btn-tambah-master-trigger');
@@ -60,12 +56,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnNext) btnNext.onclick = () => { const maxPage = Math.ceil(dataFilterAktif.length / rowsPerPage); if(currentPage < maxPage) { currentPage++; renderTabelDenganHalaman(); } };
 });
 
+// 🔥 FIX: BEGITU DATA SELESAI DI-LOAD, LANGSUNG SET KE PARENT WINDOW AGAR TOMBOL VIEW INSTAN BERFUNGSI
 async function muatDataDariCloud() {
     try {
         const { data, error } = await supabaseClient.from('pegawai').select('*');
         if (error) throw error;
         window.dbPegawai = data || [];
+        
+        // Kirim salinan data ke index.html agar modal View selalu siap siaga tanpa delay
+        if (window.parent && typeof window.parent.setCacheDataPegawaiSistem === 'function') {
+            window.parent.setCacheDataPegawaiSistem(window.dbPegawai);
+        }
     } catch (e) {
+        console.error(e);
         window.dbPegawai = [];
     }
 }
@@ -76,7 +79,6 @@ function refreshDataState() {
     renderTabelDenganHalaman();
 }
 
-// 💾 PROSES SIMPAN / DAFTARKAN PEGAWAI BARU (31 FIELD)
 async function simpanFormPegawai(e) {
     e.preventDefault();
     const saveBtn = mainForm.querySelector('button[type="submit"]');
@@ -102,7 +104,6 @@ async function simpanFormPegawai(e) {
             const { error } = await supabaseClient.from('pegawai').insert([dataObj]);
             if (error) throw error;
             
-            // Kirim log otomatis ke tabel pegawai_masuk
             await supabaseClient.from('pegawai_masuk').insert([{
                 nik: dataObj.nik, nama: dataObj.nama, jenis_kelamin: dataObj.jenis_kelamin,
                 agama: dataObj.agama, bagian: dataObj.ruangan, tmt_masuk: dataObj.masuk_rs, pendidikan: dataObj.jenjang
@@ -123,9 +124,6 @@ async function simpanFormPegawai(e) {
     }
 }
 
-// =========================================================================
-// VIEW RENDERER KONTROL OTORITAS TOMBOL KONTROL TABEL INDUK
-// =========================================================================
 function renderTabelDenganHalaman() {
     if (!tBody) return;
     tBody.innerHTML = '';
@@ -171,6 +169,11 @@ function renderTabelDenganHalaman() {
     });
 
     if (pagInfoText) pagInfoText.textContent = `Menampilkan ${((currentPage-1)*rowsPerPage)+1}-${Math.min(currentPage*rowsPerPage, totalData)} dari ${totalData} pegawai`;
+    
+    // 🔥 BEGITU SELESAI RENDER HALAMAN, KIRIM JUGA RE-SYNC DATA KE PARENT WINDOW
+    if (window.parent && typeof window.parent.setCacheDataPegawaiSistem === 'function') {
+        window.parent.setCacheDataPegawaiSistem(window.dbPegawai);
+    }
 }
 
 function jalankanPencarianDanFilter() {
@@ -210,7 +213,6 @@ function toggleFormInputMaster() {
     if (wrapper) wrapper.classList.add('hide-element');
 }
 
-// 🔥 FIX MUTLAK: EMULATOR KONTROL EDIT YANG SINKRON DENGAN INTEGRATED ENGINE AUTOMATION
 function pemicuEditPegawai(id) {
     const dataPeg = window.dbPegawai.find(x => x.id_pegawai === id);
     if (!dataPeg) return alert("Gagal memuat rekam berkas.");
