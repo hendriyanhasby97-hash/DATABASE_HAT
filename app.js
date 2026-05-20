@@ -17,7 +17,7 @@ let currentPage = 1;
 const rowsPerPage = 10;
 let dataFilterAktif = [];
 
-// DOM Selector Komponen Utama Admin
+// DOM Selector Komponen Utama Form Induk
 const mainForm = document.getElementById('main-crud-form');
 const tBody = document.getElementById('body-tabel-pegawai');
 const inputCari = document.getElementById('input-cari');
@@ -28,11 +28,19 @@ const btnNext = document.getElementById('btn-page-next');
 const pagInfoText = document.getElementById('pagination-text-info');
 
 document.addEventListener('DOMContentLoaded', async () => {
-    if (pagInfoText) pagInfoText.textContent = "Menghubungkan ke server cloud...";
+    // 🛡️ AMBIL ROLE USER DARI WINDOW PARENT (SINKRON MULTI-PAGE)
+    const roleSekarang = sessionStorage.getItem('role');
+    const btnTambahMaster = document.getElementById('btn-tambah-master-trigger');
     
-    await muatDataDariCloud();
-    hitungStatistikDashboard();
-    refreshDataState();
+    // Tampilkan tombol tambah hanya jika masuk sebagai superadmin
+    if (btnTambahMaster) {
+        btnTambahMaster.style.display = (roleSekarang === 'superadmin') ? 'inline-flex' : 'none';
+    }
+
+    if (tBody) {
+        await muatDataDariCloud();
+        refreshDataState();
+    }
 
     if (inputCari) inputCari.oninput = jalankanPencarian;
     if (btnExcel) btnExcel.onclick = unduhExcel;
@@ -60,19 +68,7 @@ function refreshDataState() {
     renderTabelDenganHalaman();
 }
 
-async function hitungStatistikDashboard() {
-    if (document.getElementById('stat-total-pegawai')) {
-        document.getElementById('stat-total-pegawai').textContent = dbPegawai.length;
-        document.getElementById('stat-pegawai-aktif').textContent = dbPegawai.filter(p => p.status?.toLowerCase() === 'aktif').length;
-        
-        const { count: totalCuti } = await supabaseClient.from('pegawai').select('*', { count: 'exact', head: true }).eq('status', 'Cuti');
-        const { count: totalMasuk } = await supabaseClient.from('pegawai_masuk').select('*', { count: 'exact', head: true });
-        
-        document.getElementById('stat-total-cuti').textContent = totalCuti || 0;
-        document.getElementById('stat-surat-masuk').textContent = totalMasuk || 0;
-    }
-}
-
+// 💾 PROSES INSERTS & UPDATES CLOUD 31 FIELD DATA PEGAWAI
 async function simpanFormPegawai(e) {
     e.preventDefault();
     const saveBtn = mainForm.querySelector('button[type="submit"]');
@@ -98,24 +94,25 @@ async function simpanFormPegawai(e) {
             const { error } = await supabaseClient.from('pegawai').insert([dataObj]);
             if (error) throw error;
             
+            // Log otomatis arsip sekunder pegawai masuk
             await supabaseClient.from('pegawai_masuk').insert([{
                 nik: dataObj.nik, nama: dataObj.nama, jenis_kelamin: dataObj.jenis_kelamin,
                 agama: dataObj.agama, bagian: dataObj.ruangan, tmt_masuk: dataObj.masuk_rs, pendidikan: dataObj.jenjang
             }]);
-            alert('Data pegawai baru & histori masuk berhasil direkam!');
+            alert('Sukses! Data pegawai baru berhasil direkam ke database cloud.');
         }
 
         statusEdit = false;
         await muatDataDariCloud();
-        hitungStatistikDashboard();
         refreshDataState();
-        if (typeof window.toggleFormInput === 'function') window.toggleFormInput('form-master-wrapper');
+        mainForm.reset();
+        toggleFormInputMaster();
     } catch (err) {
         console.error(err);
         alert("Gagal memproses data ke server cloud.");
     } finally {
         saveBtn.disabled = false;
-        saveBtn.innerHTML = "💾 Simpan Berkas";
+        saveBtn.innerHTML = "💾 Simpan Perubahan Berkas";
     }
 }
 
@@ -124,11 +121,6 @@ function renderTabelDenganHalaman() {
     tBody.innerHTML = '';
     const totalData = dataFilterAktif.length;
     const roleSekarang = sessionStorage.getItem('role');
-    
-    const btnTambahMaster = document.getElementById('btn-tambah-master-trigger');
-    if (btnTambahMaster) {
-        btnTambahMaster.style.display = (roleSekarang === 'admin') ? 'none' : 'inline-flex';
-    }
 
     if (totalData === 0) {
         tBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#94a3b8;"><i class="fa-solid fa-folder-open"></i> Data Kosong.</td></tr>`;
@@ -141,15 +133,15 @@ function renderTabelDenganHalaman() {
 
     dataHalamanIni.forEach(p => {
         const tr = document.createElement('tr');
-        
         let tombolKontrolOtoritas = "";
+        
         if (roleSekarang === 'admin') {
             tombolKontrolOtoritas = `
-                <button type="button" class="btn-action" style="background:#0284c7;" onclick="window.bukaModalViewDetailSistem('${p.id_pegawai}')"><i class="fa-solid fa-eye"></i> View</button>
+                <button type="button" class="btn-action" style="background:#0284c7;" onclick="window.parent.bukaModalViewDetailSistem('${p.id_pegawai}')"><i class="fa-solid fa-eye"></i> View</button>
             `;
         } else {
             tombolKontrolOtoritas = `
-                <button type="button" class="btn-action" style="background:#0284c7;" onclick="window.bukaModalViewDetailSistem('${p.id_pegawai}')"><i class="fa-solid fa-eye"></i> View</button>
+                <button type="button" class="btn-action" style="background:#0284c7;" onclick="window.parent.bukaModalViewDetailSistem('${p.id_pegawai}')"><i class="fa-solid fa-eye"></i> View</button>
                 <button type="button" class="btn-action" style="background:#d97706;" onclick="pemicuEditPegawai('${p.id_pegawai}')"><i class="fa-solid fa-user-pen"></i> Edit</button>
                 <button type="button" class="btn-action" style="background:#dc2626;" onclick="mutasiKeluarAksi('${p.id_pegawai}')"><i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar</button>
             `;
@@ -168,6 +160,46 @@ function renderTabelDenganHalaman() {
     });
 
     if (pagInfoText) pagInfoText.textContent = `Menampilkan ${((currentPage-1)*rowsPerPage)+1}-${Math.min(currentPage*rowsPerPage, totalData)} dari ${totalData} pegawai`;
+}
+
+// 🚀 PEMICU FORM TAMBAH BARU (MENGHAPUS HIDE-ELEMENT SECARA PRESISI)
+function bukaFormTambahBaru() {
+    statusEdit = false;
+    if (mainForm) mainForm.reset();
+    
+    const idInput = document.getElementById('id_pegawai');
+    if (idInput) idInput.value = "";
+    
+    const nikInput = document.getElementById('nik');
+    if (nikInput) nikInput.disabled = false;
+    
+    const formTitle = document.getElementById('main-form-title');
+    if (formTitle) formTitle.innerHTML = `<i class="fa-solid fa-user-plus"></i> Registrasi Record Karyawan Baru (31 Bidang)`;
+    
+    const wrapper = document.getElementById('form-master-wrapper');
+    if (wrapper) {
+        wrapper.classList.remove('hide-element');
+        window.scrollTo({ top: wrapper.offsetTop - 20, behavior: 'smooth' });
+    }
+}
+
+function toggleFormInputMaster() {
+    const wrapper = document.getElementById('form-master-wrapper');
+    if (wrapper) wrapper.classList.add('hide-element');
+}
+
+function pemicuEditPegawai(id) {
+    const dataPeg = dbPegawai.find(x => x.id_pegawai === id);
+    if (!dataPeg) return;
+    
+    if(document.getElementById('nik')) document.getElementById('nik').disabled = true;
+    fields.forEach(f => { const el = document.getElementById(f); if (el) el.value = dataPeg[f] || ''; });
+    statusEdit = true;
+    window.jalankanSemuaOtomatisasiSistem();
+    
+    document.getElementById('main-form-title').innerHTML = `<i class="fa-solid fa-user-pen"></i> Modifikasi Berkas Pegawai: ${dataPeg.nama}`;
+    const wrapper = document.getElementById('form-master-wrapper');
+    if (wrapper) wrapper.classList.remove('hide-element');
 }
 
 async function mutasiKeluarAksi(id) {
@@ -189,189 +221,50 @@ async function mutasiKeluarAksi(id) {
         await supabaseClient.from('pegawai').delete().eq('id_pegawai', id);
         alert(`Sukses! ${p.nama} dipindahkan ke daftar Pegawai Keluar.`);
         await muatDataDariCloud();
-        hitungStatistikDashboard();
         refreshDataState();
     } catch (err) {
-        alert("Gagal memproses mutasi keluar.");
+        alert("Gagal.");
     }
 }
 
-async function muatTabelSpesifik(namaTabel, idTbodyTarget, headersArray, rowBuilderFunc) {
-    const tbody = document.getElementById(idTbodyTarget);
-    if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="${headersArray.length}" style="text-align:center; padding:20px;">Mengunduh arsip...</td></tr>`;
-    
-    try {
-        const { data, error } = await supabaseClient.from(namaTabel).select('*');
-        if (error) throw error;
-        
-        tbody.innerHTML = '';
-        if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="${headersArray.length}" style="text-align:center; padding:20px; color:#94a3b8;">Arsip Berkas Kosong.</td></tr>`;
-            return;
-        }
-
-        data.forEach((row, index) => {
-            const tr = document.createElement('tr');
-            rowBuilderFunc(tr, row, index);
-            tbody.appendChild(tr);
-        });
-    } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="${headersArray.length}" style="text-align:center; color:red; padding:20px;">Gagal memuat berkas arsip cloud.</td></tr>`;
-    }
-}
-
-function hitungSisaWaktuSIK(tglBerakhirStr, elementTr) {
-    if (!tglBerakhirStr) return "-";
-    const akhir = new Date(tglBerakhirStr);
-    const sekarang = new Date();
-    const selisihWaktu = akhir - sekarang;
-    const totalHari = Math.ceil(selisihWaktu / (1000 * 60 * 60 * 24));
-    
-    if (totalHari <= 0) {
-        elementTr.style.backgroundColor = "#fee2e2"; 
-        elementTr.style.color = "#b91c1c";
-        return "EXPIRED";
-    }
-
-    const tahun = Math.floor(totalHari / 365);
-    const sisaHariDariTahun = totalHari % 365;
-    const bulan = Math.floor(sisaHariDariTahun / 30);
-    const hari = sisaHariDariTahun % 30;
-
-    if (totalHari <= 90) { elementTr.style.backgroundColor = "#fee2e2"; elementTr.style.color = "#b91c1c"; }
-    else if (totalHari <= 180) { elementTr.style.backgroundColor = "#fef3c7"; elementTr.style.color = "#b45309"; }
-
-    return `${tahun} Thn ${bulan} Bln ${hari} Hari`;
-}
-
-// 📅 CORE ENGINE: JALANKAN SEMUA AUTOMATION PENANGGALAN SEKALIGUS
 window.jalankanSemuaOtomatisasiSistem = function() {
     const inputMasukRS = document.getElementById('masuk_rs');
     const inputTglLahir = document.getElementById('tanggal_lahir');
     const inputBUP = document.getElementById('rentang_bup');
     const inputNIP = document.getElementById('nip');
 
-    // 1. Hitung Masa Kerja
     if (inputMasukRS && inputMasukRS.value) {
-        const masuk = new Date(inputMasukRS.value); 
-        const hariIni = new Date();
-        let tahun = hariIni.getFullYear() - masuk.getFullYear(); 
-        let bulan = hariIni.getMonth() - masuk.getMonth();
-        let hari = hariIni.getDate() - masuk.getDate();
+        const masuk = new Date(inputMasukRS.value); const hariIni = new Date();
+        let tahun = hariIni.getFullYear() - masuk.getFullYear(); let bulan = hariIni.getMonth() - masuk.getMonth(); let hari = hariIni.getDate() - masuk.getDate();
         if (hari < 0) { hari += new Date(hariIni.getFullYear(), hariIni.getMonth(), 0).getDate(); bulan--; }
         if (bulan < 0) { tahun--; bulan += 12; }
-        if (document.getElementById('masa_kerja_rs')) {
-            document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan ${hari} Hari`;
-        }
+        if (document.getElementById('masa_kerja_rs')) document.getElementById('masa_kerja_rs').value = `${tahun} Tahun ${bulan} Bulan ${hari} Hari`;
     }
 
-    // 2. Hitung TMT Pensiun
     if (inputTglLahir && inputTglLahir.value && inputBUP && inputBUP.value) {
         const bupVal = parseInt(inputBUP.value);
         if (!isNaN(bupVal)) {
             const tglLahir = new Date(inputTglLahir.value);
             const tmtPensiunDate = new Date(tglLahir.getFullYear() + bupVal, tglLahir.getMonth() + 1, 1);
-            const yyyy = tmtPensiunDate.getFullYear();
-            const mm = String(tmtPensiunDate.getMonth() + 1).padStart(2, '0');
-            const dd = String(tmtPensiunDate.getDate()).padStart(2, '0');
-            if (document.getElementById('tmt_pensiun')) {
-                document.getElementById('tmt_pensiun').value = `${yyyy}-${mm}-${dd}`;
-            }
+            const yyyy = tmtPensiunDate.getFullYear(); const mm = String(tmtPensiunDate.getMonth() + 1).padStart(2, '0'); const dd = String(tmtPensiunDate.getDate()).padStart(2, '0');
+            if (document.getElementById('tmt_pensiun')) document.getElementById('tmt_pensiun').value = `${yyyy}-${mm}-${dd}`;
         }
     }
 
-    // 3. Hitung TMT CPNS dari NIP
     if (inputNIP && inputNIP.value.trim().length >= 8) {
         const nipVal = inputNIP.value.trim();
-        const tahunStr = nipVal.substring(0, 4);
-        const bulanStr = nipVal.substring(4, 6);
-        const hariStr = nipVal.substring(6, 8);
+        const tahunStr = nipVal.substring(0, 4); const bulanStr = nipVal.substring(4, 6); const hariStr = nipVal.substring(6, 8);
         if (!isNaN(parseInt(tahunStr)) && !isNaN(parseInt(bulanStr)) && !isNaN(parseInt(hariStr))) {
             if (parseInt(bulanStr) >= 1 && parseInt(bulanStr) <= 12 && parseInt(hariStr) >= 1 && parseInt(hariStr) <= 31) {
-                if (document.getElementById('tmt_cpns')) {
-                    document.getElementById('tmt_cpns').value = `${tahunStr}-${bulanStr}-${hariStr}`;
-                }
+                if (document.getElementById('tmt_cpns')) document.getElementById('tmt_cpns').value = `${tahunStr}-${bulanStr}-${hariStr}`;
             }
         }
     }
 }
 
-// Re-hook pemicu manual saat admin mengetik di form
 window.hitungMasaKerjaOtomatis = () => window.jalankanSemuaOtomatisasiSistem();
 window.hitungTMTPensiunOtomatis = () => window.jalankanSemuaOtomatisasiSistem();
 window.hitungTMTCPNSOtomatis = () => window.jalankanSemuaOtomatisasiSistem();
-
-window.switchViewHook = function(viewId) {
-    const roleSekarang = sessionStorage.getItem('role');
-    const triggerIds = ['btn-tambah-masuk-trigger', 'btn-tambah-keluar-trigger', 'btn-tambah-str-trigger', 'btn-tambah-sik-trigger', 'btn-tambah-surat-masuk-trigger', 'btn-tambah-surat-keluar-trigger'];
-    triggerIds.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.style.display = (roleSekarang === 'admin') ? 'none' : 'inline-flex';
-    });
-
-    if (viewId === 'view-data-pegawai') {
-        muatDataDariCloud().then(() => { refreshDataState(); hitungStatistikDashboard(); });
-    }
-    else if (viewId === 'view-pegawai-masuk') {
-        muatTabelSpesifik('pegawai_masuk', 'body-tabel-masuk', [1,2,3,4,5,6,7], (tr, r) => {
-            tr.innerHTML = `<td>${r.nik}</td><td><strong>${r.nama}</strong></td><td>${r.jenis_kelamin}</td><td>${r.agama}</td><td>${r.bagian}</td><td>${r.tmt_masuk}</td><td>${r.pendidikan}</td>`;
-        });
-    }
-    else if (viewId === 'view-pegawai-keluar') {
-        muatTabelSpesifik('pegawai_keluar', 'body-tabel-keluar', [1,2,3,4,5,6,7], (tr, r) => {
-            tr.innerHTML = `<td>${r.nik}</td><td><strong>${r.nama}</strong></td><td>${r.bagian}</td><td>${r.unit_tugas}</td><td>${r.tmt_keluar}</td><td><span style="color:red; font-weight:700;">${r.jenis_keluar}</span></td><td>${r.keterangan || '-'}</td>`;
-        });
-    }
-    else if (viewId === 'view-str') {
-        muatTabelSpesifik('berkas_str', 'body-tabel-str', [1,2,3,4,5,6,7], (tr, r) => {
-            tr.innerHTML = `<td>${r.nik}</td><td><strong>${r.nama}</strong></td><td>${r.bidang}</td><td>${r.no_str}</td><td>${r.tgl_terbit}</td><td>${r.tgl_berakhir}</td><td><a href="${r.lampiran_url || '#'}" target="_blank" class="btn" style="padding:4px 8px; font-size:12px; background:#475569; color:white;"><i class="fa-solid fa-file-pdf"></i> Lihat</a></td>`;
-        });
-    }
-    else if (viewId === 'view-sik') {
-        muatTabelSpesifik('berkas_sik', 'body-tabel-sik', [1,2,3,4,5,6,7,8], (tr, r) => {
-            const masaAktifTeks = hitungSisaWaktuSIK(r.tgl_berakhir, tr);
-            tr.innerHTML = `<td>${r.nik}</td><td><strong>${r.nama}</strong></td><td>${r.bidang}</td><td>${r.no_sip}</td><td>${r.tgl_terbit}</td><td>${r.tgl_berakhir}</td><td style="font-weight:700;">${masaAktifTeks}</td><td><a href="${r.lampiran_url || '#'}" target="_blank" class="btn" style="padding:4px 8px; font-size:12px; background:#475569; color:white;"><i class="fa-solid fa-file-pdf"></i> Lihat</a></td>`;
-        });
-    }
-    else if (viewId === 'view-surat-masuk') {
-        muatTabelSpesifik('surat_masuk', 'body-tabel-surat-masuk', [1,2,3,4,5,6,7,8], (tr, r) => {
-            let colorBadge = "background:#cbd5e1; color:#1e293b;"; 
-            if (r.status_tindak_lanjut === 'Selesai') colorBadge = "background:#dcfce7; color:#15803d; font-weight:700;";
-            else if (r.status_tindak_lanjut === 'Proses Telaah') colorBadge = "background:#fef3c7; color:#b45309;";
-            else if (r.status_tindak_lanjut === 'Proses TTE') colorBadge = "background:#e0f2fe; color:#0369a1;";
-            tr.innerHTML = `<td><strong>${r.no_surat}</strong></td><td>${r.tgl_surat}</td><td>${r.uraian}</td><td><span style="background:#f1f5f9; padding:3px 6px; border-radius:4px; font-size:12px; font-weight:600;">${r.instruksi}</span></td><td>${r.instruksi_tambahan || '-'}</td><td><span style="padding:4px 8px; border-radius:6px; font-size:12px; ${colorBadge}">${r.status_tindak_lanjut}</span></td><td><a href="${r.lampiran_url || '#'}" target="_blank" class="btn" style="padding:4px 8px; font-size:12px; background:#475569; color:white;"><i class="fa-solid fa-file-pdf"></i> Lihat</a></td>`;
-        });
-    }
-    else if (viewId === 'view-surat-keluar') {
-        muatTabelSpesifik('surat_keluar', 'body-tabel-surat-keluar', [1,2,3,4,5,6,7,8], (tr, r) => {
-            let colorBadge = "background:#cbd5e1; color:#1e293b;";
-            if (r.status_tindak_lanjut === 'Selesai') colorBadge = "background:#dcfce7; color:#15803d; font-weight:700;";
-            else if (r.status_tindak_lanjut === 'Proses Telaah') colorBadge = "background:#fef3c7; color:#b45309;";
-            else if (r.status_tindak_lanjut === 'Proses TTE') colorBadge = "background:#e0f2fe; color:#0369a1;";
-            tr.innerHTML = `<td><strong>${r.no_surat}</strong></td><td>${r.tgl_surat}</td><td>${r.uraian}</td><td>${r.instruksi_tambahan || '-'}</td><td><span style="padding:4px 8px; border-radius:6px; font-size:12px; ${colorBadge}">${r.status_tindak_lanjut}</span></td><td><i class="fa-solid fa-location-dot" style="color:#94a3b8"></i> ${r.keberadaan_berkas}</td><td><a href="${r.lampiran_url || '#'}" target="_blank" class="btn" style="padding:4px 8px; font-size:12px; background:#475569; color:white;"><i class="fa-solid fa-file-pdf"></i> Lihat</a></td>`;
-        });
-    }
-};
-
-window.switchViewHook('view-data-pegawai');
-
-function pemicuEditPegawai(id) {
-    const dataPeg = dbPegawai.find(x => x.id_pegawai === id);
-    if (!dataPeg) return;
-    
-    if(document.getElementById('nik')) document.getElementById('nik').disabled = true;
-    fields.forEach(f => { const el = document.getElementById(f); if (el) el.value = dataPeg[f] || ''; });
-    statusEdit = true;
-    
-    // 🔥 BARU: Paksa hitung penanggalan otomatis begitu tombol edit diklik
-    window.jalankanSemuaOtomatisasiSistem();
-    
-    document.getElementById('main-form-title').innerHTML = `<i class="fa-solid fa-user-pen"></i> Modifikasi / Ubah Berkas Pegawai: ${dataPeg.nama}`;
-    const wrapper = document.getElementById('form-master-wrapper');
-    if (wrapper) wrapper.classList.remove('hide-element');
-    window.scrollTo({ top: wrapper.offsetTop - 20, behavior: 'smooth' });
-}
 
 function jalankanPencarian() {
     const kataKunci = inputCari.value.toLowerCase().trim();
