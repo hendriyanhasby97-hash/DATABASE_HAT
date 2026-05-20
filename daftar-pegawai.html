@@ -2,95 +2,87 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pangkalan Data Seluruh Karyawan</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Manajemen Data Pegawai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
-    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background: #f8fafc; padding: 25px; color: #334155; }
-        .data-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
-        .page-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 5px; }
+        .data-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; }
         
-        .action-bar { display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
-        .search-filter-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        /* TOMBOL TAMBAH */
+        .btn-add { background: #2563eb; color: white; padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; margin-bottom: 20px; }
         
-        .search-wrapper { position: relative; }
-        .search-wrapper i { position: absolute; left: 14px; top: 13px; color: #94a3b8; }
-        .search-input { padding: 10px 14px 10px 40px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; width: 250px; outline: none; }
-        .filter-select { padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; cursor: pointer; }
-
-        .btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-primary { background-color: #2563eb; color: white; }
-        .btn-success { background-color: #16a34a; color: white; }
-        .btn-danger { background-color: #dc2626; color: white; }
-
-        .table-responsive { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { background: #1e293b; color: white; padding: 14px; font-size: 12px; text-transform: uppercase; }
-        td { padding: 14px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
-        
-        /* Panel Form */
-        .panel-form-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
-        .hide-element { display: none !important; }
-        .grid-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-group label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
-        .form-group input, .form-group select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; }
+        /* FORM INPUT */
+        .panel-form { background: #f1f5f9; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #cbd5e1; }
+        .hidden { display: none; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .form-group { margin-bottom: 15px; }
+        label { font-size: 12px; font-weight: 700; display: block; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
     </style>
 </head>
 <body>
-    <div class="data-card">
-        <h2 class="page-title">Pangkalan Data Induk Karyawan</h2>
-        
-        <div id="form-master-wrapper" class="panel-form-box hide-element">
-            <h3 id="main-form-title" style="margin-bottom: 15px;">Registrasi Karyawan Baru</h3>
-            <form id="main-crud-form">
-                <input type="hidden" id="id_pegawai">
-                <div class="grid-inputs">
-                    <div class="form-group"><label>NIK *</label><input type="number" id="nik" required></div>
-                    <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="nama" required></div>
-                    <div class="form-group"><label>NIP</label><input type="text" id="nip"></div>
-                    <div class="form-group"><label>Status</label><select id="status"><option>Aktif</option><option>Mutasi</option><option>Pensiun</option></select></div>
-                    <div class="form-group"><label>Kelompok Pegawai</label><select id="kelompok_pegawai"><option>ASN</option><option>APBD</option><option>BLUD</option></select></div>
-                    <div class="form-group"><label>Ruangan</label><input type="text" id="ruangan"></div>
-                    </div>
-                <button type="submit" class="btn btn-primary">💾 Simpan Data</button>
-                <button type="button" class="btn" onclick="toggleFormInputMaster()">Batal</button>
-            </form>
-        </div>
 
-        <div class="action-bar">
-            <div class="search-filter-group">
-                <div class="search-wrapper">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="input-cari" class="search-input" placeholder="Cari Nama/NIK...">
-                </div>
-                <select id="filter-status" class="filter-select"><option value="">-- Semua Status --</option><option value="Aktif">Aktif</option></select>
-                <select id="filter-kelompok" class="filter-select"><option value="">-- Semua Kelompok --</option><option value="ASN">ASN</option></select>
-            </div>
-            <div>
-                <button class="btn btn-primary" id="btn-tambah-master-trigger" onclick="bukaFormTambahBaru()" style="display:none;"><i class="fa-solid fa-plus"></i> Tambah Baru</button>
-                <button class="btn btn-success" id="btn-excel"><i class="fa-solid fa-file-excel"></i> Excel</button>
-            </div>
-        </div>
+<div class="data-card">
+    <h2>Data Pegawai</h2>
+    
+    <button class="btn-add" onclick="toggleForm()">+ Tambah Pegawai Baru</button>
 
-        <div class="table-responsive">
-            <table>
-                <thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Status</th><th>Kelompok</th><th>Jabatan</th><th>Ruangan</th><th>Kontrol</th></tr></thead>
-                <tbody id="body-tabel-pegawai"></tbody>
-            </table>
-        </div>
-        <div style="margin-top:20px; text-align:right;">
-            <p id="pagination-text-info" style="font-size:12px; color:#64748b;"></p>
-        </div>
+    <div id="form-input" class="panel-form hidden">
+        <h3 style="margin-bottom: 15px;">Input Data Pegawai Baru</h3>
+        <form id="pegawai-form" onsubmit="simpanData(event)">
+            <div class="grid-3">
+                <div class="form-group"><label>NIK</label><input type="number" id="nik" required></div>
+                <div class="form-group"><label>Nama Lengkap</label><input type="text" id="nama" required></div>
+                <div class="form-group"><label>Status</label><select id="status"><option>Aktif</option><option>Pensiun</option></select></div>
+            </div>
+            <button type="submit" class="btn-add" style="background:#16a34a;">Simpan Data ke Database</button>
+        </form>
     </div>
-    <script src="app.js"></script>
+
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead style="background: #1e293b; color: white;">
+                <tr><th style="padding:10px;">NIK</th><th style="padding:10px;">Nama</th><th style="padding:10px;">Status</th></tr>
+            </thead>
+            <tbody id="tabel-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const supabase = supabase.createClient("URL_SUPABASE_ANDA", "KEY_SUPABASE_ANDA");
+
+    // Fungsi buka/tutup form
+    function toggleForm() {
+        document.getElementById('form-input').classList.toggle('hidden');
+    }
+
+    // Fungsi kirim data ke Supabase
+    async function simpanData(e) {
+        e.preventDefault();
+        const data = {
+            nik: document.getElementById('nik').value,
+            nama: document.getElementById('nama').value,
+            status: document.getElementById('status').value,
+            id_pegawai: 'PGW-' + Date.now()
+        };
+        
+        const { error } = await supabase.from('pegawai').insert([data]);
+        if (error) { alert("Gagal: " + error.message); }
+        else { alert("Data berhasil disimpan!"); location.reload(); }
+    }
+
+    // Load data otomatis
+    async function loadData() {
+        const { data } = await supabase.from('pegawai').select('*');
+        const tbody = document.getElementById('tabel-body');
+        tbody.innerHTML = data.map(p => `<tr><td style="padding:10px; border-bottom:1px solid #ccc;">${p.nik}</td><td style="padding:10px; border-bottom:1px solid #ccc;">${p.nama}</td><td style="padding:10px; border-bottom:1px solid #ccc;">${p.status}</td></tr>`).join('');
+    }
+    loadData();
+</script>
+
 </body>
 </html>
