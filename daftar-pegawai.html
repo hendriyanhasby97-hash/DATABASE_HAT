@@ -17,130 +17,52 @@
         body { background: #f8fafc; padding: 25px; color: #334155; }
         .data-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
         .page-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 5px; }
-        .page-desc { font-size: 13px; color: #64748b; margin-bottom: 20px; }
         
-        .action-bar { display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+        .action-bar { display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
         .search-filter-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         
         .search-wrapper { position: relative; }
         .search-wrapper i { position: absolute; left: 14px; top: 13px; color: #94a3b8; }
         .search-input { padding: 10px 14px 10px 40px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; width: 250px; outline: none; }
-        .search-input:focus { border-color: #2563eb; }
+        .filter-select { padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; cursor: pointer; }
 
-        /* Style untuk Dropdown Filter Baru */
-        .filter-select { padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; background: white; color: #475569; font-weight: 500; cursor: pointer; }
-        .filter-select:focus { border-color: #2563eb; }
-
-        .btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; text-decoration: none; }
+        .btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; }
         .btn-primary { background-color: #2563eb; color: white; }
         .btn-success { background-color: #16a34a; color: white; }
         .btn-danger { background-color: #dc2626; color: white; }
 
-        .table-responsive { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-        th { background: #1e293b; color: white; padding: 14px; font-weight: 700; font-size: 12px; text-transform: uppercase; }
-        td { padding: 14px; border-bottom: 1px solid #e2e8f0; }
-        tr:hover { background-color: #f8fafc; }
+        .table-responsive { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: #1e293b; color: white; padding: 14px; font-size: 12px; text-transform: uppercase; }
+        td { padding: 14px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
         
-        .btn-action { padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; color: white; margin-right: 4px; display: inline-flex; align-items: center; gap: 4px; }
-
-        /* FORM SECTOR DESIGN */
-        .panel-form-box { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; margin-top: 20px; }
-        .form-sector { margin-bottom: 25px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; }
-        .sector-title { font-size: 13px; font-weight: 800; color: #1d4ed8; text-transform: uppercase; margin-bottom: 18px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; }
-        .grid-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-group.full-width { grid-column: span 3; }
-        .form-group label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
-        .form-group input, .form-group select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; outline: none; background: white; }
-        .form-group input[readonly] { background-color: #e2e8f0; color: #475569; cursor: not-allowed; font-weight: 600; }
-
+        /* Panel Form */
+        .panel-form-box { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
         .hide-element { display: none !important; }
+        .grid-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="data-card">
-        <h2 class="page-title">Pangkalan Data Seluruh Karyawan</h2>
-        <p class="page-desc">Menampilkan data induk 31 bidang informasi kepegawaian secara penuh.</p>
-
+        <h2 class="page-title">Pangkalan Data Induk Karyawan</h2>
+        
         <div id="form-master-wrapper" class="panel-form-box hide-element">
-            <h3 id="main-form-title" style="font-size:16px; font-weight:700; color:#0f172a; margin-bottom:15px;"><i class="fa-solid fa-pen-to-square"></i> Formulir Rekaman Berkas Pegawai</h3>
+            <h3 id="main-form-title" style="margin-bottom: 15px;">Registrasi Karyawan Baru</h3>
             <form id="main-crud-form">
                 <input type="hidden" id="id_pegawai">
-                
-                <div class="form-sector">
-                    <div class="sector-title">👤 Sektor I: Identitas Utama Kepegawaian</div>
-                    <div class="grid-inputs">
-                        <div class="form-group"><label>NIK (Nomor Induk Kependudukan) *</label><input type="number" id="nik" required></div>
-                        <div class="form-group"><label>Nama Lengkap Pegawai *</label><input type="text" id="nama" required></div>
-                        <div class="form-group"><label>NIP / Nomor Karyawan</label><input type="text" id="nip" oninput="window.hitungTMTCPNSOtomatis()"></div>
-                        <div class="form-group"><label>Status Dinas *</label><select id="status" required><option>Aktif</option><option>Mutasi</option><option>Pensiun</option><option>Resign</option></select></div>
-                        <div class="form-group"><label>Kelompok Pegawai</label><select id="kelompok_pegawai"><option>ASN</option><option>APBD</option><option>BLUD</option><option>MAGANG</option></select></div>
-                        <div class="form-group"><label>Kelompok Jabatan *</label>
-                            <select id="kelompok_jabatan" required>
-                                <option>Management</option>
-                                <option>Tenaga Medis</option>
-                                <option>Tenaga Kesehatan</option>
-                                <option>Tenaga Penunjang Medis</option>
-                                <option>Tenaga Administrasi</option>
-                                <option>Tenaga Non Administrasi</option>
-                            </select>
-                        </div>
-                        <div class="form-group"><label>Nama Jabatan Spesifik</label><input type="text" id="jabatan"></div>
-                        <div class="form-group"><label>Ruangan / Unit Kerja Tempat Tugas</label><input type="text" id="ruangan"></div>
+                <div class="grid-inputs">
+                    <div class="form-group"><label>NIK *</label><input type="number" id="nik" required></div>
+                    <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="nama" required></div>
+                    <div class="form-group"><label>NIP</label><input type="text" id="nip"></div>
+                    <div class="form-group"><label>Status</label><select id="status"><option>Aktif</option><option>Mutasi</option><option>Pensiun</option></select></div>
+                    <div class="form-group"><label>Kelompok Pegawai</label><select id="kelompok_pegawai"><option>ASN</option><option>APBD</option><option>BLUD</option></select></div>
+                    <div class="form-group"><label>Ruangan</label><input type="text" id="ruangan"></div>
                     </div>
-                </div>
-
-                <div class="form-sector">
-                    <div class="sector-title">✏️ Sektor II: Informasi Biodata & Karakteristik</div>
-                    <div class="grid-inputs">
-                        <div class="form-group"><label>Jenis Kelamin</label><select id="jenis_kelamin"><option>Laki-laki</option><option>Perempuan</option></select></div>
-                        <div class="form-group"><label>Agama</label><select id="agama"><option>Islam</option><option>Kristen</option><option>Katolik</option><option>Hindu</option><option>Buddha</option></select></div>
-                        <div class="form-group"><label>Tempat Lahir</label><input type="text" id="tempat_lahir"></div>
-                        <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="tanggal_lahir" onchange="window.hitungTMTPensiunOtomatis()"></div>
-                        <div class="form-group"><label>Status Hubungan Keluarga</label><select id="status_keluarga"><option>TK</option><option>K/0</option><option>K/1</option><option>K/2</option><option>K/3</option></select></div>
-                        <div class="form-group"><label>Nomor Pokok Wajib Pajak (NPWP)</label><input type="text" id="npwp"></div>
-                    </div>
-                </div>
-
-                <div class="form-sector">
-                    <div class="sector-title">💼 Sektor III: Kepangkatan & Pelacakan Masa Kerja</div>
-                    <div class="grid-inputs">
-                        <div class="form-group"><label>Golongan Ruang</label><input type="text" id="gol"></div>
-                        <div class="form-group"><label>TMT Pangkat</label><input type="date" id="tmt_pangkat"></div>
-                        <div class="form-group"><label>TMT Berkala Berikutnya</label><input type="date" id="tmt_berikutnya"></div>
-                        <div class="form-group"><label>Tanggal Mulai Masuk RS</label><input type="date" id="masuk_rs" onchange="window.hitungMasaKerjaOtomatis()"></div>
-                        <div class="form-group"><label>🔒 Masa Kerja (Otomatis)</label><input type="text" id="masa_kerja_rs" readonly placeholder="Terhitung otomatis"></div>
-                        <div class="form-group"><label>BUP (Batas Usia Pensiun)</label><input type="number" id="rentang_bup" placeholder="Contoh: 58 atau 60" oninput="window.hitungTMTPensiunOtomatis()"></div>
-                        <div class="form-group"><label>🔒 TMT Pensiun (Otomatis)</label><input type="date" id="tmt_pensiun" readonly></div>
-                        <div class="form-group"><label>🔒 TMT CPNS (Otomatis dari NIP)</label><input type="date" id="tmt_cpns" readonly></div>
-                    </div>
-                </div>
-
-                <div class="form-sector">
-                    <div class="sector-title">🎓 Sektor IV: Riwayat Kelulusan Akademik</div>
-                    <div class="grid-inputs">
-                        <div class="form-group"><label>Jenjang Pendidikan</label><select id="jenjang"><option>D3</option><option>D4</option><option>S1</option><option>S2</option><option>Profesi</option></select></div>
-                        <div class="form-group"><label>Nama Universitas / Fakultas</label><input type="text" id="fakultas"></div>
-                        <div class="form-group"><label>Program Studi / Jurusan</label><input type="text" id="jurusan"></div>
-                    </div>
-                </div>
-
-                <div class="form-sector">
-                    <div class="sector-title">🏠 Sektor V: Kontak Domisili & Asuransi Sosial</div>
-                    <div class="grid-inputs">
-                        <div class="form-group full-width"><label>Alamat Rumah Tinggal Lengkap Sesuai KTP</label><input type="text" id="alamat"></div>
-                        <div class="form-group"><label>Nomor HP / WhatsApp</label><input type="tel" id="no_telp"></div>
-                        <div class="form-group"><label>Alamat Email Aktif</label><input type="email" id="email"></div>
-                        <div class="form-group"><label>Nomor JKN BPJS Kesehatan</label><input type="number" id="no_bpjsn"></div>
-                        <div class="form-group"><label>Nomor BPJS Ketenagakerjaan / Taspen</label><input type="text" id="no_bpjsket_taspen"></div>
-                    </div>
-                </div>
-
-                <div style="margin-top: 20px; text-align: right;">
-                    <button type="button" class="btn" style="background:#cbd5e1; color:#334155;" onclick="toggleFormInputMaster()">Batal</button>
-                    <button type="submit" class="btn btn-primary">💾 Simpan Perubahan Berkas</button>
-                </div>
+                <button type="submit" class="btn btn-primary">💾 Simpan Data</button>
+                <button type="button" class="btn" onclick="toggleFormInputMaster()">Batal</button>
             </form>
         </div>
 
@@ -148,52 +70,27 @@
             <div class="search-filter-group">
                 <div class="search-wrapper">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="input-cari" class="search-input" placeholder="Cari Nama atau NIK...">
+                    <input type="text" id="input-cari" class="search-input" placeholder="Cari Nama/NIK...">
                 </div>
-                
-                <select id="filter-status" class="filter-select">
-                    <option value="">-- Semua Status --</option>
-                    <option value="Aktif">Aktif</option>
-                    <option value="Mutasi">Mutasi</option>
-                    <option value="Pensiun">Pensiun</option>
-                    <option value="Resign">Resign</option>
-                </select>
-
-                <select id="filter-kelompok" class="filter-select">
-                    <option value="">-- Semua Kelompok --</option>
-                    <option value="ASN">ASN</option>
-                    <option value="APBD">APBD</option>
-                    <option value="BLUD">BLUD</option>
-                    <option value="MAGANG">MAGANG</option>
-                </select>
+                <select id="filter-status" class="filter-select"><option value="">-- Semua Status --</option><option value="Aktif">Aktif</option></select>
+                <select id="filter-kelompok" class="filter-select"><option value="">-- Semua Kelompok --</option><option value="ASN">ASN</option></select>
             </div>
-            
-            <div style="display: flex; gap:8px;">
-                <button class="btn btn-primary" id="btn-tambah-master-trigger" onclick="bukaFormTambahBaru()" style="display:none;"><i class="fa-solid fa-user-plus"></i> Tambah Baru</button>
+            <div>
+                <button class="btn btn-primary" id="btn-tambah-master-trigger" onclick="bukaFormTambahBaru()" style="display:none;"><i class="fa-solid fa-plus"></i> Tambah Baru</button>
                 <button class="btn btn-success" id="btn-excel"><i class="fa-solid fa-file-excel"></i> Excel</button>
-                <button class="btn btn-danger" id="btn-pdf"><i class="fa-solid fa-file-pdf"></i> PDF</button>
             </div>
         </div>
 
         <div class="table-responsive">
             <table>
-                <thead>
-                    <tr><th>NIK</th><th>Nama Pegawai</th><th>Status</th><th>Kelompok</th><th>Jabatan</th><th>Ruangan</th><th style="text-align: center;">Kontrol</th></tr>
-                </thead>
-                <tbody id="body-tabel-pegawai">
-                    <tr><td colspan="7" style="text-align:center; padding:20px;">Memuat sinkronisasi cloud...</td></tr>
-                </tbody>
+                <thead><tr><th>NIK</th><th>Nama Pegawai</th><th>Status</th><th>Kelompok</th><th>Jabatan</th><th>Ruangan</th><th>Kontrol</th></tr></thead>
+                <tbody id="body-tabel-pegawai"></tbody>
             </table>
         </div>
-        <div style="display:flex; justify-content:space-between; margin-top:20px; align-items:center;">
-            <p id="pagination-text-info" style="font-size:13px; color:#64748b;"></p>
-            <div style="display:flex; gap:6px;">
-                <button class="btn" id="btn-page-prev" style="background:white; border:1px solid #cbd5e1; padding:6px 12px;">Sebelumnya</button>
-                <button class="btn" id="btn-page-next" style="background:white; border:1px solid #cbd5e1; padding:6px 12px;">Selanjutnya</button>
-            </div>
+        <div style="margin-top:20px; text-align:right;">
+            <p id="pagination-text-info" style="font-size:12px; color:#64748b;"></p>
         </div>
     </div>
-
     <script src="app.js"></script>
 </body>
 </html>
