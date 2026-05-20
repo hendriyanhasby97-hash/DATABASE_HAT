@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Riwayat Pendidikan Karyawan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: #f8fafc; padding: 25px; color: #334155; }
+        .data-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; }
+        .form-sector { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .grid-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; }
+        .form-group input, .form-group select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; }
+        .btn { padding: 10px 18px; border-radius: 8px; font-weight: 600; background: #2563eb; color: white; border:none; cursor:pointer;}
+        .table-responsive { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px;}
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th { background: #1e293b; color: white; padding: 14px; font-size: 12px; }
+        td { padding: 14px; border-bottom: 1px solid #e2e8f0; }
+    </style>
+</head>
+<body>
+    <div class="data-card">
+        <h2 style="font-size:20px; font-weight:800; margin-bottom:15px;">Pendidikan Kelulusan Formal Karyawan</h2>
+        <div class="form-sector" id="wrapper-form-input">
+            <form id="form-pendidikan" onsubmit="savePendidikan(event)">
+                <div class="grid-inputs">
+                    <div class="form-group"><label>NIK Pegawai</label><input type="number" id="edu-nik" required onblur="cariNamaPegawaiOtomatis(this.value)"></div>
+                    <div class="form-group"><label>Nama Pegawai</label><input type="text" id="edu-nama" readonly style="background:#e2e8f0;"></div>
+                    <div class="form-group"><label>Jenjang Kelulusan</label><select id="edu-jenjang"><option>D3</option><option>S1</option><option>S2</option><option>Profesi</option></select></div>
+                    <div class="form-group"><label>Nama Universitas/Sekolah</label><input type="text" id="edu-institusi" required></div>
+                    <div class="form-group"><label>Fakultas / Program Studi</label><input type="text" id="edu-studi" required></div>
+                    <div class="form-group"><label>Tahun Lulus</label><input type="number" id="edu-tahun" required></div>
+                </div>
+                <input type="hidden" id="edu-id-pegawai">
+                <div style="margin-top:15px; text-align:right;"><button type="submit" class="btn">💾 Simpan Kelulusan</button></div>
+            </form>
+        </div>
+        <div class="table-responsive">
+            <table>
+                <thead><tr><th>NIK</th><th>Nama Karyawan</th><th>Jenjang</th><th>Nama Institusi Akademik</th><th>Fakultas/Prodi</th><th>Tahun Lulus</th></tr></thead>
+                <tbody id="body-tabel-pendidikan"></tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        const supabaseClient = supabase.createClient("https://trxakqvaxleslwmngsvr.supabase.co", "sb_publishable_fKDMGUajM2z2CbLVk2DuGg_8mSdHQoC");
+        if (sessionStorage.getItem('role') !== 'superadmin') document.getElementById('wrapper-form-input').style.display = 'none';
+        let rawData = [];
+        async function cariNamaPegawaiOtomatis(nik) {
+            const { data } = await supabaseClient.from('pegawai').select('id_pegawai, nama').eq('nik', nik.trim()).single();
+            if(data) { document.getElementById('edu-nama').value = data.nama; document.getElementById('edu-id-pegawai').value = data.id_pegawai; }
+        }
+        async function muatPendidikan() {
+            const { data } = await supabaseClient.from('riwayat_pendidikan').select('*'); rawData = data || []; renderTabel();
+        }
+        function renderTabel() {
+            const tbody = document.getElementById('body-tabel-pendidikan'); tbody.innerHTML = "";
+            rawData.forEach(r => { tbody.innerHTML += `<tr><td>${r.nik}</td><td><strong>${r.nama_pegawai}</strong></td><td>${r.jenjang_pendidikan}</td><td>${r.nama_institusi}</td><td>${r.fakultas_jurusan}</td><td>${r.tahun_lulus}</td></tr>`; });
+        }
+        async function savePendidikan(event) {
+            event.preventDefault();
+            const payload = {
+                id_pendidikan: 'EDU-' + Date.now(), id_pegawai: document.getElementById('edu-id-pegawai').value,
+                nik: document.getElementById('edu-nik').value.trim(), nama_pegawai: document.getElementById('edu-nama').value,
+                jenjang_pendidikan: document.getElementById('edu-jenjang').value, nama_institusi: document.getElementById('edu-institusi').value.trim(),
+                fakultas_jurusan: document.getElementById('edu-studi').value.trim(), tahun_lulus: document.getElementById('edu-tahun').value
+            };
+            await supabaseClient.from('riwayat_pendidikan').insert([payload]); alert("Tersimpan!"); document.getElementById('form-pendidikan').reset(); muatPendidikan();
+        }
+        document.addEventListener('DOMContentLoaded', muatPendidikan);
+    </script>
+</body>
+</html>
