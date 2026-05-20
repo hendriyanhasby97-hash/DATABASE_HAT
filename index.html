@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Dashboard Eksekutif Kepegawaian</title>
+    <title>Sistem Dashboard Executive Kepegawaian</title>
     
     <script>
         const currentRole = sessionStorage.getItem('role');
@@ -378,7 +378,7 @@
                 </div>
             </div>
 
-            <div id="view-doc-str" id="view-str" class="view-panel">
+            <div id="view-str" class="view-panel">
                 <div class="page-title-box"><h2>Registrasi Surat Tanda Registrasi (STR)</h2></div>
                 <div class="data-card">
                     <div class="action-bar" style="justify-content: flex-end;">
@@ -478,7 +478,7 @@
             document.getElementById('top-role-avatar').textContent = roleLogin === 'superadmin' ? 'SA' : 'AD';
         }
 
-        // 👁️ LIVE LOGIC: SWITCH LOCK INPUT JIKA CEKLISAN SEUMUR HIDUP STR AKTIF
+        // SWITCH LOCK INPUT JIKA CEKLISAN SEUMUR HIDUP STR AKTIF
         function toggleSTRSeumurHidup(checkboxId, inputTglId) {
             const cb = document.getElementById(checkboxId);
             const inputTgl = document.getElementById(inputTglId);
@@ -491,7 +491,7 @@
             }
         }
 
-        // CUSTOM ASYNC SAVE KHUSUS STR ADMIN AGAR KATA SEUMUR HIDUP MASUK KEDATABASE
+        // SAVE STR ADMIN
         async function saveDataSekunderSTRAdmin(event) {
             event.preventDefault();
             const form = document.getElementById('form-add-str');
@@ -526,7 +526,7 @@
             finally { btnSubmit.disabled = false; btnSubmit.textContent = "💾 Unggah Berkas STR"; }
         }
 
-        // 🔥 FUNGSI BARU: SIMPAN MANUAL DATA PEGAWAI MASUK KE DATABASE SINKRON
+        // SAVE PEGAWAI MASUK
         async function saveDataPegawaiMasukManual(event) {
             event.preventDefault();
             const form = document.getElementById('form-add-masuk');
@@ -546,14 +546,14 @@
             try {
                 const { error } = await supabaseClient.from('pegawai_masuk').insert([payload]);
                 if (error) throw error;
-                alert("Sukses! Data Pegawai Masuk berhasil direkam ke database cloud.");
+                alert("Sukses! Data Pegawai Masuk berhasil direkam.");
                 form.reset(); toggleFormInput('form-masuk-wrapper');
                 if (typeof window.switchViewHook === 'function') window.switchViewHook('view-pegawai-masuk');
             } catch (err) { alert("Gagal menyimpan data."); } 
             finally { btn.disabled = false; btn.textContent = "💾 Simpan Pegawai Masuk"; }
         }
 
-        // 🔥 FUNGSI BARU: SIMPAN MANUAL DATA PEGAWAI KELUAR KE DATABASE SINKRON
+        // SAVE PEGAWAI KELUAR
         async function saveDataPegawaiKeluarManual(event) {
             event.preventDefault();
             const form = document.getElementById('form-add-keluar');
@@ -573,14 +573,14 @@
             try {
                 const { error } = await supabaseClient.from('pegawai_keluar').insert([payload]);
                 if (error) throw error;
-                alert("Sukses! Data Pegawai Keluar berhasil direkam ke database cloud.");
+                alert("Sukses! Data Pegawai Keluar berhasil direkam.");
                 form.reset(); toggleFormInput('form-keluar-wrapper');
                 if (typeof window.switchViewHook === 'function') window.switchViewHook('view-pegawai-keluar');
             } catch (err) { alert("Gagal menyimpan data."); } 
             finally { btn.disabled = false; btn.textContent = "💾 Simpan Pegawai Keluar"; }
         }
 
-        // 👁️ ENGINE SISI SUPERADMIN: LOAD TRANSAKSI PENDING DAN BUAT ACTION KEPUTUSAN CUTI
+        // LOAD LAJUR TRANSAKSI CUTI ADMIN
         async function muatTabelCutiUntukAdmin() {
             const tbody = document.getElementById('admin-tabel-cuti-verifikasi'); if(!tbody) return;
             const roleSekarang = sessionStorage.getItem('role');
@@ -600,7 +600,7 @@
                             <button class="btn-action" style="background:#dc2626" onclick="verifikasiCutiAksi('${r.id_cuti}', 'Ditolak')"><i class="fa-solid fa-xmark"></i> Tolak</button>
                         `;
                     } else {
-                        aksiTombol = `<span style="font-weight:700; color:#475569"><i class="fa-solid fa-circle-info"></i> Selesai Diproses</span>`;
+                        aksiTombol = `<span style="font-weight:700; color:#475569"><i class="fa-solid fa-circle-info"></i> Selesai</span>`;
                     }
 
                     tbody.innerHTML += `
@@ -609,7 +609,7 @@
                             <td>${r.jenis_cuti}</td>
                             <td>"${r.alasan || '-'}"</td>
                             <td>${r.lama_cuti} (${r.tgl_mulai})</td>
-                            <td><span style="font-weight:700;">${r.status_verifikasi}</span></td>
+                            <td><span>${r.status_verifikasi}</span></td>
                             <td>${aksiTombol}</td>
                         </tr>
                     `;
@@ -617,21 +617,14 @@
             } catch(e){}
         }
 
-        // 🚀 AKSI VERIFIKASI UPDATE DATA CUTI CLOUD SISI SUPERADMIN
         async function verifikasiCutiAksi(idCuti, keputusan) {
-            const catatan = prompt(`Masukkan catatan/alasan untuk keputusan ${keputusan}:`);
+            const catatan = prompt(`Masukkan catatan keputusan ${keputusan}:`);
             if(catatan === null) return;
-
             try {
-                const { error } = await supabaseClient
-                    .from('pengajuan_cuti')
-                    .update({ status_verifikasi: keputusan, catatan_admin: catatan || '-' })
-                    .eq('id_cuti', idCuti);
-                
+                const { error } = await supabaseClient.from('pengajuan_cuti').update({ status_verifikasi: keputusan, catatan_admin: catatan || '-' }).eq('id_cuti', idCuti);
                 if(error) throw error;
-                alert(`Sukses! Pengajuan ${idCuti} telah di-verifikasi menjadi: ${keputusan}.`);
-                muatTabelCutiUntukAdmin();
-            } catch(err) { alert("Gagal merubah status."); }
+                alert(`Sukses memverifikasi menjadi ${keputusan}.`); muatTabelCutiUntukAdmin();
+            } catch(err) { alert("Gagal."); }
         }
 
         function toggleDropdown(element) {
@@ -655,42 +648,33 @@
 
         function toggleFormInput(wrapperId) {
             const wrapper = document.getElementById(wrapperId);
-            if (wrapper) {
-                wrapper.classList.toggle('hide-element');
-                if (!wrapper.classList.contains('hide-element')) window.scrollTo({ top: wrapper.offsetTop - 20, behavior: 'smooth' });
-            }
+            if (wrapper) wrapper.classList.toggle('hide-element');
         }
 
         function bukaFormTambahBaru() {
             document.getElementById('main-crud-form').reset();
             document.getElementById('id_pegawai').value = "";
             document.getElementById('nik').disabled = false;
-            document.getElementById('main-form-title').innerHTML = `<i class="fa-solid fa-user-plus"></i> Registrasi Record Karyawan Baru (31 Bidang)`;
-            const wrapper = document.getElementById('form-master-wrapper');
-            wrapper.classList.remove('hide-element');
-            window.scrollTo({ top: wrapper.offsetTop - 20, behavior: 'smooth' });
+            document.getElementById('main-form-title').innerHTML = `<i class="fa-solid fa-user-plus"></i> Registrasi Record Karyawan Baru`;
+            document.getElementById('form-master-wrapper').classList.remove('hide-element');
         }
 
         window.bukaModalViewDetailSistem = function(idPegawai) {
-            if(typeof dbPegawai === 'undefined') return alert("Sistem sinkronisasi belum siap.");
+            if(typeof dbPegawai === 'undefined') return alert("Sistem belum siap.");
             const p = dbPegawai.find(x => x.id_pegawai === idPegawai);
             if(!p) return alert("Data tidak ditemukan.");
-
-            const container = document.getElementById('container-view-rows');
-            container.innerHTML = "";
-
+            const container = document.getElementById('container-view-rows'); container.innerHTML = "";
             const mapLabels = {
                 nik: 'NIK KTP', nama: 'Nama Lengkap', nip: 'NIP / No Pegawai', status: 'Status Dinas', 
                 kelompok_pegawai: 'Kelompok Pegawai', kelompok_jabatan: 'Kelompok Jabatan', jabatan: 'Nama Jabatan', 
                 ruangan: 'Unit Kerja', jenis_kelamin: 'Jenis Kelamin', agama: 'Agama', tempat_lahir: 'Tempat Lahir', 
                 tanggal_lahir: 'Tanggal Lahir', status_keluarga: 'Status Hubungan', npwp: 'NPWP', gol: 'Golongan', 
                 tmt_pangkat: 'TMT Pangkat', tmt_berikutnya: 'TMT Berkala Next', masuk_rs: 'Tgl Masuk RS', 
-                masa_kerja_rs: 'Masa Kerja', rentang_bup: 'BUP Pensiun (Usia)', tmt_pensiun: 'TMT Pensiun', 
-                tmt_cpns: 'TMT CPNS', jenjang: 'Jenjang Pendidikan', fakultas: 'Universitas / Sekolah', 
+                masa_kerja_rs: 'Masa Kerja', rentang_bup: 'BUP Pensiun', tmt_pensiun: 'TMT Pensiun', 
+                tmt_cpns: 'TMT CPNS', jenjang: 'Jenjang Pendidikan', fakultas: 'Universitas', 
                 jurusan: 'Program Studi', alamat: 'Alamat Rumah', no_telp: 'No HP / WA', email: 'Email', 
-                no_bpjsn: 'BPJS Kesehatan', no_bpjsket_taspen: 'BPJS Ketenagakerjaan/Taspen', id_pegawai: 'ID Sistem Cloud'
+                no_bpjsn: 'BPJS Kesehatan', no_bpjsket_taspen: 'BPJS Ketenagakerjaan', id_pegawai: 'ID Cloud'
             };
-
             Object.keys(mapLabels).forEach(key => {
                 const div = document.createElement('div'); div.className = "view-row";
                 div.innerHTML = `<strong>${mapLabels[key]}</strong><span>${p[key] || "-"}</span>`;
@@ -701,10 +685,9 @@
 
         function tutupModalDetail(e) { if(e.target.classList.contains('modal-overlay')) tutupModalDetailAksi(); }
         function tutupModalDetailAksi() { document.getElementById('modal-view-detail').classList.remove('open'); }
-
         async function saveDataSekunder(event, namaTabel, idForm, idWrapper, viewId) {
             event.preventDefault(); const form = document.getElementById(idForm); const btnSubmit = form.querySelector('button[type="submit"]');
-            btnSubmit.disabled = true; btnSubmit.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Memproses...";
+            btnSubmit.disabled = true; btnSubmit.innerHTML = "Memproses...";
             const fileInput = form.querySelector('input[type="file"]'); let finalUrl = "";
             try {
                 if (fileInput && fileInput.files.length > 0) {
@@ -713,16 +696,15 @@
                     finalUrl = supabaseClient.storage.from('lampiran').getPublicUrl(fileName).data.publicUrl;
                 }
                 const formData = new FormData(form); const dataObj = {};
-                formData.forEach((value, key) => { if (key !== 'lampiran_file') dataObj[key] = value.trim(); });
+                formData.forEach((value, key) => { if (key !== 'lampiran_file') dataObj[value, key] = value.trim(); });
                 dataObj['lampiran_url'] = finalUrl;
                 const { error } = await supabaseClient.from(namaTabel).insert([dataObj]);
                 if (error) throw error;
-                alert(`Sukses! Data tersimpan.`); form.reset(); toggleFormInput(idWrapper);
+                alert(`Sukses!`); form.reset(); toggleFormInput(idWrapper);
                 if (typeof window.switchViewHook === 'function') window.switchViewHook(viewId);
-            } catch (err) { alert("Gagal mengunggah."); } finally { btnSubmit.disabled = false; btnSubmit.textContent = "💾 Simpan Data"; }
+            } catch (err) { alert("Gagal."); } finally { btnSubmit.disabled = false; btnSubmit.textContent = "💾 Simpan Data"; }
         }
-
-        function logoutAksi() { if(confirm("Keluar?")) { sessionStorage.clear(); window.location.href = 'login.html'; } }
+        function logoutAksi() { sessionStorage.clear(); window.location.href = 'login.html'; }
     </script>
     <script src="app.js"></script>
 </body>
