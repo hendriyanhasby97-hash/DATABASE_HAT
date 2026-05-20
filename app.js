@@ -1,60 +1,79 @@
-// Konfigurasi Kredensial Supabase
-const SUPABASE_URL = "URL_SUPABASE_ANDA";
-const SUPABASE_KEY = "KEY_SUPABASE_ANDA";
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+/**
+ * SISTEM SINERGI ADMIN - APP.JS MASTER
+ * Fungsi: Penanganan Supabase, CRUD, dan Otomatisasi Penanggalan
+ */
 
-// State Global
-let currentData = [];
-let currentPage = 1;
-const rowsPerPage = 15; // Setelan 15 Baris per Halaman
+// 1. KONFIGURASI
+const SUPABASE_URL = "URL_SUPABASE_ANDA"; // Ganti dengan URL Anda
+const SUPABASE_KEY = "KEY_SUPABASE_ANDA"; // Ganti dengan KEY Anda
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Fungsi Otomatisasi 31 Field
-window.hitungOtomatis = () => {
+const MASTER_FIELDS = [
+    'id_pegawai', 'nik', 'nama', 'nip', 'status', 'kelompok_pegawai', 'kelompok_jabatan',
+    'gol', 'tmt_pangkat', 'tmt_berikutnya', 'jabatan', 'jenis_kelamin', 'agama', 
+    'rentang_bup', 'tmt_pensiun', 'tmt_cpns', 'masuk_rs', 'masa_kerja_rs', 
+    'tempat_lahir', 'tanggal_lahir', 'status_keluarga', 'alamat', 'jenjang', 
+    'fakultas', 'jurusan', 'ruangan', 'no_bpjsn', 'no_bpjsket_taspen', 'npwp', 'email', 'no_telp'
+];
+
+// 2. OTOMATISASI CALCULATOR (Global Helper)
+window.jalankanOtomatisasi = () => {
+    // Hitung Masa Kerja
+    const masuk = document.getElementById('masuk_rs')?.value;
+    if (masuk) {
+        const d = new Date(masuk); const now = new Date();
+        let th = now.getFullYear() - d.getFullYear();
+        let bl = now.getMonth() - d.getMonth();
+        if (bl < 0) { th--; bl += 12; }
+        const el = document.getElementById('masa_kerja_rs');
+        if (el) el.value = `${th} Tahun ${bl} Bulan`;
+    }
+    // Hitung Pensiun
     const lahir = document.getElementById('tanggal_lahir')?.value;
-    const bup = parseInt(document.getElementById('rentang_bup')?.value);
-    const nip = document.getElementById('nip')?.value;
-
+    const bup = document.getElementById('rentang_bup')?.value;
     if (lahir && bup) {
         const d = new Date(lahir);
-        d.setFullYear(d.getFullYear() + bup);
-        document.getElementById('tmt_pensiun').value = d.toISOString().split('T')[0];
-    }
-    if (nip && nip.length >= 8) {
-        document.getElementById('tmt_cpns').value = `${nip.substring(0,4)}-${nip.substring(4,6)}-${nip.substring(6,8)}`;
+        d.setFullYear(d.getFullYear() + parseInt(bup));
+        const el = document.getElementById('tmt_pensiun');
+        if (el) el.value = d.toISOString().split('T')[0];
     }
 };
 
-// Fungsi Universal Save (Gunakan untuk Master & Riwayat)
-async function saveToDatabase(tableName, payload, idField) {
-    const { error } = await supabaseClient.from(tableName).upsert([payload]);
-    if (error) alert("Gagal: " + error.message);
-    else { alert("Data Tersimpan!"); location.reload(); }
-}
-
-// Render Paginasi 15 Baris
-function renderTable(data, tbodyId) {
+// 3. FUNGSI CRUD UNIVERSAL (Bisa dipakai di semua halaman)
+async function fetchData(tableName, tbodyId, renderFunction) {
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
     
-    const start = (currentPage - 1) * rowsPerPage;
-    const paginated = data.slice(start, start + rowsPerPage);
-    
-    // Logika render tabel tergantung pada isi data
-    // (Contoh untuk daftar pegawai)
-    tbody.innerHTML = paginated.map(p => `
-        <tr>
-            <td>${p.nik || '-'}</td>
-            <td>${p.nama || '-'}</td>
-            <td>${p.status || '-'}</td>
-            <td><button onclick="editData('${p.id_pegawai}')">Edit</button></td>
-        </tr>
-    `).join('');
+    try {
+        const { data, error } = await supabase.from(tableName).select('*');
+        if (error) throw error;
+        
+        if (data.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='10' style='text-align:center;'>Data Kosong</td></tr>";
+        } else {
+            renderFunction(data); // Memanggil fungsi render spesifik halaman
+        }
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan='10' style='color:red;'>Error: ${e.message}</td></tr>`;
+        console.error(e);
+    }
 }
 
-// Pemicu Update otomatis jika ada perubahan
-document.addEventListener('DOMContentLoaded', async () => {
-    // Tambahkan cek sesi login sederhana
-    if (!sessionStorage.getItem('role') && !location.href.includes('login.html')) {
-        location.href = 'login.html';
+async function saveRecord(tableName, payload) {
+    try {
+        const { error } = await supabase.from(tableName).insert([payload]);
+        if (error) throw error;
+        alert("Data berhasil disimpan!");
+        location.reload();
+    } catch (e) {
+        alert("Gagal menyimpan: " + e.message);
     }
+}
+
+// 4. INITIATION
+document.addEventListener('DOMContentLoaded', () => {
+    // Tambahkan listener otomatis pada input tanggal jika ada
+    document.querySelectorAll('input[type="date"]').forEach(el => {
+        el.addEventListener('change', window.jalankanOtomatisasi);
+    });
 });
